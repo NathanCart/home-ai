@@ -1,8 +1,8 @@
 {
 	"expo": {
-		"scheme": "Swipable",
-		"name": "Swipable++",
-		"slug": "swipable",
+		"scheme": "HomeAI",
+		"name": "Home AI",
+		"slug": "home-ai",
 		"version": "1.1.0",
 		"web": {
 			"favicon": "./assets/favicon.png",
@@ -43,7 +43,7 @@
 		"assetBundlePatterns": ["**/*"],
 		"ios": {
 			"supportsTablet": true,
-			"bundleIdentifier": "com.nathan-carter.my-expo-app",
+			"bundleIdentifier": "com.viralreach.home-ai",
 			"infoPlist": {
 				"NSPhotoLibraryUsageDescription": "This app needs access to your photo library to help you organize and clean up your files by swiping through them month by month.",
 				"NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to help you organize and clean up your files.",
