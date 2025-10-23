@@ -19,19 +19,19 @@ export function ThemedText({
 	// Get the appropriate font weight based on variant
 	const getFontFamily = () => {
 		if (bold) {
-			return 'Montserrat_700Bold';
+			return 'Urbanist_700Bold';
 		}
 		if (extraBold) {
-			return 'Montserrat_800ExtraBold';
+			return 'Urbanist_700Bold';
 		}
 		switch (variant) {
 			case 'title-xl':
 			case 'title-lg':
 			case 'title-md':
-				return 'Montserrat_600SemiBold';
+				return 'Urbanist_700Bold';
 			case 'body':
 			default:
-				return 'Montserrat_500Medium';
+				return 'Urbanist_400Regular';
 		}
 	};
 
@@ -45,10 +45,10 @@ export function ThemedText({
 				style,
 			]}
 			className={`
-        ${variant === 'title-lg' ? 'text-4xl' : ''}
-        ${variant === 'title-xl' ? 'text-5xl' : ''}
-        ${variant === 'title-md' ? 'text-3xl' : ''}
-        ${variant === 'body' ? 'text-xl' : ''}
+        ${variant === 'title-lg' ? 'text-3xl' : ''}
+        ${variant === 'title-xl' ? 'text-4xl' : ''}
+        ${variant === 'title-md' ? 'text-2xl' : ''}
+        ${variant === 'body' ? 'text-lg' : ''}
 
         ${
 			color === 'primary'

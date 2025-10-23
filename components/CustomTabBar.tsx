@@ -2,10 +2,13 @@ import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Octicons from '@expo/vector-icons/Octicons';
+import { ThemedText } from './ThemedText';
+import * as Haptics from 'expo-haptics';
 
 interface CustomTabBarProps {
-	activeTab: 'home' | 'analytics' | 'settings';
-	onTabPress: (tab: 'home' | 'analytics' | 'settings') => void;
+	activeTab: 'home' | 'explore' | 'projects';
+	onTabPress: (tab: 'home' | 'explore' | 'projects') => void;
 }
 
 export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
@@ -16,16 +19,21 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 	// Animation values
 	const slideAnimation = useRef(new Animated.Value(0)).current;
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
-	const previousTab = useRef<'home' | 'analytics' | 'settings' | null>(null);
+	const previousTab = useRef<'home' | 'explore' | 'projects' | null>(null);
+
+	// Individual tab scale animations
+	const homeScaleAnimation = useRef(new Animated.Value(1)).current;
+	const exploreScaleAnimation = useRef(new Animated.Value(1)).current;
+	const projectsScaleAnimation = useRef(new Animated.Value(1)).current;
 
 	// Get tab index for animation calculations
-	const getTabIndex = (tab: 'home' | 'analytics' | 'settings') => {
+	const getTabIndex = (tab: 'home' | 'explore' | 'projects') => {
 		switch (tab) {
 			case 'home':
 				return 0;
-			case 'analytics':
+			case 'explore':
 				return 1;
-			case 'settings':
+			case 'projects':
 				return 2;
 			default:
 				return 0;
@@ -34,8 +42,8 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 
 	// Get slide direction based on tab positions
 	const getSlideDirection = (
-		fromTab: 'home' | 'analytics' | 'settings' | null,
-		toTab: 'home' | 'analytics' | 'settings'
+		fromTab: 'home' | 'explore' | 'projects' | null,
+		toTab: 'home' | 'explore' | 'projects'
 	) => {
 		if (!fromTab) return 'right'; // Default direction for initial load
 
@@ -88,16 +96,40 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 		previousTab.current = activeTab;
 	}, [activeTab, tabWidth, slideAnimation, scaleAnimation]);
 
-	const handleTabPress = (tab: 'home' | 'analytics' | 'settings') => {
+	// Press animation functions
+	const handlePressIn = (scaleAnimation: Animated.Value) => {
+		Animated.spring(scaleAnimation, {
+			toValue: 0.9,
+			useNativeDriver: true,
+			tension: 300,
+			friction: 10,
+		}).start();
+	};
+
+	const handlePressOut = (scaleAnimation: Animated.Value) => {
+		Animated.spring(scaleAnimation, {
+			toValue: 1,
+			useNativeDriver: true,
+			tension: 300,
+			friction: 10,
+		}).start();
+	};
+
+	const handleTabPress = (tab: 'home' | 'explore' | 'projects') => {
+		// Haptic feedback
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		onTabPress(tab);
 	};
 
 	return (
-		<View className="bg-primary" style={{ paddingBottom: insets.bottom }}>
+		<View
+			className="bg-gray-50 border-t-2 border-gray-100"
+			style={{ paddingBottom: insets.bottom }}
+		>
 			<View className="flex-row relative">
 				{/* Animated sliding indicator */}
 				<Animated.View
-					className="absolute top-0 left-0 bg-white/20 rounded-full"
+					className="absolute top-0 left-0  rounded-full"
 					style={{
 						width: 80,
 						height: 80,
@@ -109,47 +141,83 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 
 				{/* Home Tab */}
 				<TouchableOpacity
-					className="flex-1 flex-col items-center justify-center py-4"
+					className="flex-1 flex-col items-center justify-center "
 					onPress={() => handleTabPress('home')}
-					activeOpacity={0.7}
+					onPressIn={() => handlePressIn(homeScaleAnimation)}
+					onPressOut={() => handlePressOut(homeScaleAnimation)}
+					activeOpacity={1}
 				>
-					<View className="p-4 rounded-full">
-						<Ionicons
-							name={activeTab === 'home' ? 'grid' : 'grid-outline'}
-							size={32}
-							color={activeTab === 'home' ? 'white' : '#d1d5db'}
+					<Animated.View
+						className="p-4 rounded-full items-center justify-center"
+						style={{ transform: [{ scale: homeScaleAnimation }] }}
+					>
+						<Octicons
+							name="home-fill"
+							className={activeTab === 'home' ? 'opacity-100' : 'opacity-60'}
+							size={28}
+							color={'#111827'}
 						/>
-					</View>
+						<ThemedText
+							variant="body"
+							className={`${activeTab === 'home' ? 'opacity-100' : 'opacity-60'} text-gray-900 !text-base mt-1`}
+						>
+							Generate
+						</ThemedText>
+					</Animated.View>
 				</TouchableOpacity>
 
 				{/* Analytics Tab */}
 				<TouchableOpacity
-					className="flex-1 flex-col items-center justify-center py-4"
-					onPress={() => handleTabPress('analytics')}
-					activeOpacity={0.7}
+					className="flex-1 flex-col items-center justify-center "
+					onPress={() => handleTabPress('explore')}
+					onPressIn={() => handlePressIn(exploreScaleAnimation)}
+					onPressOut={() => handlePressOut(exploreScaleAnimation)}
+					activeOpacity={1}
 				>
-					<View className="p-4 rounded-full">
-						<Ionicons
-							name={activeTab === 'analytics' ? 'pie-chart' : 'pie-chart-outline'}
-							size={32}
-							color={activeTab === 'analytics' ? 'white' : '#d1d5db'}
+					<Animated.View
+						className="p-4 rounded-full items-center justify-center"
+						style={{ transform: [{ scale: exploreScaleAnimation }] }}
+					>
+						<Octicons
+							name="sparkles-fill"
+							className={activeTab === 'explore' ? 'opacity-100' : 'opacity-60'}
+							size={28}
+							color={'#111827'}
 						/>
-					</View>
+						<ThemedText
+							variant="body"
+							className={`${activeTab === 'explore' ? 'opacity-100' : 'opacity-60'} text-gray-900 !text-base mt-1 ml-1`}
+						>
+							Explore
+						</ThemedText>
+					</Animated.View>
 				</TouchableOpacity>
 
 				{/* Settings Tab */}
 				<TouchableOpacity
-					className="flex-1 flex-col items-center justify-center py-4"
-					onPress={() => handleTabPress('settings')}
-					activeOpacity={0.7}
+					className="flex-1 flex-col items-center justify-center "
+					onPress={() => handleTabPress('projects')}
+					onPressIn={() => handlePressIn(projectsScaleAnimation)}
+					onPressOut={() => handlePressOut(projectsScaleAnimation)}
+					activeOpacity={1}
 				>
-					<View className="p-4 rounded-full">
-						<Ionicons
-							name={activeTab === 'settings' ? 'settings' : 'settings-outline'}
-							size={32}
-							color={activeTab === 'settings' ? 'white' : '#d1d5db'}
+					<Animated.View
+						className="p-4 rounded-full items-center justify-center"
+						style={{ transform: [{ scale: projectsScaleAnimation }] }}
+					>
+						<Octicons
+							name="bookmark-filled"
+							className={activeTab === 'projects' ? 'opacity-100' : 'opacity-60'}
+							size={28}
+							color={'#111827'}
 						/>
-					</View>
+						<ThemedText
+							variant="body"
+							className={`${activeTab === 'projects' ? 'opacity-100' : 'opacity-60'} text-gray-900 !text-base mt-1`}
+						>
+							Projects
+						</ThemedText>
+					</Animated.View>
 				</TouchableOpacity>
 			</View>
 		</View>

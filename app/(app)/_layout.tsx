@@ -56,7 +56,7 @@ export default function RootLayout() {
 		// Only trigger paywall if user has completed onboarding and is actually in tabs
 		if (hasCompletedOnboarding) {
 			(async () => {
-				await presentPaywallIfNeeded();
+				// await presentPaywallIfNeeded();
 			})();
 		}
 	}, [hasCompletedOnboarding]);
@@ -116,60 +116,6 @@ export default function RootLayout() {
 								name="settings"
 								options={{
 									animation: screenAnimation,
-								}}
-							/>
-							<Stack.Screen
-								name="analytics"
-								options={{
-									animation: screenAnimation,
-								}}
-							/>
-							<Stack.Screen
-								name="swipe"
-								options={{
-									animation: 'slide_from_left',
-								}}
-							/>
-							<Stack.Screen
-								name="duplicates"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="gallery"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/notifications"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/privacy"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/storage"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/about"
-								options={{
-									animation: 'slide_from_right',
-								}}
-							/>
-							<Stack.Screen
-								name="settings/support"
-								options={{
-									animation: 'slide_from_right',
 								}}
 							/>
 							<Stack.Screen

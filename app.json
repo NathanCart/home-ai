@@ -1,71 +1,74 @@
 {
-	"expo": {
-		"scheme": "HomeAI",
-		"name": "Home AI",
-		"slug": "home-ai",
-		"version": "1.1.0",
-		"web": {
-			"favicon": "./assets/favicon.png",
-			"bundler": "metro"
-		},
-		"experiments": {
-			"tsconfigPaths": true
-		},
-		"plugins": [
-			[
-				"@sentry/react-native/expo",
-				{
-					"url": "https://sentry.io/",
-					"project": "swipe-wipe",
-					"organization": "viral-reach"
-				}
-			],
-			"expo-media-library",
-			"expo-router",
-			"expo-video",
-			[
-				"react-native-google-mobile-ads",
-				{
-					"androidAppId": "ca-app-pub-4272728413119527~8692365194",
-					"iosAppId": "ca-app-pub-4272728413119527~5075681679",
-					"userTrackingUsageDescription": "This app uses Google Mobile Ads SDK to provide personalized ads and improve your experience. We may collect information about your device and use it to show you relevant ads."
-				}
-			]
-		],
-		"orientation": "portrait",
-		"icon": "./assets/icon.png",
-		"userInterfaceStyle": "light",
-		"splash": {
-			"image": "./assets/splash.png",
-			"resizeMode": "contain",
-			"backgroundColor": "#0285f8"
-		},
-		"assetBundlePatterns": ["**/*"],
-		"ios": {
-			"supportsTablet": true,
-			"bundleIdentifier": "com.viralreach.home-ai",
-			"infoPlist": {
-				"NSPhotoLibraryUsageDescription": "This app needs access to your photo library to help you organize and clean up your files by swiping through them month by month.",
-				"NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to help you organize and clean up your files.",
-				"ITSAppUsesNonExemptEncryption": false
-			}
-		},
-		"android": {
-			"adaptiveIcon": {
-				"foregroundImage": "./assets/adaptive-icon.png",
-				"backgroundColor": "#ffffff"
-			},
-			"permissions": [
-				"android.permission.READ_EXTERNAL_STORAGE",
-				"android.permission.WRITE_EXTERNAL_STORAGE"
-			],
-			"package": "com.nathancarter.myexpoapp"
-		},
-		"extra": {
-			"router": {},
-			"eas": {
-				"projectId": "3d869481-ba71-4cce-94e4-bb5e45019e23"
-			}
-		}
-	}
+  "expo": {
+    "scheme": "HomeAI",
+    "name": "Home AI",
+    "slug": "home-ai",
+    "version": "1.1.0",
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "experiments": {
+      "tsconfigPaths": true
+    },
+    "plugins": [
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "swipe-wipe",
+          "organization": "viral-reach"
+        }
+      ],
+      "expo-media-library",
+      "expo-router",
+      "expo-video",
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-4272728413119527~8692365194",
+          "iosAppId": "ca-app-pub-4272728413119527~5075681679",
+          "userTrackingUsageDescription": "This app uses Google Mobile Ads SDK to provide personalized ads and improve your experience. We may collect information about your device and use it to show you relevant ads."
+        }
+      ]
+    ],
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0285f8"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.viralreach.home-ai",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "This app needs access to your photo library to help you organize and clean up your files by swiping through them month by month.",
+        "NSPhotoLibraryAddUsageDescription": "This app needs access to your photo library to help you organize and clean up your files.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
+      "package": "com.nathancarter.myexpoapp"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "85444176-de1b-4489-b96a-632b4f11cc51"
+      }
+    },
+    "owner": "nathan-carter"
+  }
 }
