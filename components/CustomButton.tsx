@@ -179,7 +179,7 @@ export function CustomButton({
 
 	return (
 		<Animated.View
-			className="w-full"
+			className={`${className}`}
 			style={{
 				transform: [{ scale: scaleAnimation }],
 				opacity: opacityAnimation,

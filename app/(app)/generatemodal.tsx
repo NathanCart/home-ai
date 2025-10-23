@@ -5,12 +5,14 @@ import { ThemedText } from 'components/ThemedText';
 import { CustomButton } from 'components/CustomButton';
 import { Step1 } from 'components/generatesteps/Step1';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
-import { router } from 'expo-router';
+import { getStepConfig } from 'config/stepConfig';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
 export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
+	const { mode } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(4);
 	const slideAnimation = useRef(new Animated.Value(0)).current;
@@ -67,28 +69,30 @@ export default function GenerateModal() {
 	};
 
 	const renderStepContent = () => {
+		const config = getStepConfig(mode as string, currentStep);
+
 		switch (currentStep) {
 			case 1:
-				return <Step1 onImageSelect={handleImageSelect} />;
+				return <Step1 onImageSelect={handleImageSelect} config={config} />;
 			case 2:
 				return (
 					<View className="flex-1 px-6">
 						<View className="items-center mb-8">
 							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name="gear" size={40} color="white" />
+								<Octicons name={config.icon as any} size={40} color="white" />
 							</View>
 							<ThemedText
 								variant="title-lg"
 								className="text-gray-900 mb-3 text-center"
 								extraBold
 							>
-								Choose Your Options
+								{config.title}
 							</ThemedText>
 							<ThemedText
 								variant="body"
 								className="text-gray-600 text-center leading-6"
 							>
-								Select your preferences and customize your generation
+								{config.subtitle}
 							</ThemedText>
 						</View>
 					</View>
@@ -98,20 +102,20 @@ export default function GenerateModal() {
 					<View className="flex-1 px-6">
 						<View className="items-center mb-8">
 							<View className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name="sparkle" size={40} color="white" />
+								<Octicons name={config.icon as any} size={40} color="white" />
 							</View>
 							<ThemedText
 								variant="title-lg"
 								className="text-gray-900 mb-3 text-center"
 								extraBold
 							>
-								Generate Content
+								{config.title}
 							</ThemedText>
 							<ThemedText
 								variant="body"
 								className="text-gray-600 text-center leading-6"
 							>
-								Review your preferences and generate your AI-powered content
+								{config.subtitle}
 							</ThemedText>
 						</View>
 					</View>
@@ -121,20 +125,20 @@ export default function GenerateModal() {
 					<View className="flex-1 px-6">
 						<View className="items-center mb-8">
 							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name="check-circle" size={40} color="white" />
+								<Octicons name={config.icon as any} size={40} color="white" />
 							</View>
 							<ThemedText
 								variant="title-lg"
 								className="text-gray-900 mb-3 text-center"
 								extraBold
 							>
-								Complete
+								{config.title}
 							</ThemedText>
 							<ThemedText
 								variant="body"
 								className="text-gray-600 text-center leading-6"
 							>
-								Your content has been generated successfully
+								{config.subtitle}
 							</ThemedText>
 						</View>
 					</View>
@@ -145,7 +149,7 @@ export default function GenerateModal() {
 	};
 
 	return (
-		<View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
+		<View className=" bg-gray-50 flex-1" style={{ paddingTop: insets.top }}>
 			{/* Header */}
 			<ModalHeader
 				currentStep={currentStep}
@@ -161,9 +165,9 @@ export default function GenerateModal() {
 				style={{ transform: [{ translateX: slideAnimation }] }}
 			>
 				<ScrollView
-					className="flex-1"
+					className=""
+					contentContainerClassName="flex-1 mt-4"
 					showsVerticalScrollIndicator={false}
-					contentContainerStyle={{ flexGrow: 1 }}
 				>
 					{renderStepContent()}
 				</ScrollView>

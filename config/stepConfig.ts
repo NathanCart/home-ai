@@ -1,0 +1,85 @@
+export interface StepConfig {
+	title: string;
+	subtitle: string;
+	icon: string;
+	description: string;
+}
+
+export interface ModeConfig {
+	step1: StepConfig;
+	step2: StepConfig;
+	step3: StepConfig;
+	step4: StepConfig;
+}
+
+export const stepConfigs: Record<string, ModeConfig> = {
+	'interior-design': {
+		step1: {
+			title: 'Upload a Photo of Your Room',
+			subtitle: 'Take a photo or upload an existing image to get started',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step2: {
+			title: 'Choose Your Style',
+			subtitle: 'Select your preferred interior design style and preferences',
+			icon: 'gear',
+			description: 'Customize your design with various style options',
+		},
+		step3: {
+			title: 'Generate Design',
+			subtitle: 'AI will create your personalized interior design',
+			icon: 'sparkle',
+			description: 'Review your preferences and generate your AI-powered design',
+		},
+		step4: {
+			title: 'Design Complete',
+			subtitle: 'Your interior design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized interior design is ready!',
+		},
+	},
+	default: {
+		step1: {
+			title: 'Upload Your Photo',
+			subtitle: 'Take a photo or upload an existing image to get started',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step2: {
+			title: 'Choose Your Options',
+			subtitle: 'Select your preferences and customize your generation',
+			icon: 'gear',
+			description: 'Customize your generation with various options',
+		},
+		step3: {
+			title: 'Generate Content',
+			subtitle: 'AI will create your personalized content',
+			icon: 'sparkle',
+			description: 'Review your preferences and generate your AI-powered content',
+		},
+		step4: {
+			title: 'Complete',
+			subtitle: 'Your content has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized content is ready!',
+		},
+	},
+};
+
+export function getStepConfig(mode: string, step: number): StepConfig {
+	const config = stepConfigs[mode] || stepConfigs.default;
+
+	switch (step) {
+		case 1:
+			return config.step1;
+		case 2:
+			return config.step2;
+		case 3:
+			return config.step3;
+		case 4:
+			return config.step4;
+		default:
+			return config.step1;
+	}
+}
