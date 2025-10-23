@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Image } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from '../ThemedText';
 import { StepConfig } from '../../config/stepConfig';
@@ -15,15 +15,11 @@ interface Step1Props {
 export function Step1({ onImageSelect, config }: Step1Props) {
 	const [showTipsModal, setShowTipsModal] = useState(false);
 	const [showMediaSourceModal, setShowMediaSourceModal] = useState(false);
+	const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
-	const handleTakePhoto = () => {
-		// TODO: Implement camera functionality
-		console.log('Take photo pressed');
-	};
-
-	const handleChooseFromGallery = () => {
-		// TODO: Implement gallery picker functionality
-		console.log('Choose from gallery pressed');
+	const handleImageSelected = (imageUri: string) => {
+		setSelectedImage(imageUri);
+		onImageSelect?.();
 	};
 
 	const handleCardPress = () => {
@@ -59,20 +55,38 @@ export function Step1({ onImageSelect, config }: Step1Props) {
 					</TouchableOpacity>
 
 					<TouchableOpacity
-						className="bg-gray-100 aspect-square  w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center mb-6"
+						className="bg-gray-100 aspect-square w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center mb-6 overflow-hidden"
 						onPress={handleCardPress}
 					>
-						<Octicons name="image" size={60} color="#D1D5DB" className="mb-4" />
+						{selectedImage ? (
+							<View className="absolute inset-0">
+								<Image
+									source={{ uri: selectedImage }}
+									className="w-full h-full"
+									resizeMode="cover"
+								/>
+								{/* Overlay for changing photo */}
+								<View className="absolute inset-0 bg-black/20 items-center justify-center">
+									<View className="bg-white/90 rounded-full p-3">
+										<Octicons name="pencil" size={24} color="#111827" />
+									</View>
+								</View>
+							</View>
+						) : (
+							<View className="items-center">
+								<Octicons name="image" size={60} color="#D1D5DB" className="mb-4" />
 
-						<CustomButton
-							title="Upload photo"
-							onPress={handleCardPress}
-							icon="plus"
-							iconPosition="left"
-							className="!w-fit"
-							variant="primary"
-							size="sm"
-						/>
+								<CustomButton
+									title="Upload photo"
+									onPress={handleCardPress}
+									icon="plus"
+									iconPosition="left"
+									className="!w-fit"
+									variant="primary"
+									size="sm"
+								/>
+							</View>
+						)}
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -84,8 +98,7 @@ export function Step1({ onImageSelect, config }: Step1Props) {
 			<MediaSourceModal
 				visible={showMediaSourceModal}
 				onClose={() => setShowMediaSourceModal(false)}
-				onTakePhoto={handleTakePhoto}
-				onChooseFromGallery={handleChooseFromGallery}
+				onImageSelected={handleImageSelected}
 			/>
 		</View>
 	);

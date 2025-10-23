@@ -1,27 +1,30 @@
-import React, { useRef } from 'react';
-import { View, TouchableOpacity, Modal, Animated } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, TouchableOpacity, Modal, Animated, ActivityIndicator } from 'react-native';
 import { PanGestureHandler, PanGestureHandlerGestureEvent } from 'react-native-gesture-handler';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from '../ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 
 interface MediaSourceModalProps {
 	visible: boolean;
 	onClose: () => void;
-	onTakePhoto: () => void;
-	onChooseFromGallery: () => void;
+	onImageSelected: (imageUri: string) => void;
 }
 
-export function MediaSourceModal({
-	visible,
-	onClose,
-	onTakePhoto,
-	onChooseFromGallery,
-}: MediaSourceModalProps) {
+export function MediaSourceModal({ visible, onClose, onImageSelected }: MediaSourceModalProps) {
 	const insets = useSafeAreaInsets();
 	const translateY = useRef(new Animated.Value(200)).current;
 	const panGestureRef = useRef<PanGestureHandler>(null);
+	const [isLoading, setIsLoading] = useState(false);
+
+	// Reset loading state when modal opens
+	useEffect(() => {
+		if (visible) {
+			setIsLoading(false);
+		}
+	}, [visible]);
 
 	// Slide up animation when modal opens
 	React.useEffect(() => {
@@ -71,16 +74,93 @@ export function MediaSourceModal({
 		});
 	};
 
-	const handleTakePhoto = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		onTakePhoto();
-		handleClose();
+	const handleTakePhoto = async () => {
+		try {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+			setIsLoading(true);
+
+			// Request camera permissions
+			const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+			if (status !== 'granted') {
+				alert('Camera permission is required to take photos.');
+				setIsLoading(false);
+				return;
+			}
+
+			// Launch camera with the same options as your working code
+			const result = await ImagePicker.launchCameraAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				allowsEditing: true,
+				aspect: [4, 3],
+				quality: 0.8,
+			});
+
+			// Handle result like your working code
+			if (!result.canceled && result.assets[0]) {
+				const asset = result.assets[0];
+				if (asset.uri) {
+					onImageSelected(asset.uri);
+					handleClose(); // Close modal after successful selection
+				}
+			}
+		} catch (error) {
+			console.error('Error taking photo:', error);
+			// More specific error handling
+			if (error.message && error.message.includes('simulator')) {
+				alert(
+					'Camera is not available on simulator. Please test on a real device or use the photo library.'
+				);
+			} else if (error.message && error.message.includes('Camera not available')) {
+				alert(
+					'Camera is not available. Please check your device settings or use the photo library.'
+				);
+			} else {
+				alert(
+					`Failed to open camera: ${error.message || 'Unknown error'}. Please try again or use the photo library.`
+				);
+			}
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
-	const handleChooseFromGallery = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		onChooseFromGallery();
-		handleClose();
+	const handleChooseFromGallery = async () => {
+		try {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+			setIsLoading(true);
+
+			// Request media library permissions
+			const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+			if (status !== 'granted') {
+				alert('Gallery permission is required to select photos.');
+				setIsLoading(false);
+				return;
+			}
+
+			// Launch image picker with the same options as your working code
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				allowsEditing: true,
+				aspect: [4, 3],
+				quality: 0.8,
+			});
+
+			// Handle result like your working code
+			if (!result.canceled && result.assets[0]) {
+				const asset = result.assets[0];
+				if (asset.uri) {
+					onImageSelected(asset.uri);
+					handleClose(); // Close modal after successful selection
+				}
+			}
+		} catch (error) {
+			console.error('Error selecting image:', error);
+			alert('Error selecting image. Please try again.');
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	return (
@@ -128,10 +208,19 @@ export function MediaSourceModal({
 								{/* Take Photo Option */}
 								<TouchableOpacity
 									onPress={handleTakePhoto}
-									className="flex-row items-center bg-gray-50 rounded-2xl p-4 mb-4"
+									disabled={isLoading}
+									className={`flex-row items-center bg-gray-50 rounded-2xl p-4 mb-4 ${isLoading ? 'opacity-50' : ''}`}
 								>
 									<View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-4">
-										<Octicons name="device-camera" size={24} color="#111827" />
+										{isLoading ? (
+											<ActivityIndicator size="small" color="#111827" />
+										) : (
+											<Octicons
+												name="device-camera"
+												size={24}
+												color="#111827"
+											/>
+										)}
 									</View>
 									<View className="flex-1">
 										<ThemedText
@@ -148,16 +237,23 @@ export function MediaSourceModal({
 											Capture a new photo of your room
 										</ThemedText>
 									</View>
-									<Octicons name="chevron-right" size={20} color="#6B7280" />
+									{!isLoading && (
+										<Octicons name="chevron-right" size={20} color="#6B7280" />
+									)}
 								</TouchableOpacity>
 
 								{/* Choose from Gallery Option */}
 								<TouchableOpacity
 									onPress={handleChooseFromGallery}
-									className="flex-row items-center bg-gray-50 rounded-2xl p-4"
+									disabled={isLoading}
+									className={`flex-row items-center bg-gray-50 rounded-2xl p-4 ${isLoading ? 'opacity-50' : ''}`}
 								>
 									<View className="w-12 h-12 bg-gray-100 rounded-full items-center justify-center mr-4">
-										<Octicons name="image" size={24} color="#111827" />
+										{isLoading ? (
+											<ActivityIndicator size="small" color="#111827" />
+										) : (
+											<Octicons name="image" size={24} color="#111827" />
+										)}
 									</View>
 									<View className="flex-1">
 										<ThemedText
@@ -174,7 +270,9 @@ export function MediaSourceModal({
 											Select an existing photo from your gallery
 										</ThemedText>
 									</View>
-									<Octicons name="chevron-right" size={20} color="#6B7280" />
+									{!isLoading && (
+										<Octicons name="chevron-right" size={20} color="#6B7280" />
+									)}
 								</TouchableOpacity>
 							</View>
 						</Animated.View>
