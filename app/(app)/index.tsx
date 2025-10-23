@@ -94,7 +94,7 @@ export default function HomePage() {
 						showButton={true}
 						buttonText="Start Designing"
 						onPress={() => {
-							router.push('/interior-design?mode=interior-design');
+							router.push('/generatemodal?mode=interior-design');
 						}}
 					/>
 				</View>

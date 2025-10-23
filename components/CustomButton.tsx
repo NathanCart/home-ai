@@ -179,6 +179,7 @@ export function CustomButton({
 
 	return (
 		<Animated.View
+			className="w-full"
 			style={{
 				transform: [{ scale: scaleAnimation }],
 				opacity: opacityAnimation,
@@ -200,7 +201,7 @@ export function CustomButton({
 
 				<ThemedText
 					variant="body"
-					className={getTextStyles()}
+					className={`${getTextStyles()} !text-xl`}
 					bold={variant === 'primary' || variant === 'secondary'}
 				>
 					{loading ? 'Loading...' : title}

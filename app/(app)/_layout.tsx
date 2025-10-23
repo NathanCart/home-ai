@@ -12,20 +12,20 @@ import { useRevenuecat } from 'components/useRevenueCat';
 export default function RootLayout() {
 	const pathname = usePathname();
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<'home' | 'analytics' | 'settings'>('home');
+	const [activeTab, setActiveTab] = useState<'home' | 'explore' | 'projects'>('home');
 	const [screenAnimation, setScreenAnimation] = useState<
 		'fade' | 'slide_from_left' | 'slide_from_right'
 	>('fade');
-	const previousTab = useRef<'home' | 'analytics' | 'settings' | null>(null);
+	const previousTab = useRef<'home' | 'explore' | 'projects' | null>(null);
 
 	// Get tab index for animation calculations
-	const getTabIndex = (tab: 'home' | 'analytics' | 'settings') => {
+	const getTabIndex = (tab: 'home' | 'explore' | 'projects') => {
 		switch (tab) {
 			case 'home':
 				return 0;
-			case 'analytics':
+			case 'explore':
 				return 1;
-			case 'settings':
+			case 'projects':
 				return 2;
 			default:
 				return 0;
@@ -34,8 +34,8 @@ export default function RootLayout() {
 
 	// Get slide direction based on tab positions
 	const getSlideDirection = (
-		fromTab: 'home' | 'analytics' | 'settings' | null,
-		toTab: 'home' | 'analytics' | 'settings'
+		fromTab: 'home' | 'explore' | 'projects' | null,
+		toTab: 'home' | 'explore' | 'projects'
 	) => {
 		if (!fromTab) return 'fade'; // Default to fade for initial load
 
@@ -47,8 +47,9 @@ export default function RootLayout() {
 		return toIndex > fromIndex ? 'slide_from_right' : 'slide_from_left';
 	};
 
-	// Check if current route is onboarding (no tab bar)
+	// Check if current route is onboarding or modal (no tab bar)
 	const isOnboardingRoute = pathname.startsWith('/onboarding');
+	const isModalRoute = pathname.includes('/generatemodal');
 	const { presentPaywallIfNeeded, isInitialized, initializeRevenueCat } = useRevenuecat();
 	const { hasCompletedOnboarding } = useOnboarding();
 
@@ -65,14 +66,14 @@ export default function RootLayout() {
 	useEffect(() => {
 		if (pathname === '/') {
 			setActiveTab('home');
-		} else if (pathname === '/analytics') {
-			setActiveTab('analytics');
-		} else if (pathname === '/settings') {
-			setActiveTab('settings');
+		} else if (pathname === '/explore') {
+			setActiveTab('explore');
+		} else if (pathname === '/projects') {
+			setActiveTab('projects');
 		}
 	}, [pathname]);
 
-	const handleTabPress = (tab: 'home' | 'analytics' | 'settings') => {
+	const handleTabPress = (tab: 'home' | 'explore' | 'projects') => {
 		if (tab === activeTab) return; // Don't navigate if already on the tab
 
 		// Store previous tab for animation direction
@@ -86,10 +87,10 @@ export default function RootLayout() {
 
 		if (tab === 'home') {
 			router.replace('/');
-		} else if (tab === 'analytics') {
-			router.replace('/analytics');
-		} else if (tab === 'settings') {
-			router.replace('/settings');
+		} else if (tab === 'explore') {
+			router.replace('/explore');
+		} else if (tab === 'projects') {
+			router.replace('/projects');
 		}
 	};
 
@@ -146,6 +147,14 @@ export default function RootLayout() {
 								name="onboarding/step3"
 								options={{
 									animation: 'slide_from_right',
+								}}
+							/>
+							<Stack.Screen
+								name="generatemodal"
+								options={{
+									presentation: 'fullScreenModal',
+									animation: 'slide_from_bottom',
+									headerShown: false,
 								}}
 							/>
 						</Stack>
