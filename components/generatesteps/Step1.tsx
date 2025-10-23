@@ -8,18 +8,17 @@ import { PhotoTipsModal } from './PhotoTipsModal';
 import { MediaSourceModal } from './MediaSourceModal';
 
 interface Step1Props {
-	onImageSelect?: () => void;
+	onImageSelect?: (imageUri?: string) => void;
 	config: StepConfig;
+	selectedImageUri?: string | null;
 }
 
-export function Step1({ onImageSelect, config }: Step1Props) {
+export function Step1({ onImageSelect, config, selectedImageUri }: Step1Props) {
 	const [showTipsModal, setShowTipsModal] = useState(false);
 	const [showMediaSourceModal, setShowMediaSourceModal] = useState(false);
-	const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
 	const handleImageSelected = (imageUri: string) => {
-		setSelectedImage(imageUri);
-		onImageSelect?.();
+		onImageSelect?.(imageUri);
 	};
 
 	const handleCardPress = () => {
@@ -58,10 +57,10 @@ export function Step1({ onImageSelect, config }: Step1Props) {
 						className="bg-gray-100 aspect-square w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center mb-6 overflow-hidden"
 						onPress={handleCardPress}
 					>
-						{selectedImage ? (
+						{selectedImageUri ? (
 							<View className="absolute inset-0">
 								<Image
-									source={{ uri: selectedImage }}
+									source={{ uri: selectedImageUri }}
 									className="w-full h-full"
 									resizeMode="cover"
 								/>

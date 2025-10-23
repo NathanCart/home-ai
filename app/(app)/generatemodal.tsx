@@ -15,7 +15,10 @@ export default function GenerateModal() {
 	const { mode } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(4);
+	const [hasImageSelected, setHasImageSelected] = useState(false);
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const slideAnimation = useRef(new Animated.Value(0)).current;
+	const opacityAnimation = useRef(new Animated.Value(1)).current;
 
 	const handleClose = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -25,19 +28,35 @@ export default function GenerateModal() {
 	const handleNextStep = () => {
 		if (currentStep < totalSteps) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-			// Slide left animation for next step
-			Animated.timing(slideAnimation, {
-				toValue: -300,
-				duration: 200,
-				useNativeDriver: true,
-			}).start(() => {
-				setCurrentStep(currentStep + 1);
-				slideAnimation.setValue(300);
-				Animated.timing(slideAnimation, {
+			// Fade out and slide left
+			Animated.parallel([
+				Animated.timing(opacityAnimation, {
 					toValue: 0,
-					duration: 200,
+					duration: 150,
 					useNativeDriver: true,
-				}).start();
+				}),
+				Animated.timing(slideAnimation, {
+					toValue: -50,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+			]).start(() => {
+				setCurrentStep(currentStep + 1);
+				// Reset and animate in
+				slideAnimation.setValue(50);
+				opacityAnimation.setValue(0);
+				Animated.parallel([
+					Animated.timing(opacityAnimation, {
+						toValue: 1,
+						duration: 150,
+						useNativeDriver: true,
+					}),
+					Animated.timing(slideAnimation, {
+						toValue: 0,
+						duration: 150,
+						useNativeDriver: true,
+					}),
+				]).start();
 			});
 		}
 	};
@@ -45,25 +64,44 @@ export default function GenerateModal() {
 	const handlePreviousStep = () => {
 		if (currentStep > 1) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-			// Slide right animation for previous step
-			Animated.timing(slideAnimation, {
-				toValue: 300,
-				duration: 200,
-				useNativeDriver: true,
-			}).start(() => {
-				setCurrentStep(currentStep - 1);
-				slideAnimation.setValue(-300);
-				Animated.timing(slideAnimation, {
+			// Fade out and slide right
+			Animated.parallel([
+				Animated.timing(opacityAnimation, {
 					toValue: 0,
-					duration: 200,
+					duration: 150,
 					useNativeDriver: true,
-				}).start();
+				}),
+				Animated.timing(slideAnimation, {
+					toValue: 50,
+					duration: 150,
+					useNativeDriver: true,
+				}),
+			]).start(() => {
+				setCurrentStep(currentStep - 1);
+				// Reset and animate in
+				slideAnimation.setValue(-50);
+				opacityAnimation.setValue(0);
+				Animated.parallel([
+					Animated.timing(opacityAnimation, {
+						toValue: 1,
+						duration: 150,
+						useNativeDriver: true,
+					}),
+					Animated.timing(slideAnimation, {
+						toValue: 0,
+						duration: 150,
+						useNativeDriver: true,
+					}),
+				]).start();
 			});
 		}
 	};
 
-	const handleImageSelect = () => {
-		// TODO: Implement image picker functionality
+	const handleImageSelect = (imageUri?: string) => {
+		setHasImageSelected(true);
+		if (imageUri) {
+			setSelectedImageUri(imageUri);
+		}
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		console.log('Image select pressed');
 	};
@@ -73,7 +111,13 @@ export default function GenerateModal() {
 
 		switch (currentStep) {
 			case 1:
-				return <Step1 onImageSelect={handleImageSelect} config={config} />;
+				return (
+					<Step1
+						onImageSelect={handleImageSelect}
+						config={config}
+						selectedImageUri={selectedImageUri}
+					/>
+				);
 			case 2:
 				return (
 					<View className="flex-1 px-6">
@@ -162,7 +206,10 @@ export default function GenerateModal() {
 			{/* Content */}
 			<Animated.View
 				className="flex-1"
-				style={{ transform: [{ translateX: slideAnimation }] }}
+				style={{
+					transform: [{ translateX: slideAnimation }],
+					opacity: opacityAnimation,
+				}}
 			>
 				<ScrollView
 					className=""
@@ -184,6 +231,7 @@ export default function GenerateModal() {
 						variant="primary"
 						size="lg"
 						className="flex-1"
+						disabled={currentStep === 1 && !hasImageSelected}
 					/>
 				</View>
 			</View>
