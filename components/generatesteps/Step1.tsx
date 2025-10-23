@@ -5,6 +5,7 @@ import { ThemedText } from '../ThemedText';
 import { StepConfig } from '../../config/stepConfig';
 import { CustomButton } from '../CustomButton';
 import { PhotoTipsModal } from './PhotoTipsModal';
+import { MediaSourceModal } from './MediaSourceModal';
 
 interface Step1Props {
 	onImageSelect?: () => void;
@@ -13,6 +14,21 @@ interface Step1Props {
 
 export function Step1({ onImageSelect, config }: Step1Props) {
 	const [showTipsModal, setShowTipsModal] = useState(false);
+	const [showMediaSourceModal, setShowMediaSourceModal] = useState(false);
+
+	const handleTakePhoto = () => {
+		// TODO: Implement camera functionality
+		console.log('Take photo pressed');
+	};
+
+	const handleChooseFromGallery = () => {
+		// TODO: Implement gallery picker functionality
+		console.log('Choose from gallery pressed');
+	};
+
+	const handleCardPress = () => {
+		setShowMediaSourceModal(true);
+	};
 
 	return (
 		<View className="flex-1 px-6">
@@ -44,13 +60,13 @@ export function Step1({ onImageSelect, config }: Step1Props) {
 
 					<TouchableOpacity
 						className="bg-gray-100 aspect-square  w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center mb-6"
-						onPress={onImageSelect}
+						onPress={handleCardPress}
 					>
 						<Octicons name="image" size={60} color="#D1D5DB" className="mb-4" />
 
 						<CustomButton
 							title="Upload photo"
-							onPress={onImageSelect || (() => {})}
+							onPress={handleCardPress}
 							icon="plus"
 							iconPosition="left"
 							className="!w-fit"
@@ -63,6 +79,14 @@ export function Step1({ onImageSelect, config }: Step1Props) {
 
 			{/* Photo Tips Modal */}
 			<PhotoTipsModal visible={showTipsModal} onClose={() => setShowTipsModal(false)} />
+
+			{/* Media Source Modal */}
+			<MediaSourceModal
+				visible={showMediaSourceModal}
+				onClose={() => setShowMediaSourceModal(false)}
+				onTakePhoto={handleTakePhoto}
+				onChooseFromGallery={handleChooseFromGallery}
+			/>
 		</View>
 	);
 }
