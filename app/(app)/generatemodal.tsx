@@ -3,7 +3,8 @@ import { View, ScrollView, Animated } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from 'components/ThemedText';
 import { CustomButton } from 'components/CustomButton';
-import { Step1 } from 'components/generatesteps/Step1';
+import { PhotoStep } from 'components/generatesteps/PhotoStep';
+import { RoomStep } from 'components/generatesteps/RoomStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -17,6 +18,8 @@ export default function GenerateModal() {
 	const [totalSteps] = useState(4);
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [selectedRoom, setSelectedRoom] = useState<any>(null);
+	const [isTransitioning, setIsTransitioning] = useState(false);
 	const slideAnimation = useRef(new Animated.Value(0)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
 
@@ -26,73 +29,93 @@ export default function GenerateModal() {
 	};
 
 	const handleNextStep = () => {
-		if (currentStep < totalSteps) {
+		if (currentStep < totalSteps && !isTransitioning) {
+			setIsTransitioning(true);
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
 			// Fade out and slide left
 			Animated.parallel([
 				Animated.timing(opacityAnimation, {
 					toValue: 0,
-					duration: 150,
+					duration: 200,
 					useNativeDriver: true,
 				}),
 				Animated.timing(slideAnimation, {
 					toValue: -50,
-					duration: 150,
+					duration: 200,
 					useNativeDriver: true,
 				}),
 			]).start(() => {
+				// Change step when fade out completes
 				setCurrentStep(currentStep + 1);
-				// Reset and animate in
+				// Reset animation values for next step
 				slideAnimation.setValue(50);
 				opacityAnimation.setValue(0);
-				Animated.parallel([
-					Animated.timing(opacityAnimation, {
-						toValue: 1,
-						duration: 150,
-						useNativeDriver: true,
-					}),
-					Animated.timing(slideAnimation, {
-						toValue: 0,
-						duration: 150,
-						useNativeDriver: true,
-					}),
-				]).start();
+
+				// Small delay to ensure state update
+				setTimeout(() => {
+					// Animate in new content
+					Animated.parallel([
+						Animated.timing(opacityAnimation, {
+							toValue: 1,
+							duration: 200,
+							useNativeDriver: true,
+						}),
+						Animated.timing(slideAnimation, {
+							toValue: 0,
+							duration: 200,
+							useNativeDriver: true,
+						}),
+					]).start(() => {
+						setIsTransitioning(false);
+					});
+				}, 10);
 			});
 		}
 	};
 
 	const handlePreviousStep = () => {
-		if (currentStep > 1) {
+		if (currentStep > 1 && !isTransitioning) {
+			setIsTransitioning(true);
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
 			// Fade out and slide right
 			Animated.parallel([
 				Animated.timing(opacityAnimation, {
 					toValue: 0,
-					duration: 150,
+					duration: 200,
 					useNativeDriver: true,
 				}),
 				Animated.timing(slideAnimation, {
 					toValue: 50,
-					duration: 150,
+					duration: 200,
 					useNativeDriver: true,
 				}),
 			]).start(() => {
+				// Change step when fade out completes
 				setCurrentStep(currentStep - 1);
-				// Reset and animate in
+				// Reset animation values for previous step
 				slideAnimation.setValue(-50);
 				opacityAnimation.setValue(0);
-				Animated.parallel([
-					Animated.timing(opacityAnimation, {
-						toValue: 1,
-						duration: 150,
-						useNativeDriver: true,
-					}),
-					Animated.timing(slideAnimation, {
-						toValue: 0,
-						duration: 150,
-						useNativeDriver: true,
-					}),
-				]).start();
+
+				// Small delay to ensure state update
+				setTimeout(() => {
+					// Animate in new content
+					Animated.parallel([
+						Animated.timing(opacityAnimation, {
+							toValue: 1,
+							duration: 200,
+							useNativeDriver: true,
+						}),
+						Animated.timing(slideAnimation, {
+							toValue: 0,
+							duration: 200,
+							useNativeDriver: true,
+						}),
+					]).start(() => {
+						setIsTransitioning(false);
+					});
+				}, 10);
 			});
 		}
 	};
@@ -106,13 +129,18 @@ export default function GenerateModal() {
 		console.log('Image select pressed');
 	};
 
+	const handleRoomSelect = (room: any) => {
+		setSelectedRoom(room);
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+	};
+
 	const renderStepContent = () => {
 		const config = getStepConfig(mode as string, currentStep);
 
 		switch (currentStep) {
 			case 1:
 				return (
-					<Step1
+					<PhotoStep
 						onImageSelect={handleImageSelect}
 						config={config}
 						selectedImageUri={selectedImageUri}
@@ -120,26 +148,11 @@ export default function GenerateModal() {
 				);
 			case 2:
 				return (
-					<View className="flex-1 px-6">
-						<View className="items-center mb-8">
-							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-blue-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name={config.icon as any} size={40} color="white" />
-							</View>
-							<ThemedText
-								variant="title-lg"
-								className="text-gray-900 mb-3 text-center"
-								extraBold
-							>
-								{config.title}
-							</ThemedText>
-							<ThemedText
-								variant="body"
-								className="text-gray-600 text-center leading-6"
-							>
-								{config.subtitle}
-							</ThemedText>
-						</View>
-					</View>
+					<RoomStep
+						onRoomSelect={handleRoomSelect}
+						config={config}
+						selectedRoom={selectedRoom}
+					/>
 				);
 			case 3:
 				return (
@@ -193,7 +206,7 @@ export default function GenerateModal() {
 	};
 
 	return (
-		<View className=" bg-gray-50 flex-1" style={{ paddingTop: insets.top }}>
+		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
 			{/* Header */}
 			<ModalHeader
 				currentStep={currentStep}
@@ -213,7 +226,8 @@ export default function GenerateModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName="flex-1 mt-4"
+					contentContainerClassName="mt-4"
+					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
 					{renderStepContent()}
@@ -231,7 +245,10 @@ export default function GenerateModal() {
 						variant="primary"
 						size="lg"
 						className="flex-1"
-						disabled={currentStep === 1 && !hasImageSelected}
+						disabled={
+							(currentStep === 1 && !hasImageSelected) ||
+							(currentStep === 2 && !selectedRoom)
+						}
 					/>
 				</View>
 			</View>

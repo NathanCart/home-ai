@@ -21,10 +21,10 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
 		},
 		step2: {
-			title: 'Choose Your Style',
-			subtitle: 'Select your preferred interior design style and preferences',
-			icon: 'gear',
-			description: 'Customize your design with various style options',
+			title: 'Choose a Room Type',
+			subtitle: 'Select the type of room you want to design',
+			icon: 'home',
+			description: 'Choose the type of room you want to design',
 		},
 		step3: {
 			title: 'Generate Design',
