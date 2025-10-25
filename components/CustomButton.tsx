@@ -193,6 +193,7 @@ export function CustomButton({
 					},
 				]}
 			>
+				{iconPosition === 'left' && renderIcon()}
 				<ThemedText
 					variant="body"
 					className={`${getTextStyles()} !text-xl`}
@@ -200,6 +201,7 @@ export function CustomButton({
 				>
 					{loading ? 'Loading...' : title}
 				</ThemedText>
+				{iconPosition === 'right' && renderIcon()}
 			</Pressable>
 		</Animated.View>
 	);

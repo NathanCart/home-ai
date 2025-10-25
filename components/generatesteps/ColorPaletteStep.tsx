@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import {
+	View,
+	TouchableOpacity,
+	ScrollView,
+	Alert,
+	ActivityIndicator,
+	Modal,
+	TextInput,
+} from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { CustomButton } from '../CustomButton';
 import { Octicons } from '@expo/vector-icons';
 import { StepConfig } from '../../config/stepConfig';
 import colorPalettesData from '../../data/colorPalettes.json';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import ColorPicker, { Panel1, HueSlider } from 'reanimated-color-picker';
+import { runOnJS } from 'react-native-reanimated';
 
 interface ColorPaletteStepProps {
 	onPaletteSelect?: (palette: ColorPalette | null) => void;
@@ -60,10 +71,53 @@ export function ColorPaletteStep({
 	const [error, setError] = useState<string | null>(null);
 	const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
+	// Custom palette states
+	const [customPalettes, setCustomPalettes] = useState<ColorPalette[]>([]);
+	const [showAddModal, setShowAddModal] = useState<boolean>(false);
+	const [showEditModal, setShowEditModal] = useState<boolean>(false);
+	const [newPaletteName, setNewPaletteName] = useState<string>('');
+	const [newPaletteColors, setNewPaletteColors] = useState<string[]>([
+		'#FFFFFF',
+		'#CCCCCC',
+		'#999999',
+		'#666666',
+		'#000000',
+	]);
+	const [editingPalette, setEditingPalette] = useState<ColorPalette | null>(null);
+	const [editPaletteName, setEditPaletteName] = useState<string>('');
+	const [editPaletteColors, setEditPaletteColors] = useState<string[]>([]);
+
+	// Color picker states - default to first color selected
+	const [editingColorIndex, setEditingColorIndex] = useState<number | null>(0);
+	const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
 	// Load color palettes from JSON file
 	useEffect(() => {
 		loadColorPalettes();
+		loadCustomPalettes();
 	}, []);
+
+	const loadCustomPalettes = async () => {
+		try {
+			const stored = await AsyncStorage.getItem('customColorPalettes');
+			if (stored) {
+				const custom = JSON.parse(stored);
+				setCustomPalettes(custom);
+			}
+		} catch (error) {
+			console.error('Error loading custom palettes:', error);
+		}
+	};
+
+	const saveCustomPalettes = async (palettes: ColorPalette[]) => {
+		try {
+			await AsyncStorage.setItem('customColorPalettes', JSON.stringify(palettes));
+			setCustomPalettes(palettes);
+		} catch (error) {
+			console.error('Error saving custom palettes:', error);
+			Alert.alert('Error', 'Failed to save custom palette');
+		}
+	};
 
 	const loadColorPalettes = async () => {
 		try {
@@ -152,13 +206,119 @@ export function ColorPaletteStep({
 		return styleMap[styleId] || styleId;
 	};
 
+	// Custom palette functions
+	const handleAddCustomPalette = () => {
+		if (!newPaletteName.trim()) {
+			Alert.alert('Error', 'Please enter a palette name');
+			return;
+		}
+
+		const newPalette: ColorPalette = {
+			id: `custom-${Date.now()}`,
+			title: newPaletteName.trim(),
+			userName: 'You',
+			numViews: 0,
+			numVotes: 0,
+			numComments: 0,
+			colors: newPaletteColors,
+			description: 'Custom palette',
+		};
+
+		const updated = [...customPalettes, newPalette];
+		saveCustomPalettes(updated);
+		setNewPaletteName('');
+		setNewPaletteColors(['#FFFFFF', '#CCCCCC', '#999999', '#666666', '#000000']);
+		setEditingColorIndex(null);
+		setShowAddModal(false);
+	};
+
+	const handleUpdatePalette = () => {
+		if (!editPaletteName.trim() || !editingPalette) {
+			Alert.alert('Error', 'Please enter a palette name');
+			return;
+		}
+
+		const updated = customPalettes.map((p) =>
+			p.id === editingPalette.id
+				? { ...p, title: editPaletteName.trim(), colors: editPaletteColors }
+				: p
+		);
+
+		saveCustomPalettes(updated);
+		setEditingColorIndex(null);
+		setShowEditModal(false);
+		setEditingPalette(null);
+	};
+
+	const handleLongPress = (palette: ColorPalette) => {
+		if (palette.id.startsWith('custom-')) {
+			setEditingPalette(palette);
+			setEditPaletteName(palette.title);
+			setEditPaletteColors([...palette.colors]);
+			setEditingColorIndex(0);
+			setIsEditMode(true);
+			setShowEditModal(true);
+		}
+	};
+
+	const handleDeletePalette = () => {
+		if (!editingPalette) return;
+
+		Alert.alert(
+			'Delete Palette',
+			`Are you sure you want to delete "${editingPalette.title}"?`,
+			[
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Delete',
+					style: 'destructive',
+					onPress: () => {
+						const updated = customPalettes.filter((p) => p.id !== editingPalette.id);
+						saveCustomPalettes(updated);
+						if (selectedPaletteId === editingPalette.id) {
+							setSelectedPaletteId(null);
+							onPaletteSelect?.(null);
+						}
+						setShowEditModal(false);
+						setEditingPalette(null);
+					},
+				},
+			]
+		);
+	};
+
+	const handleColorSelect = (index: number) => {
+		setEditingColorIndex(index);
+	};
+
+	const updateColorInPlace = (hex: string) => {
+		if (editingColorIndex === null) return;
+
+		if (isEditMode) {
+			const updated = [...editPaletteColors];
+			updated[editingColorIndex] = hex;
+			setEditPaletteColors(updated);
+		} else {
+			const updated = [...newPaletteColors];
+			updated[editingColorIndex] = hex;
+			setNewPaletteColors(updated);
+		}
+	};
+
+	const handleColorChange = ({ hex }: { hex: string }) => {
+		'worklet';
+		runOnJS(updateColorInPlace)(hex);
+	};
+
 	const renderPaletteCard = (palette: ColorPalette, isRecommended: boolean = false) => {
 		const isSelected = selectedPaletteId === palette.id;
+		const isCustom = palette.id.startsWith('custom-');
 
 		return (
 			<TouchableOpacity
 				key={palette.id}
 				onPress={() => handlePalettePress(palette)}
+				onLongPress={() => handleLongPress(palette)}
 				className={`w-full mb-4 rounded-2xl overflow-hidden border-2 ${
 					isSelected ? 'border-blue-500' : 'border-gray-200'
 				}`}
@@ -299,15 +459,40 @@ export function ColorPaletteStep({
 				</View>
 			</ScrollView>
 
+			{/* Add Custom Palette Button */}
+			<View className="px-6 mb-4">
+				<CustomButton
+					title="Custom Palette"
+					onPress={() => {
+						setEditingColorIndex(0);
+						setIsEditMode(false);
+						setShowAddModal(true);
+					}}
+					variant="primary"
+					size="sm"
+					icon="plus"
+				/>
+			</View>
+
 			<ScrollView
 				className="flex-1  px-6"
 				showsVerticalScrollIndicator={false}
 				contentContainerStyle={{ paddingBottom: 100 }}
 			>
+				{/* Custom Palettes Section */}
+				{customPalettes.length > 0 && (
+					<View className="mb-6">
+						<ThemedText variant="title-sm" className="text-gray-900 mb-2" extraBold>
+							Your Custom Palettes
+						</ThemedText>
+						{customPalettes.map((palette) => renderPaletteCard(palette, false))}
+					</View>
+				)}
+
 				{/* Recommended Palettes Section */}
 				{recommendedPalettes.length > 0 && (
 					<View className="mb-6">
-						<ThemedText variant="title-md" className="text-gray-900 mb-4" extraBold>
+						<ThemedText variant="title-sm" className="text-gray-900 mb-2" extraBold>
 							Recommended for{' '}
 							{selectedStyle ? getStyleDisplayName(selectedStyle) : ''}
 						</ThemedText>
@@ -323,6 +508,211 @@ export function ColorPaletteStep({
 				)}
 				{filteredPalettes.map((palette) => renderPaletteCard(palette, false))}
 			</ScrollView>
+
+			{/* Add Palette Modal */}
+			<Modal
+				visible={showAddModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowAddModal(false)}
+			>
+				<View className="flex-1 bg-black/50 justify-center items-center px-6">
+					<TouchableOpacity
+						className="absolute inset-0"
+						activeOpacity={1}
+						onPress={() => setShowAddModal(false)}
+					/>
+					<View className="bg-white rounded-2xl p-4 w-full relative">
+						<TouchableOpacity
+							onPress={() => setShowAddModal(false)}
+							className="absolute top-4 right-4 z-10"
+							activeOpacity={0.7}
+						>
+							<Octicons name="x" size={20} color="#6B7280" />
+						</TouchableOpacity>
+						<ThemedText variant="title-md" className="text-gray-900" extraBold>
+							Add Custom Palette
+						</ThemedText>
+						<ThemedText variant="body" className="text-gray-600 mb-3">
+							Enter the name and colors for the palette you want to add
+						</ThemedText>
+
+						<TextInput
+							value={newPaletteName}
+							onChangeText={setNewPaletteName}
+							placeholder="e.g., Warm Neutrals, Ocean Blues, etc."
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							autoFocus
+						/>
+						<ThemedText variant="body" className="text-gray-600 mb-2">
+							Colors (tap to select color to edit)
+						</ThemedText>
+
+						<View className="mb-4 rounded-xl overflow-hidden border-2 border-gray-200">
+							<View className="flex-row h-20">
+								{newPaletteColors.map((color, index) => (
+									<TouchableOpacity
+										key={index}
+										className="flex-1 relative"
+										style={{ backgroundColor: color }}
+										activeOpacity={0.7}
+										onPress={() => {
+											setIsEditMode(false);
+											handleColorSelect(index);
+										}}
+									>
+										{editingColorIndex === index && !isEditMode && (
+											<View className="absolute inset-0 border-4 border-blue-500" />
+										)}
+									</TouchableOpacity>
+								))}
+							</View>
+						</View>
+
+						{editingColorIndex !== null && !isEditMode && (
+							<View className="mb-4">
+								<ThemedText variant="body" className="text-gray-600 mb-2">
+									Adjust Color
+								</ThemedText>
+								<View style={{ width: '100%' }}>
+									<ColorPicker
+										style={{ width: '100%' }}
+										value={newPaletteColors[editingColorIndex]}
+										onComplete={handleColorChange}
+									>
+										<Panel1
+											style={{ width: '100%', height: 200, marginBottom: 12 }}
+										/>
+										<HueSlider style={{ width: '100%', height: 40 }} />
+									</ColorPicker>
+								</View>
+							</View>
+						)}
+
+						<View className="flex-row gap-2 mb-8">
+							<CustomButton
+								title="Cancel"
+								onPress={() => setShowAddModal(false)}
+								variant="ghost"
+								size="sm"
+								className="flex-1"
+							/>
+							<CustomButton
+								title="Add"
+								onPress={handleAddCustomPalette}
+								variant="primary"
+								size="sm"
+								className="flex-1"
+								disabled={!newPaletteName.trim()}
+							/>
+						</View>
+					</View>
+				</View>
+			</Modal>
+
+			{/* Edit Palette Modal */}
+			<Modal
+				visible={showEditModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowEditModal(false)}
+			>
+				<View className="flex-1 bg-black/50 justify-center items-center px-6">
+					<TouchableOpacity
+						className="absolute inset-0"
+						activeOpacity={1}
+						onPress={() => setShowEditModal(false)}
+					/>
+					<View className="bg-white rounded-2xl p-4 w-full relative">
+						<TouchableOpacity
+							onPress={() => setShowEditModal(false)}
+							className="absolute top-4 right-4 z-10"
+							activeOpacity={0.7}
+						>
+							<Octicons name="x" size={20} color="#6B7280" />
+						</TouchableOpacity>
+
+						<ThemedText variant="title-md" className="text-gray-900" extraBold>
+							Edit Palette
+						</ThemedText>
+						<ThemedText variant="body" className="text-gray-600 mb-3">
+							Update the name and colors for this palette
+						</ThemedText>
+
+						<TextInput
+							value={editPaletteName}
+							onChangeText={setEditPaletteName}
+							placeholder="e.g., Warm Neutrals, Ocean Blues, etc."
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							autoFocus
+						/>
+
+						<ThemedText variant="body" className="text-gray-600 mb-2">
+							Colors (tap to select color to edit)
+						</ThemedText>
+						<View className="mb-4 rounded-xl overflow-hidden border-2 border-gray-200">
+							<View className="flex-row h-20">
+								{editPaletteColors.map((color, index) => (
+									<TouchableOpacity
+										key={index}
+										className="flex-1 relative"
+										style={{ backgroundColor: color }}
+										activeOpacity={0.7}
+										onPress={() => {
+											setIsEditMode(true);
+											handleColorSelect(index);
+										}}
+									>
+										{editingColorIndex === index && isEditMode && (
+											<View className="absolute inset-0 border-4 border-blue-500" />
+										)}
+									</TouchableOpacity>
+								))}
+							</View>
+						</View>
+
+						{editingColorIndex !== null && isEditMode && (
+							<View className="mb-4">
+								<ThemedText variant="body" className="text-gray-600 mb-2">
+									Adjust Color
+								</ThemedText>
+								<View style={{ width: '100%' }}>
+									<ColorPicker
+										style={{ width: '100%' }}
+										value={editPaletteColors[editingColorIndex]}
+										onComplete={handleColorChange}
+									>
+										<Panel1
+											style={{ width: '100%', height: 200, marginBottom: 12 }}
+										/>
+										<HueSlider style={{ width: '100%', height: 40 }} />
+									</ColorPicker>
+								</View>
+							</View>
+						)}
+
+						<View className="flex-row gap-2 mb-8">
+							<CustomButton
+								title="Delete"
+								onPress={handleDeletePalette}
+								variant="ghost"
+								size="sm"
+								className="flex-1"
+							/>
+							<CustomButton
+								title="Save"
+								onPress={handleUpdatePalette}
+								variant="primary"
+								size="sm"
+								className="flex-1"
+								disabled={!editPaletteName.trim()}
+							/>
+						</View>
+					</View>
+				</View>
+			</Modal>
 		</View>
 	);
 }
