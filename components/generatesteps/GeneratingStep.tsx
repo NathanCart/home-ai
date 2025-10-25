@@ -1,0 +1,186 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Animated, Easing } from 'react-native';
+import { ThemedText } from '../ThemedText';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+interface GeneratingStepProps {
+	onComplete?: () => void;
+}
+
+const loadingMessages = [
+	'Analyzing your space...',
+	'Applying design principles...',
+	'Generating color schemes...',
+	'Crafting perfect aesthetics...',
+	'Adding finishing touches...',
+	'Almost there...',
+];
+
+export function GeneratingStep({ onComplete }: GeneratingStepProps) {
+	const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+	const [progress, setProgress] = useState(0);
+	const insets = useSafeAreaInsets();
+
+	// Animation values - use useRef to persist across renders
+	const spinValue = useRef(new Animated.Value(0)).current;
+	const pulseValue = useRef(new Animated.Value(1)).current;
+	const fadeValue = useRef(new Animated.Value(1)).current;
+
+	// Spinning animation
+	useEffect(() => {
+		Animated.loop(
+			Animated.timing(spinValue, {
+				toValue: 1,
+				duration: 2000,
+				easing: Easing.linear,
+				useNativeDriver: true,
+			})
+		).start();
+	}, []);
+
+	// Pulsing animation
+	useEffect(() => {
+		Animated.loop(
+			Animated.sequence([
+				Animated.timing(pulseValue, {
+					toValue: 1.2,
+					duration: 1000,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true,
+				}),
+				Animated.timing(pulseValue, {
+					toValue: 1,
+					duration: 1000,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true,
+				}),
+			])
+		).start();
+	}, []);
+
+	// Message rotation and progress
+	useEffect(() => {
+		const messageInterval = setInterval(() => {
+			setCurrentMessageIndex((prev) => {
+				if (prev < loadingMessages.length - 1) {
+					return prev + 1;
+				}
+				return prev;
+			});
+		}, 3000);
+
+		const progressInterval = setInterval(() => {
+			setProgress((prev) => {
+				if (prev < 95) {
+					return prev + 1;
+				}
+				return prev;
+			});
+		}, 200);
+
+		return () => {
+			clearInterval(messageInterval);
+			clearInterval(progressInterval);
+		};
+	}, []);
+
+	// Fade animation for message changes
+	useEffect(() => {
+		fadeValue.setValue(0);
+		Animated.timing(fadeValue, {
+			toValue: 1,
+			duration: 500,
+			useNativeDriver: true,
+		}).start();
+	}, [currentMessageIndex]);
+
+	const spin = spinValue.interpolate({
+		inputRange: [0, 1],
+		outputRange: ['0deg', '360deg'],
+	});
+
+	return (
+		<View className="flex-1 bg-gray-50 justify-center items-center px-6">
+			{/* Spinning circles */}
+			<View className="relative w-full h-52 mb-12  mx-auto justify-center items-center">
+				{/* Outer ring */}
+				<Animated.View
+					style={{
+						position: 'absolute',
+						width: 192,
+						height: 192,
+						top: 0,
+						transform: [{ rotate: spin }],
+					}}
+				>
+					<View className="w-full h-full rounded-full border-4 border-gray-600 border-t-transparent" />
+				</Animated.View>
+
+				{/* Middle ring */}
+				<Animated.View
+					style={{
+						position: 'absolute',
+						width: 144,
+						height: 144,
+						top: 24,
+						transform: [{ rotate: spin }],
+						opacity: 0.6,
+					}}
+				>
+					<View className="w-full h-full rounded-full border-4 border-gray-700 border-b-transparent" />
+				</Animated.View>
+
+				{/* Inner circle with pulse */}
+				<Animated.View
+					style={{
+						position: 'absolute',
+						width: 72,
+						height: 72,
+						top: 60,
+						transform: [{ scale: pulseValue }],
+					}}
+				>
+					<LinearGradient
+						colors={['#374151', '#111827']}
+						start={{ x: 0, y: 0 }}
+						end={{ x: 1, y: 1 }}
+						style={{
+							width: '100%',
+							height: '100%',
+							borderRadius: 36,
+							justifyContent: 'center',
+							alignItems: 'center',
+						}}
+					>
+						<ThemedText variant="title-md" className="text-white" extraBold>
+							{progress}%
+						</ThemedText>
+					</LinearGradient>
+				</Animated.View>
+			</View>
+
+			{/* Loading message */}
+			<Animated.View style={{ opacity: fadeValue, marginBottom: 16 }}>
+				<ThemedText variant="title-md" className="text-gray-900 text-center" extraBold>
+					{loadingMessages[currentMessageIndex]}
+				</ThemedText>
+			</Animated.View>
+
+			{/* Warning text - absolute positioned at bottom */}
+			<View
+				style={{
+					position: 'absolute',
+					bottom: insets.bottom + 24,
+					left: 0,
+					right: 0,
+					paddingHorizontal: 24,
+				}}
+			>
+				<ThemedText variant="body" className="text-gray-600 text-center">
+					Please keep the app open and don't lock your device
+				</ThemedText>
+			</View>
+		</View>
+	);
+}

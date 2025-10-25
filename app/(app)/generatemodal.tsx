@@ -7,6 +7,7 @@ import { PhotoStep } from 'components/generatesteps/PhotoStep';
 import { RoomStep } from 'components/generatesteps/RoomStep';
 import { StyleStep } from 'components/generatesteps/StyleStep';
 import { ColorPaletteStep } from 'components/generatesteps/ColorPaletteStep';
+import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -17,7 +18,7 @@ export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
 	const { mode } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(6);
+	const [totalSteps] = useState(4);
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [selectedRoom, setSelectedRoom] = useState<any>(null);
@@ -33,7 +34,7 @@ export default function GenerateModal() {
 	};
 
 	const handleNextStep = () => {
-		if (currentStep < totalSteps && !isTransitioning) {
+		if (currentStep < totalSteps + 1 && !isTransitioning) {
 			setIsTransitioning(true);
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
@@ -186,74 +187,7 @@ export default function GenerateModal() {
 					/>
 				);
 			case 5:
-				return (
-					<View className="flex-1 px-6">
-						<View className="items-center mb-8">
-							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name={config.icon as any} size={40} color="white" />
-							</View>
-							<ThemedText
-								variant="title-lg"
-								className="text-gray-900 mb-3 text-center"
-								extraBold
-							>
-								{config.title}
-							</ThemedText>
-							<ThemedText
-								variant="body"
-								className="text-gray-600 text-center leading-6"
-							>
-								{config.subtitle}
-							</ThemedText>
-						</View>
-					</View>
-				);
-			case 5:
-				return (
-					<View className="flex-1 px-6">
-						<View className="items-center mb-8">
-							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name={config.icon as any} size={40} color="white" />
-							</View>
-							<ThemedText
-								variant="title-lg"
-								className="text-gray-900 mb-3 text-center"
-								extraBold
-							>
-								{config.title}
-							</ThemedText>
-							<ThemedText
-								variant="body"
-								className="text-gray-600 text-center leading-6"
-							>
-								{config.subtitle}
-							</ThemedText>
-						</View>
-					</View>
-				);
-			case 6:
-				return (
-					<View className="flex-1 px-6">
-						<View className="items-center mb-8">
-							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl items-center justify-center mb-6">
-								<Octicons name={config.icon as any} size={40} color="white" />
-							</View>
-							<ThemedText
-								variant="title-lg"
-								className="text-gray-900 mb-3 text-center"
-								extraBold
-							>
-								{config.title}
-							</ThemedText>
-							<ThemedText
-								variant="body"
-								className="text-gray-600 text-center leading-6"
-							>
-								{config.subtitle}
-							</ThemedText>
-						</View>
-					</View>
-				);
+				return <GeneratingStep onComplete={() => router.back()} />;
 			default:
 				return null;
 		}
@@ -261,14 +195,16 @@ export default function GenerateModal() {
 
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
-			{/* Header */}
-			<ModalHeader
-				currentStep={currentStep}
-				totalSteps={totalSteps}
-				onClose={handleClose}
-				onPrevious={handlePreviousStep}
-				showPrevious={currentStep > 1}
-			/>
+			{/* Header - Hide on generating step */}
+			{currentStep !== 5 && (
+				<ModalHeader
+					currentStep={currentStep}
+					totalSteps={totalSteps}
+					onClose={handleClose}
+					onPrevious={handlePreviousStep}
+					showPrevious={currentStep > 1}
+				/>
+			)}
 
 			{/* Content */}
 			<Animated.View
@@ -280,7 +216,7 @@ export default function GenerateModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName="mt-4"
+					contentContainerClassName={`mt-4 ${currentStep === totalSteps + 1 ? 'flex-1' : ''}`}
 					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
@@ -288,26 +224,31 @@ export default function GenerateModal() {
 				</ScrollView>
 			</Animated.View>
 
-			{/* Footer */}
-			<View className="px-6 py-6 bg-gray-50/50" style={{ paddingBottom: insets.bottom + 8 }}>
-				<View className="flex-row justify-between items-center">
-					<CustomButton
-						title={currentStep === totalSteps ? 'Finish' : 'Continue'}
-						onPress={handleNextStep}
-						icon="arrow-right"
-						iconPosition="right"
-						variant="primary"
-						size="lg"
-						className="flex-1"
-						disabled={
-							(currentStep === 1 && !hasImageSelected) ||
-							(currentStep === 2 && !selectedRoom) ||
-							(currentStep === 3 && !selectedStyle) ||
-							(currentStep === 4 && !selectedPalette)
-						}
-					/>
+			{/* Footer - Hide on generating step */}
+			{currentStep !== 5 && (
+				<View
+					className="px-6 py-6 bg-gray-50/50"
+					style={{ paddingBottom: insets.bottom + 8 }}
+				>
+					<View className="flex-row justify-between items-center">
+						<CustomButton
+							title={currentStep === 4 ? 'Generate' : 'Continue'}
+							onPress={handleNextStep}
+							icon="arrow-right"
+							iconPosition="right"
+							variant="primary"
+							size="lg"
+							className="flex-1"
+							disabled={
+								(currentStep === 1 && !hasImageSelected) ||
+								(currentStep === 2 && !selectedRoom) ||
+								(currentStep === 3 && !selectedStyle) ||
+								(currentStep === 4 && !selectedPalette)
+							}
+						/>
+					</View>
 				</View>
-			</View>
+			)}
 		</View>
 	);
 }
