@@ -11,6 +11,7 @@ export interface ModeConfig {
 	step3: StepConfig;
 	step4: StepConfig;
 	step5: StepConfig;
+	step6: StepConfig;
 }
 
 export const stepConfigs: Record<string, ModeConfig> = {
@@ -34,12 +35,18 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Pick a style that matches your vision and personality',
 		},
 		step4: {
+			title: 'Choose Color Palette',
+			subtitle: 'Select a color scheme for your design',
+			icon: 'paintbrush',
+			description: 'Pick colors that create the perfect mood and atmosphere',
+		},
+		step5: {
 			title: 'Generate Design',
 			subtitle: 'AI will create your personalized interior design',
 			icon: 'sparkle',
 			description: 'Review your preferences and generate your AI-powered design',
 		},
-		step5: {
+		step6: {
 			title: 'Design Complete',
 			subtitle: 'Your interior design has been generated successfully',
 			icon: 'check-circle',
@@ -77,6 +84,12 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			icon: 'check-circle',
 			description: 'Your personalized content is ready!',
 		},
+		step6: {
+			title: 'Complete',
+			subtitle: 'Your content has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized content is ready!',
+		},
 	},
 };
 
@@ -94,6 +107,8 @@ export function getStepConfig(mode: string, step: number): StepConfig {
 			return config.step4;
 		case 5:
 			return config.step5;
+		case 6:
+			return config.step6;
 		default:
 			return config.step1;
 	}

@@ -46,6 +46,13 @@ const styleTypes: Style[] = [
 			'https://lh3.googleusercontent.com/yy7xrn8b_jjQ_2uMBm6blAp10PtcrtPb3wjbQMZR0PX8OSlXjPPR-Yl-OPnnfP2lyD6RTAdYOx-tREZRkg7TFsMX944quW40b36O6E_PYfG9lfe7p3HusBcWqYqa-zakrlbPG0TiA0ZDw0hV2fM',
 	},
 	{
+		id: 'dark-academia',
+		name: 'Dark Academia',
+		description: 'Dark and mysterious Academia vibes',
+		imageUrl:
+			'https://www.marthastewart.com/thmb/TCjkhYwNm-ouWesF20NSKcDSGFc=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/marthastewart-darkacademia-ryanmatthewcohn-a93eec0e984643c9bdbf1d5cdd66537c.jpg',
+	},
+	{
 		id: 'dark-behemian',
 		name: 'Dark Bohemian',
 		description: 'Dark and mysterious Bohemian vibes',

@@ -2,7 +2,7 @@ import { Text, type TextProps } from 'react-native';
 
 export type ThemedTextProps = TextProps & {
 	color?: 'primary' | 'secondary' | 'destructive';
-	variant?: 'body' | 'title-lg' | 'title-xl' | 'title-md';
+	variant?: 'body' | 'title-lg' | 'title-xl' | 'title-md' | 'title-sm';
 	bold?: boolean;
 	extraBold?: boolean;
 };
@@ -29,6 +29,8 @@ export function ThemedText({
 			case 'title-lg':
 			case 'title-md':
 				return 'Urbanist_700Bold';
+			case 'title-sm':
+				return 'Urbanist_400Regular';
 			case 'body':
 			default:
 				return 'Urbanist_400Regular';
@@ -48,6 +50,7 @@ export function ThemedText({
         ${variant === 'title-lg' ? 'text-3xl' : ''}
         ${variant === 'title-xl' ? 'text-4xl' : ''}
         ${variant === 'title-md' ? 'text-2xl' : ''}
+		${variant === 'title-sm' ? 'text-xl' : ''}
         ${variant === 'body' ? 'text-lg' : ''}
 
         ${

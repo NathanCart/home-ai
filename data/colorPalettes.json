@@ -1,0 +1,1780 @@
+{
+  "blues": [
+    {
+      "id": "blue-1",
+      "title": "Ocean Breeze",
+      "userName": "Design Team",
+      "numViews": 1250,
+      "numVotes": 89,
+      "numComments": 12,
+      "colors": [
+        "#E3F2FD",
+        "#BBDEFB",
+        "#90CAF9",
+        "#64B5F6",
+        "#42A5F5"
+      ],
+      "description": "Calming blues and whites for a serene atmosphere",
+      "recommendedFor": [
+        "scandinavian",
+        "coastal"
+      ]
+    },
+    {
+      "id": "blue-2",
+      "title": "Midnight Blue",
+      "userName": "Design Team",
+      "numViews": 1400,
+      "numVotes": 87,
+      "numComments": 11,
+      "colors": [
+        "#E8EAF6",
+        "#C5CAE9",
+        "#9FA8DA",
+        "#7986CB",
+        "#5C6BC0"
+      ],
+      "description": "Deep blues and indigos for sophisticated spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "traditional"
+      ]
+    },
+    {
+      "id": "blue-3",
+      "title": "Electric Blue",
+      "userName": "Design Team",
+      "numViews": 1350,
+      "numVotes": 94,
+      "numComments": 13,
+      "colors": [
+        "#E3F2FD",
+        "#BBDEFB",
+        "#90CAF9",
+        "#2196F3",
+        "#1976D2"
+      ],
+      "description": "Bold blues and electric accents for modern spaces",
+      "recommendedFor": [
+        "modern",
+        "industrial",
+        "contemporary"
+      ]
+    },
+    {
+      "id": "blue-4",
+      "title": "Sky High",
+      "userName": "Design Team",
+      "numViews": 1100,
+      "numVotes": 76,
+      "numComments": 9,
+      "colors": [
+        "#E1F5FE",
+        "#B3E5FC",
+        "#81D4FA",
+        "#4FC3F7",
+        "#29B6F6"
+      ],
+      "description": "Light sky blues for bright, airy spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "coastal"
+      ]
+    },
+    {
+      "id": "blue-5",
+      "title": "Navy Elegance",
+      "userName": "Design Team",
+      "numViews": 1650,
+      "numVotes": 112,
+      "numComments": 16,
+      "colors": [
+        "#1A237E",
+        "#283593",
+        "#3949AB",
+        "#5C6BC0",
+        "#7986CB"
+      ],
+      "description": "Rich navy blues for luxurious interiors",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "traditional",
+        "art-deco",
+        "transitional"
+      ]
+    },
+    {
+      "id": "blue-6",
+      "title": "Arctic Ice",
+      "userName": "Design Team",
+      "numViews": 980,
+      "numVotes": 67,
+      "numComments": 8,
+      "colors": [
+        "#F3F8FF",
+        "#E3F2FD",
+        "#BBDEFB",
+        "#90CAF9",
+        "#64B5F6"
+      ],
+      "description": "Cool arctic blues for crisp, clean spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "japandi"
+      ]
+    },
+    {
+      "id": "blue-7",
+      "title": "Deep Ocean",
+      "userName": "Design Team",
+      "numViews": 1520,
+      "numVotes": 108,
+      "numComments": 14,
+      "colors": [
+        "#0D47A1",
+        "#1565C0",
+        "#1976D2",
+        "#1E88E5",
+        "#42A5F5"
+      ],
+      "description": "Deep ocean blues for dramatic, powerful spaces",
+      "recommendedFor": [
+        "modern",
+        "dark-academia",
+        "dark-behemian",
+        "industrial",
+        "contemporary"
+      ]
+    },
+    {
+      "id": "blue-8",
+      "title": "Cobalt Dreams",
+      "userName": "Design Team",
+      "numViews": 1180,
+      "numVotes": 82,
+      "numComments": 10,
+      "colors": [
+        "#E8EAF6",
+        "#C5CAE9",
+        "#9FA8DA",
+        "#7986CB",
+        "#3F51B5"
+      ],
+      "description": "Vibrant cobalt blues for energetic, modern spaces",
+      "recommendedFor": [
+        "modern",
+        "contemporary",
+        "tropical"
+      ]
+    }
+  ],
+  "greens": [
+    {
+      "id": "green-1",
+      "title": "Forest Green",
+      "userName": "Design Team",
+      "numViews": 1800,
+      "numVotes": 134,
+      "numComments": 18,
+      "colors": [
+        "#E8F5E8",
+        "#C8E6C9",
+        "#A5D6A7",
+        "#81C784",
+        "#66BB6A"
+      ],
+      "description": "Natural greens and earth tones for organic feel",
+      "recommendedFor": [
+        "bohemian",
+        "rustic"
+      ]
+    },
+    {
+      "id": "green-2",
+      "title": "Sage Garden",
+      "userName": "Design Team",
+      "numViews": 1750,
+      "numVotes": 123,
+      "numComments": 16,
+      "colors": [
+        "#F1F8E9",
+        "#DCEDC8",
+        "#C5E1A5",
+        "#AED581",
+        "#9CCC65"
+      ],
+      "description": "Muted greens and sages for calming environments",
+      "recommendedFor": [
+        "scandinavian",
+        "modern-farmhouse",
+        "japandi",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "green-3",
+      "title": "Tropical Paradise",
+      "userName": "Design Team",
+      "numViews": 1600,
+      "numVotes": 112,
+      "numComments": 14,
+      "colors": [
+        "#E8F5E8",
+        "#C8E6C9",
+        "#81C784",
+        "#4CAF50",
+        "#388E3C"
+      ],
+      "description": "Vibrant greens and teals for fresh, energetic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "contemporary",
+        "tropical"
+      ]
+    },
+    {
+      "id": "green-4",
+      "title": "Deep Forest",
+      "userName": "Design Team",
+      "numViews": 1800,
+      "numVotes": 134,
+      "numComments": 18,
+      "colors": [
+        "#E8F5E8",
+        "#C8E6C9",
+        "#81C784",
+        "#4CAF50",
+        "#2E7D32"
+      ],
+      "description": "Deep forest greens for natural, grounding spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "rustic",
+        "contemporary"
+      ]
+    },
+    {
+      "id": "green-5",
+      "title": "Mint Fresh",
+      "userName": "Design Team",
+      "numViews": 1450,
+      "numVotes": 98,
+      "numComments": 12,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#26A69A"
+      ],
+      "description": "Fresh mint greens for clean, modern spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "coastal",
+        "japandi"
+      ]
+    },
+    {
+      "id": "green-6",
+      "title": "Emerald City",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 118,
+      "numComments": 15,
+      "colors": [
+        "#E8F5E8",
+        "#C8E6C9",
+        "#A5D6A7",
+        "#66BB6A",
+        "#4CAF50"
+      ],
+      "description": "Rich emerald greens for luxurious, vibrant spaces",
+      "recommendedFor": [
+        "dark-behemian",
+        "traditional",
+        "rustic",
+        "art-deco",
+        "modern-farmhouse",
+        "french-country",
+        "transitional"
+      ]
+    },
+    {
+      "id": "green-7",
+      "title": "Lime Zest",
+      "userName": "Design Team",
+      "numViews": 1320,
+      "numVotes": 89,
+      "numComments": 11,
+      "colors": [
+        "#F1F8E9",
+        "#DCEDC8",
+        "#C5E1A5",
+        "#AED581",
+        "#8BC34A"
+      ],
+      "description": "Bright lime greens for energetic, fresh spaces",
+      "recommendedFor": [
+        "bohemian",
+        "tropical"
+      ]
+    },
+    {
+      "id": "green-8",
+      "title": "Moss Garden",
+      "userName": "Design Team",
+      "numViews": 1420,
+      "numVotes": 95,
+      "numComments": 13,
+      "colors": [
+        "#F1F8E9",
+        "#DCEDC8",
+        "#C5E1A5",
+        "#9CCC65",
+        "#689F38"
+      ],
+      "description": "Soft moss greens for natural, peaceful spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "japandi"
+      ]
+    }
+  ],
+  "purples": [
+    {
+      "id": "purple-1",
+      "title": "Purple Dreams",
+      "userName": "Design Team",
+      "numViews": 1650,
+      "numVotes": 98,
+      "numComments": 15,
+      "colors": [
+        "#F3E5F5",
+        "#E1BEE7",
+        "#CE93D8",
+        "#BA68C8",
+        "#AB47BC"
+      ],
+      "description": "Rich purples and lavenders for luxury spaces",
+      "recommendedFor": [
+        "bohemian",
+        "art-deco",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "purple-2",
+      "title": "Lavender Fields",
+      "userName": "Design Team",
+      "numViews": 1700,
+      "numVotes": 128,
+      "numComments": 17,
+      "colors": [
+        "#F3E5F5",
+        "#E1BEE7",
+        "#CE93D8",
+        "#BA68C8",
+        "#9C27B0"
+      ],
+      "description": "Soft lavenders and purples for peaceful retreats",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "purple-3",
+      "title": "Royal Purple",
+      "userName": "Design Team",
+      "numViews": 1550,
+      "numVotes": 89,
+      "numComments": 13,
+      "colors": [
+        "#EDE7F6",
+        "#D1C4E9",
+        "#B39DDB",
+        "#9575CD",
+        "#7E57C2"
+      ],
+      "description": "Regal purples for elegant, sophisticated spaces",
+      "recommendedFor": [
+        "traditional",
+        "art-deco",
+        "transitional"
+      ]
+    },
+    {
+      "id": "purple-4",
+      "title": "Plum Velvet",
+      "userName": "Design Team",
+      "numViews": 1420,
+      "numVotes": 95,
+      "numComments": 14,
+      "colors": [
+        "#F3E5F5",
+        "#E1BEE7",
+        "#CE93D8",
+        "#BA68C8",
+        "#8E24AA"
+      ],
+      "description": "Deep plum and magenta for dramatic spaces",
+      "recommendedFor": [
+        "dark-behemian",
+        "art-deco"
+      ]
+    },
+    {
+      "id": "purple-5",
+      "title": "Violet Storm",
+      "userName": "Design Team",
+      "numViews": 1380,
+      "numVotes": 92,
+      "numComments": 12,
+      "colors": [
+        "#F3E5F5",
+        "#E1BEE7",
+        "#CE93D8",
+        "#BA68C8",
+        "#7B1FA2"
+      ],
+      "description": "Deep violet purples for bold, dramatic spaces",
+      "recommendedFor": [
+        "dark-behemian",
+        "art-deco"
+      ]
+    },
+    {
+      "id": "purple-6",
+      "title": "Orchid Mist",
+      "userName": "Design Team",
+      "numViews": 1520,
+      "numVotes": 108,
+      "numComments": 14,
+      "colors": [
+        "#F3E5F5",
+        "#E1BEE7",
+        "#CE93D8",
+        "#BA68C8",
+        "#9C27B0"
+      ],
+      "description": "Soft orchid purples for gentle, romantic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "french-country",
+        "shabby-chic"
+      ]
+    }
+  ],
+  "pinks": [
+    {
+      "id": "pink-1",
+      "title": "Coral Sunset",
+      "userName": "Design Team",
+      "numViews": 1950,
+      "numVotes": 142,
+      "numComments": 19,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#E57373",
+        "#EF5350"
+      ],
+      "description": "Soft pinks and corals for warm, inviting spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "pink-2",
+      "title": "Rose Gold",
+      "userName": "Design Team",
+      "numViews": 1850,
+      "numVotes": 145,
+      "numComments": 21,
+      "colors": [
+        "#FCE4EC",
+        "#F8BBD9",
+        "#F48FB1",
+        "#F06292",
+        "#EC407A"
+      ],
+      "description": "Elegant rose golds and pinks for romantic spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "pink-3",
+      "title": "Peach Blossom",
+      "userName": "Design Team",
+      "numViews": 1450,
+      "numVotes": 103,
+      "numComments": 15,
+      "colors": [
+        "#FFF3E0",
+        "#FFE0B2",
+        "#FFCC80",
+        "#FFB74D",
+        "#FF9800"
+      ],
+      "description": "Soft peaches and creams for gentle, feminine spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "pink-4",
+      "title": "Blush Rose",
+      "userName": "Design Team",
+      "numViews": 1620,
+      "numVotes": 118,
+      "numComments": 16,
+      "colors": [
+        "#FCE4EC",
+        "#F8BBD9",
+        "#F48FB1",
+        "#F06292",
+        "#E91E63"
+      ],
+      "description": "Delicate blush pinks for soft, romantic interiors",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "pink-5",
+      "title": "Cotton Candy",
+      "userName": "Design Team",
+      "numViews": 1380,
+      "numVotes": 95,
+      "numComments": 12,
+      "colors": [
+        "#FCE4EC",
+        "#F8BBD9",
+        "#F48FB1",
+        "#E91E63",
+        "#C2185B"
+      ],
+      "description": "Sweet cotton candy pinks for playful, cheerful spaces",
+      "recommendedFor": [
+        "bohemian",
+        "tropical"
+      ]
+    },
+    {
+      "id": "pink-6",
+      "title": "Dusty Rose",
+      "userName": "Design Team",
+      "numViews": 1520,
+      "numVotes": 108,
+      "numComments": 14,
+      "colors": [
+        "#FCE4EC",
+        "#F8BBD9",
+        "#F48FB1",
+        "#E91E63",
+        "#AD1457"
+      ],
+      "description": "Muted dusty rose pinks for sophisticated, elegant spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "pink-7",
+      "title": "Bubblegum",
+      "userName": "Design Team",
+      "numViews": 1280,
+      "numVotes": 87,
+      "numComments": 11,
+      "colors": [
+        "#FCE4EC",
+        "#F8BBD9",
+        "#F48FB1",
+        "#E91E63",
+        "#C2185B"
+      ],
+      "description": "Bright bubblegum pinks for fun, energetic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "tropical"
+      ]
+    }
+  ],
+  "oranges": [
+    {
+      "id": "orange-1",
+      "title": "Sunset Vibes",
+      "userName": "Design Team",
+      "numViews": 2100,
+      "numVotes": 156,
+      "numComments": 23,
+      "colors": [
+        "#FFE0B2",
+        "#FFCC02",
+        "#FF9800",
+        "#F57C00",
+        "#E65100"
+      ],
+      "description": "Warm oranges and yellows for cozy spaces",
+      "recommendedFor": [
+        "bohemian",
+        "rustic"
+      ]
+    },
+    {
+      "id": "orange-2",
+      "title": "Golden Hour",
+      "userName": "Design Team",
+      "numViews": 2200,
+      "numVotes": 178,
+      "numComments": 25,
+      "colors": [
+        "#FFF8E1",
+        "#FFECB3",
+        "#FFE082",
+        "#FFD54F",
+        "#FFCA28"
+      ],
+      "description": "Warm golds and ambers for luxurious interiors",
+      "recommendedFor": [
+        "art-deco",
+        "transitional"
+      ]
+    },
+    {
+      "id": "orange-3",
+      "title": "Autumn Leaves",
+      "userName": "Design Team",
+      "numViews": 1950,
+      "numVotes": 156,
+      "numComments": 20,
+      "colors": [
+        "#FFF3E0",
+        "#FFE0B2",
+        "#FFCC02",
+        "#FF8F00",
+        "#F57C00"
+      ],
+      "description": "Rich autumn colors for warm, inviting interiors",
+      "recommendedFor": [
+        "rustic"
+      ]
+    },
+    {
+      "id": "orange-4",
+      "title": "Tangerine Dream",
+      "userName": "Design Team",
+      "numViews": 1380,
+      "numVotes": 92,
+      "numComments": 11,
+      "colors": [
+        "#FFF3E0",
+        "#FFE0B2",
+        "#FFCC80",
+        "#FFB74D",
+        "#FF9800"
+      ],
+      "description": "Bright tangerine and orange for energetic spaces",
+      "recommendedFor": [
+        "contemporary",
+        "tropical"
+      ]
+    },
+    {
+      "id": "orange-5",
+      "title": "Pumpkin Spice",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 124,
+      "numComments": 16,
+      "colors": [
+        "#FFF3E0",
+        "#FFE0B2",
+        "#FFCC80",
+        "#FFB74D",
+        "#FF9800"
+      ],
+      "description": "Warm pumpkin spice oranges for cozy, seasonal spaces",
+      "recommendedFor": []
+    },
+    {
+      "id": "orange-6",
+      "title": "Citrus Burst",
+      "userName": "Design Team",
+      "numViews": 1420,
+      "numVotes": 98,
+      "numComments": 13,
+      "colors": [
+        "#FFF8E1",
+        "#FFECB3",
+        "#FFE082",
+        "#FFD54F",
+        "#FFC107"
+      ],
+      "description": "Fresh citrus oranges for bright, energizing spaces",
+      "recommendedFor": [
+        "contemporary",
+        "tropical"
+      ]
+    },
+    {
+      "id": "orange-7",
+      "title": "Copper Glow",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 112,
+      "numComments": 15,
+      "colors": [
+        "#FFF3E0",
+        "#FFE0B2",
+        "#FFCC80",
+        "#FFB74D",
+        "#FF8F00"
+      ],
+      "description": "Rich copper oranges for warm, sophisticated spaces",
+      "recommendedFor": [
+        "art-deco",
+        "transitional"
+      ]
+    }
+  ],
+  "yellows": [
+    {
+      "id": "yellow-1",
+      "title": "Sunshine",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 124,
+      "numComments": 17,
+      "colors": [
+        "#FFFDE7",
+        "#FFF9C4",
+        "#FFF59D",
+        "#FFF176",
+        "#FFEB3B"
+      ],
+      "description": "Bright yellows for cheerful, energetic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "contemporary",
+        "tropical"
+      ]
+    },
+    {
+      "id": "yellow-2",
+      "title": "Lemon Zest",
+      "userName": "Design Team",
+      "numViews": 1520,
+      "numVotes": 108,
+      "numComments": 14,
+      "colors": [
+        "#FFF8E1",
+        "#FFECB3",
+        "#FFE082",
+        "#FFD54F",
+        "#FFCA28"
+      ],
+      "description": "Fresh lemon yellows for bright, modern spaces",
+      "recommendedFor": [
+        "bohemian",
+        "tropical"
+      ]
+    },
+    {
+      "id": "yellow-3",
+      "title": "Honey Gold",
+      "userName": "Design Team",
+      "numViews": 1890,
+      "numVotes": 142,
+      "numComments": 19,
+      "colors": [
+        "#FFF8E1",
+        "#FFECB3",
+        "#FFE082",
+        "#FFD54F",
+        "#FFC107"
+      ],
+      "description": "Warm honey golds for cozy, inviting spaces",
+      "recommendedFor": [
+        "french-country"
+      ]
+    },
+    {
+      "id": "yellow-4",
+      "title": "Daffodil",
+      "userName": "Design Team",
+      "numViews": 1420,
+      "numVotes": 98,
+      "numComments": 12,
+      "colors": [
+        "#FFFDE7",
+        "#FFF9C4",
+        "#FFF59D",
+        "#FFF176",
+        "#FFEB3B"
+      ],
+      "description": "Fresh daffodil yellows for spring-inspired spaces",
+      "recommendedFor": [
+        "tropical",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "yellow-5",
+      "title": "Buttercup",
+      "userName": "Design Team",
+      "numViews": 1380,
+      "numVotes": 92,
+      "numComments": 11,
+      "colors": [
+        "#FFFDE7",
+        "#FFF9C4",
+        "#FFF59D",
+        "#FFF176",
+        "#FDD835"
+      ],
+      "description": "Soft buttercup yellows for gentle, warm spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "yellow-6",
+      "title": "Goldenrod",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 112,
+      "numComments": 15,
+      "colors": [
+        "#FFF8E1",
+        "#FFECB3",
+        "#FFE082",
+        "#FFD54F",
+        "#FFC107"
+      ],
+      "description": "Rich goldenrod yellows for luxurious, warm spaces",
+      "recommendedFor": [
+        "art-deco",
+        "transitional"
+      ]
+    }
+  ],
+  "reds": [
+    {
+      "id": "red-1",
+      "title": "Cherry Blossom",
+      "userName": "Design Team",
+      "numViews": 1720,
+      "numVotes": 129,
+      "numComments": 18,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#E57373",
+        "#F44336"
+      ],
+      "description": "Soft cherry reds for warm, welcoming spaces",
+      "recommendedFor": [
+        "traditional",
+        "art-deco"
+      ]
+    },
+    {
+      "id": "red-2",
+      "title": "Burgundy Wine",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 98,
+      "numComments": 13,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#E57373",
+        "#D32F2F"
+      ],
+      "description": "Rich burgundy reds for sophisticated spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "traditional"
+      ]
+    },
+    {
+      "id": "red-3",
+      "title": "Scarlet Fire",
+      "userName": "Design Team",
+      "numViews": 1450,
+      "numVotes": 87,
+      "numComments": 12,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#F44336",
+        "#D32F2F"
+      ],
+      "description": "Bold scarlet reds for dramatic, passionate spaces",
+      "recommendedFor": [
+        "contemporary"
+      ]
+    },
+    {
+      "id": "red-4",
+      "title": "Rose Petal",
+      "userName": "Design Team",
+      "numViews": 1620,
+      "numVotes": 118,
+      "numComments": 16,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#E57373",
+        "#F44336"
+      ],
+      "description": "Delicate rose petal reds for romantic, soft spaces",
+      "recommendedFor": [
+        "bohemian",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "red-5",
+      "title": "Crimson Velvet",
+      "userName": "Design Team",
+      "numViews": 1480,
+      "numVotes": 102,
+      "numComments": 14,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#F44336",
+        "#C62828"
+      ],
+      "description": "Rich crimson reds for luxurious, dramatic spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "art-deco"
+      ]
+    },
+    {
+      "id": "red-6",
+      "title": "Ruby Glow",
+      "userName": "Design Team",
+      "numViews": 1550,
+      "numVotes": 108,
+      "numComments": 15,
+      "colors": [
+        "#FFEBEE",
+        "#FFCDD2",
+        "#EF9A9A",
+        "#E57373",
+        "#D32F2F"
+      ],
+      "description": "Deep ruby reds for elegant, sophisticated spaces",
+      "recommendedFor": [
+        "traditional",
+        "art-deco",
+        "transitional"
+      ]
+    }
+  ],
+  "grays": [
+    {
+      "id": "gray-1",
+      "title": "Neutral Elegance",
+      "userName": "Design Team",
+      "numViews": 3200,
+      "numVotes": 245,
+      "numComments": 31,
+      "colors": [
+        "#FAFAFA",
+        "#F5F5F5",
+        "#EEEEEE",
+        "#E0E0E0",
+        "#BDBDBD"
+      ],
+      "description": "Sophisticated grays and whites for modern minimalism",
+      "recommendedFor": [
+        "modern",
+        "scandinavian",
+        "minimalist",
+        "japandi"
+      ]
+    },
+    {
+      "id": "gray-2",
+      "title": "Charcoal & Cream",
+      "userName": "Design Team",
+      "numViews": 2800,
+      "numVotes": 201,
+      "numComments": 28,
+      "colors": [
+        "#F5F5F5",
+        "#E0E0E0",
+        "#BDBDBD",
+        "#757575",
+        "#424242"
+      ],
+      "description": "Classic charcoal and cream for timeless elegance",
+      "recommendedFor": [
+        "modern",
+        "dark-academia",
+        "dark-behemian",
+        "industrial"
+      ]
+    },
+    {
+      "id": "gray-3",
+      "title": "Industrial Gray",
+      "userName": "Design Team",
+      "numViews": 2100,
+      "numVotes": 167,
+      "numComments": 22,
+      "colors": [
+        "#FAFAFA",
+        "#F5F5F5",
+        "#E0E0E0",
+        "#9E9E9E",
+        "#616161"
+      ],
+      "description": "Industrial grays and metals for urban, modern spaces",
+      "recommendedFor": [
+        "modern",
+        "industrial"
+      ]
+    },
+    {
+      "id": "gray-4",
+      "title": "Crystal Clear",
+      "userName": "Design Team",
+      "numViews": 2600,
+      "numVotes": 198,
+      "numComments": 26,
+      "colors": [
+        "#F8F9FA",
+        "#E9ECEF",
+        "#DEE2E6",
+        "#CED4DA",
+        "#ADB5BD"
+      ],
+      "description": "Clean whites and light grays for bright, airy spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "japandi"
+      ]
+    },
+    {
+      "id": "gray-5",
+      "title": "Warm Neutrals",
+      "userName": "Design Team",
+      "numViews": 2400,
+      "numVotes": 189,
+      "numComments": 24,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#D4C4B0",
+        "#C4B59A"
+      ],
+      "description": "Warm beiges and tans for cozy, comfortable spaces",
+      "recommendedFor": [
+        "rustic",
+        "modern-farmhouse",
+        "french-country"
+      ]
+    },
+    {
+      "id": "gray-6",
+      "title": "Slate Storm",
+      "userName": "Design Team",
+      "numViews": 1850,
+      "numVotes": 142,
+      "numComments": 18,
+      "colors": [
+        "#F5F5F5",
+        "#E0E0E0",
+        "#BDBDBD",
+        "#9E9E9E",
+        "#616161"
+      ],
+      "description": "Deep slate grays for sophisticated, modern spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "dark-behemian",
+        "industrial"
+      ]
+    },
+    {
+      "id": "gray-7",
+      "title": "Pearl Mist",
+      "userName": "Design Team",
+      "numViews": 2200,
+      "numVotes": 168,
+      "numComments": 21,
+      "colors": [
+        "#FAFAFA",
+        "#F5F5F5",
+        "#EEEEEE",
+        "#E0E0E0",
+        "#BDBDBD"
+      ],
+      "description": "Soft pearl grays for elegant, refined spaces",
+      "recommendedFor": [
+        "scandinavian",
+        "minimalist",
+        "japandi"
+      ]
+    },
+    {
+      "id": "gray-8",
+      "title": "Classic White",
+      "userName": "Design Team",
+      "numViews": 4500,
+      "numVotes": 380,
+      "numComments": 45,
+      "colors": [
+        "#FFFFFF",
+        "#FAFAFA",
+        "#F5F5F5",
+        "#EEEEEE",
+        "#E0E0E0"
+      ],
+      "description": "Pure whites and off-whites for clean, bright homes",
+      "recommendedFor": [
+        "modern",
+        "scandinavian",
+        "minimalist",
+        "modern-farmhouse",
+        "japandi"
+      ]
+    },
+    {
+      "id": "gray-9",
+      "title": "Greige",
+      "userName": "Design Team",
+      "numViews": 3200,
+      "numVotes": 245,
+      "numComments": 32,
+      "colors": [
+        "#F5F5F5",
+        "#E8E8E8",
+        "#D3D3D3",
+        "#A9A9A9",
+        "#808080"
+      ],
+      "description": "Popular greige tones for modern, sophisticated homes",
+      "recommendedFor": [
+        "modern",
+        "industrial",
+        "contemporary",
+        "modern-farmhouse",
+        "transitional"
+      ]
+    }
+  ],
+  "browns": [
+    {
+      "id": "brown-1",
+      "title": "Coffee House",
+      "userName": "Design Team",
+      "numViews": 1950,
+      "numVotes": 148,
+      "numComments": 20,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#D4C4B0",
+        "#8D6E63"
+      ],
+      "description": "Rich coffee browns for warm, inviting spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "traditional",
+        "rustic",
+        "modern-farmhouse"
+      ]
+    },
+    {
+      "id": "brown-2",
+      "title": "Chestnut",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 112,
+      "numComments": 15,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#A1887F",
+        "#795548"
+      ],
+      "description": "Deep chestnut browns for sophisticated interiors",
+      "recommendedFor": [
+        "dark-academia",
+        "traditional",
+        "rustic",
+        "modern-farmhouse",
+        "french-country"
+      ]
+    },
+    {
+      "id": "brown-3",
+      "title": "Cocoa",
+      "userName": "Design Team",
+      "numViews": 1820,
+      "numVotes": 134,
+      "numComments": 18,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#BCAAA4",
+        "#8D6E63"
+      ],
+      "description": "Rich cocoa browns for cozy, comfortable spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "rustic"
+      ]
+    },
+    {
+      "id": "brown-4",
+      "title": "Caramel",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 118,
+      "numComments": 16,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#D4C4B0",
+        "#A1887F"
+      ],
+      "description": "Sweet caramel browns for warm, cozy spaces",
+      "recommendedFor": [
+        "rustic",
+        "modern-farmhouse"
+      ]
+    },
+    {
+      "id": "brown-5",
+      "title": "Mocha",
+      "userName": "Design Team",
+      "numViews": 1720,
+      "numVotes": 128,
+      "numComments": 17,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#BCAAA4",
+        "#8D6E63"
+      ],
+      "description": "Rich mocha browns for sophisticated, warm spaces",
+      "recommendedFor": [
+        "rustic"
+      ]
+    },
+    {
+      "id": "brown-6",
+      "title": "Walnut",
+      "userName": "Design Team",
+      "numViews": 1650,
+      "numVotes": 122,
+      "numComments": 15,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#A1887F",
+        "#6D4C41"
+      ],
+      "description": "Deep walnut browns for elegant, grounded spaces",
+      "recommendedFor": [
+        "dark-academia",
+        "rustic"
+      ]
+    }
+  ],
+  "teals": [
+    {
+      "id": "teal-1",
+      "title": "Ocean Depths",
+      "userName": "Design Team",
+      "numViews": 1750,
+      "numVotes": 128,
+      "numComments": 17,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#26A69A"
+      ],
+      "description": "Deep teals and aquas for calming, sophisticated spaces",
+      "recommendedFor": [
+        "coastal",
+        "japandi"
+      ]
+    },
+    {
+      "id": "teal-2",
+      "title": "Tropical Waters",
+      "userName": "Design Team",
+      "numViews": 1620,
+      "numVotes": 115,
+      "numComments": 14,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#009688"
+      ],
+      "description": "Vibrant teals for fresh, energetic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "tropical",
+        "coastal"
+      ]
+    },
+    {
+      "id": "teal-3",
+      "title": "Mint Teal",
+      "userName": "Design Team",
+      "numViews": 1480,
+      "numVotes": 98,
+      "numComments": 12,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#26A69A"
+      ],
+      "description": "Fresh mint teals for clean, modern spaces",
+      "recommendedFor": [
+        "minimalist",
+        "japandi"
+      ]
+    },
+    {
+      "id": "teal-4",
+      "title": "Jade Garden",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 122,
+      "numComments": 16,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#00695C"
+      ],
+      "description": "Rich jade teals for luxurious, calming spaces",
+      "recommendedFor": [
+        "dark-behemian",
+        "art-deco",
+        "transitional"
+      ]
+    },
+    {
+      "id": "teal-5",
+      "title": "Aqua Breeze",
+      "userName": "Design Team",
+      "numViews": 1520,
+      "numVotes": 108,
+      "numComments": 13,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#26A69A"
+      ],
+      "description": "Light aqua teals for fresh, airy spaces",
+      "recommendedFor": [
+        "coastal"
+      ]
+    },
+    {
+      "id": "teal-6",
+      "title": "Emerald Sea",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 115,
+      "numComments": 15,
+      "colors": [
+        "#E0F2F1",
+        "#B2DFDB",
+        "#80CBC4",
+        "#4DB6AC",
+        "#00796B"
+      ],
+      "description": "Deep emerald teals for sophisticated, grounding spaces",
+      "recommendedFor": [
+        "dark-behemian",
+        "art-deco",
+        "transitional"
+      ]
+    }
+  ],
+  "classic": [
+    {
+      "id": "classic-1",
+      "title": "Navy & White",
+      "userName": "Design Team",
+      "numViews": 4200,
+      "numVotes": 350,
+      "numComments": 42,
+      "colors": [
+        "#FFFFFF",
+        "#F5F5F5",
+        "#E0E0E0",
+        "#1976D2",
+        "#0D47A1"
+      ],
+      "description": "Classic navy and white for timeless, elegant homes",
+      "recommendedFor": [
+        "traditional",
+        "coastal"
+      ]
+    },
+    {
+      "id": "classic-2",
+      "title": "Black & White",
+      "userName": "Design Team",
+      "numViews": 3800,
+      "numVotes": 320,
+      "numComments": 38,
+      "colors": [
+        "#FFFFFF",
+        "#F5F5F5",
+        "#E0E0E0",
+        "#424242",
+        "#000000"
+      ],
+      "description": "Timeless black and white for sophisticated, modern homes",
+      "recommendedFor": [
+        "modern",
+        "dark-academia",
+        "dark-behemian",
+        "industrial",
+        "art-deco"
+      ]
+    },
+    {
+      "id": "classic-3",
+      "title": "Beige & Cream",
+      "userName": "Design Team",
+      "numViews": 3600,
+      "numVotes": 280,
+      "numComments": 35,
+      "colors": [
+        "#FFFFFF",
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#D4C4B0"
+      ],
+      "description": "Warm beige and cream for cozy, traditional homes",
+      "recommendedFor": [
+        "traditional",
+        "rustic",
+        "modern-farmhouse",
+        "french-country"
+      ]
+    },
+    {
+      "id": "classic-4",
+      "title": "Sage & White",
+      "userName": "Design Team",
+      "numViews": 3400,
+      "numVotes": 260,
+      "numComments": 32,
+      "colors": [
+        "#FFFFFF",
+        "#F5F5F5",
+        "#E8F5E8",
+        "#C8E6C9",
+        "#9CCC65"
+      ],
+      "description": "Soft sage green and white for calm, peaceful homes",
+      "recommendedFor": [
+        "scandinavian"
+      ]
+    },
+    {
+      "id": "classic-5",
+      "title": "Taupe & Gray",
+      "userName": "Design Team",
+      "numViews": 3200,
+      "numVotes": 240,
+      "numComments": 30,
+      "colors": [
+        "#F5F5F5",
+        "#E8E8E8",
+        "#D3D3D3",
+        "#A9A9A9",
+        "#808080"
+      ],
+      "description": "Sophisticated taupe and gray for modern, neutral homes",
+      "recommendedFor": [
+        "modern",
+        "minimalist",
+        "contemporary",
+        "transitional"
+      ]
+    },
+    {
+      "id": "classic-6",
+      "title": "Cream & Brown",
+      "userName": "Design Team",
+      "numViews": 3000,
+      "numVotes": 220,
+      "numComments": 28,
+      "colors": [
+        "#FFFFFF",
+        "#FFF8F0",
+        "#F5E6D3",
+        "#D4C4B0",
+        "#8D6E63"
+      ],
+      "description": "Warm cream and brown for traditional, cozy homes",
+      "recommendedFor": [
+        "traditional",
+        "rustic",
+        "modern-farmhouse",
+        "french-country"
+      ]
+    },
+    {
+      "id": "classic-7",
+      "title": "Gray & Blue",
+      "userName": "Design Team",
+      "numViews": 2800,
+      "numVotes": 200,
+      "numComments": 25,
+      "colors": [
+        "#F5F5F5",
+        "#E0E0E0",
+        "#BDBDBD",
+        "#64B5F6",
+        "#1976D2"
+      ],
+      "description": "Classic gray and blue for calm, sophisticated homes",
+      "recommendedFor": [
+        "scandinavian",
+        "coastal",
+        "transitional"
+      ]
+    },
+    {
+      "id": "classic-8",
+      "title": "Ivory & Gold",
+      "userName": "Design Team",
+      "numViews": 2600,
+      "numVotes": 180,
+      "numComments": 22,
+      "colors": [
+        "#FFFFFF",
+        "#FFF8F0",
+        "#F5E6D3",
+        "#FFD54F",
+        "#FFC107"
+      ],
+      "description": "Elegant ivory and gold for luxurious, warm homes",
+      "recommendedFor": [
+        "traditional",
+        "art-deco",
+        "transitional"
+      ]
+    }
+  ],
+  "multicolor": [
+    {
+      "id": "multi-1",
+      "title": "Rainbow Bright",
+      "userName": "Design Team",
+      "numViews": 2100,
+      "numVotes": 156,
+      "numComments": 22,
+      "colors": [
+        "#FFCDD2",
+        "#F8BBD9",
+        "#E1BEE7",
+        "#C5CAE9",
+        "#BBDEFB"
+      ],
+      "description": "Vibrant rainbow colors for playful, energetic spaces",
+      "recommendedFor": [
+        "bohemian",
+        "contemporary",
+        "tropical"
+      ]
+    },
+    {
+      "id": "multi-2",
+      "title": "Pastel Dreams",
+      "userName": "Design Team",
+      "numViews": 1850,
+      "numVotes": 142,
+      "numComments": 19,
+      "colors": [
+        "#FFEBEE",
+        "#F3E5F5",
+        "#E8EAF6",
+        "#E3F2FD",
+        "#E0F2F1"
+      ],
+      "description": "Soft pastels for gentle, dreamy spaces",
+      "recommendedFor": [
+        "french-country",
+        "shabby-chic"
+      ]
+    },
+    {
+      "id": "multi-3",
+      "title": "Earth Tones",
+      "userName": "Design Team",
+      "numViews": 1950,
+      "numVotes": 148,
+      "numComments": 20,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#C8E6C9",
+        "#A5D6A7"
+      ],
+      "description": "Natural earth tones for organic, grounded spaces",
+      "recommendedFor": [
+        "bohemian",
+        "rustic"
+      ]
+    },
+    {
+      "id": "multi-4",
+      "title": "Jewel Tones",
+      "userName": "Design Team",
+      "numViews": 1680,
+      "numVotes": 124,
+      "numComments": 16,
+      "colors": [
+        "#FFCDD2",
+        "#F8BBD9",
+        "#E1BEE7",
+        "#C5CAE9",
+        "#BBDEFB"
+      ],
+      "description": "Rich jewel tones for luxurious, dramatic spaces",
+      "recommendedFor": [
+        "traditional",
+        "art-deco",
+        "transitional"
+      ]
+    },
+    {
+      "id": "multi-5",
+      "title": "Sunset Gradient",
+      "userName": "Design Team",
+      "numViews": 1780,
+      "numVotes": 132,
+      "numComments": 18,
+      "colors": [
+        "#FFE0B2",
+        "#FFCC80",
+        "#FFB74D",
+        "#FF8F00",
+        "#F57C00"
+      ],
+      "description": "Warm sunset gradients for cozy, inviting spaces",
+      "recommendedFor": []
+    },
+    {
+      "id": "multi-6",
+      "title": "Ocean Waves",
+      "userName": "Design Team",
+      "numViews": 1620,
+      "numVotes": 118,
+      "numComments": 15,
+      "colors": [
+        "#E3F2FD",
+        "#BBDEFB",
+        "#90CAF9",
+        "#64B5F6",
+        "#42A5F5"
+      ],
+      "description": "Cool ocean waves for calm, refreshing spaces",
+      "recommendedFor": [
+        "minimalist",
+        "coastal"
+      ]
+    },
+    {
+      "id": "multi-7",
+      "title": "Forest Floor",
+      "userName": "Design Team",
+      "numViews": 1720,
+      "numVotes": 128,
+      "numComments": 17,
+      "colors": [
+        "#E8F5E8",
+        "#C8E6C9",
+        "#A5D6A7",
+        "#81C784",
+        "#66BB6A"
+      ],
+      "description": "Natural forest floor colors for organic, peaceful spaces",
+      "recommendedFor": [
+        "tropical"
+      ]
+    },
+    {
+      "id": "multi-8",
+      "title": "Desert Sands",
+      "userName": "Design Team",
+      "numViews": 1580,
+      "numVotes": 112,
+      "numComments": 14,
+      "colors": [
+        "#FFF8F0",
+        "#F5E6D3",
+        "#E6D7C3",
+        "#D4C4B0",
+        "#C4B59A"
+      ],
+      "description": "Warm desert sands for cozy, earthy spaces",
+      "recommendedFor": [
+        "rustic",
+        "modern-farmhouse",
+        "french-country"
+      ]
+    }
+  ]
+}

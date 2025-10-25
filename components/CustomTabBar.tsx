@@ -2,10 +2,9 @@ import React, { useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Octicons from '@expo/vector-icons/Octicons';
 import { ThemedText } from './ThemedText';
 import * as Haptics from 'expo-haptics';
-
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 interface CustomTabBarProps {
 	activeTab: 'home' | 'explore' | 'projects';
 	onTabPress: (tab: 'home' | 'explore' | 'projects') => void;
@@ -151,8 +150,8 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 						className="p-4 rounded-full items-center justify-center"
 						style={{ transform: [{ scale: homeScaleAnimation }] }}
 					>
-						<Octicons
-							name="home-fill"
+						<FontAwesome6
+							name="house"
 							className={activeTab === 'home' ? 'opacity-100' : 'opacity-60'}
 							size={28}
 							color={'#111827'}
@@ -178,8 +177,8 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 						className="p-4 rounded-full items-center justify-center"
 						style={{ transform: [{ scale: exploreScaleAnimation }] }}
 					>
-						<Octicons
-							name="sparkles-fill"
+						<Ionicons
+							name="sparkles"
 							className={activeTab === 'explore' ? 'opacity-100' : 'opacity-60'}
 							size={28}
 							color={'#111827'}
@@ -205,8 +204,8 @@ export function CustomTabBar({ activeTab, onTabPress }: CustomTabBarProps) {
 						className="p-4 rounded-full items-center justify-center"
 						style={{ transform: [{ scale: projectsScaleAnimation }] }}
 					>
-						<Octicons
-							name="bookmark-filled"
+						<Ionicons
+							name="bookmark"
 							className={activeTab === 'projects' ? 'opacity-100' : 'opacity-60'}
 							size={28}
 							color={'#111827'}
