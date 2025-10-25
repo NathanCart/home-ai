@@ -157,7 +157,7 @@ export function PhotoStep({ onImageSelect, config, selectedImageUri }: PhotoStep
 								activeOpacity={0.7}
 							>
 								<View
-									className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-gray-200  ${selectedImageUri === example.source.uri ? 'border-blue-500 border-2 ' : ''}`}
+									className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-gray-200  ${selectedImageUri === example.source.uri ? '!border-blue-500' : ''}`}
 								>
 									<Image
 										source={example.source}

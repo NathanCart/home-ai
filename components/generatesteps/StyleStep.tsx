@@ -1,0 +1,595 @@
+import React, { useState, useEffect } from 'react';
+import {
+	View,
+	TouchableOpacity,
+	ScrollView,
+	ImageBackground,
+	Modal,
+	TextInput,
+	Alert,
+	Image,
+} from 'react-native';
+import { ThemedText } from '../ThemedText';
+import { CustomButton } from '../CustomButton';
+import { Octicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import { StepConfig } from '../../config/stepConfig';
+
+interface StyleStepProps {
+	onStyleSelect?: (style: Style | null) => void;
+	config: StepConfig;
+	selectedStyle?: Style | null;
+}
+
+interface Style {
+	id: string;
+	name: string;
+	description: string;
+	imageUrl: string;
+	isCustom?: boolean;
+}
+
+const styleTypes: Style[] = [
+	{
+		id: 'modern',
+		name: 'Modern',
+		description: 'Clean lines and minimal design',
+		imageUrl:
+			'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'bohemian',
+		name: 'Bohemian',
+		description: 'Eclectic and artistic flair',
+		imageUrl:
+			'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'scandinavian',
+		name: 'Scandinavian',
+		description: 'Light, airy, and functional',
+		imageUrl:
+			'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'industrial',
+		name: 'Industrial',
+		description: 'Raw materials and urban feel',
+		imageUrl:
+			'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'traditional',
+		name: 'Traditional',
+		description: 'Classic and timeless elegance',
+		imageUrl:
+			'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'minimalist',
+		name: 'Minimalist',
+		description: 'Less is more philosophy',
+		imageUrl:
+			'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'rustic',
+		name: 'Rustic',
+		description: 'Natural materials and warmth',
+		imageUrl:
+			'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop&crop=center',
+	},
+	{
+		id: 'contemporary',
+		name: 'Contemporary',
+		description: 'Current trends and fresh design',
+		imageUrl:
+			'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop&crop=center',
+	},
+];
+
+export function StyleStep({ onStyleSelect, config, selectedStyle }: StyleStepProps) {
+	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
+		selectedStyle?.id || null
+	);
+	const [customStyles, setCustomStyles] = useState<Style[]>([]);
+	const [showAddModal, setShowAddModal] = useState<boolean>(false);
+	const [newStyleName, setNewStyleName] = useState<string>('');
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [showEditModal, setShowEditModal] = useState<boolean>(false);
+	const [editingStyle, setEditingStyle] = useState<Style | null>(null);
+	const [editStyleName, setEditStyleName] = useState<string>('');
+	const [editImageUri, setEditImageUri] = useState<string | null>(null);
+	const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
+	const [isLoadingEditImage, setIsLoadingEditImage] = useState<boolean>(false);
+	const [allStyles, setAllStyles] = useState<Style[]>(styleTypes);
+
+	// Load custom styles from AsyncStorage on component mount
+	useEffect(() => {
+		loadCustomStyles();
+	}, []);
+
+	// Update allStyles when customStyles change - custom styles first
+	useEffect(() => {
+		setAllStyles([...customStyles, ...styleTypes]);
+	}, [customStyles]);
+
+	const loadCustomStyles = async () => {
+		try {
+			const stored = await AsyncStorage.getItem('customStyles');
+			if (stored) {
+				const parsedStyles = JSON.parse(stored);
+				setCustomStyles(parsedStyles);
+			}
+		} catch (error) {
+			console.error('Error loading custom styles:', error);
+		}
+	};
+
+	const saveCustomStyles = async (styles: Style[]) => {
+		try {
+			await AsyncStorage.setItem('customStyles', JSON.stringify(styles));
+		} catch (error) {
+			console.error('Error saving custom styles:', error);
+		}
+	};
+
+	const handleStyleSelect = (style: Style) => {
+		setSelectedStyleId(style.id);
+		onStyleSelect?.(style);
+	};
+
+	const handleImageSelect = async () => {
+		try {
+			setIsLoadingImage(true);
+
+			// Request permissions first
+			const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+			if (permissionResult.status !== 'granted') {
+				Alert.alert(
+					'Permission Required',
+					'Please grant camera roll permissions to select an image.'
+				);
+				return;
+			}
+
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				allowsEditing: true,
+				aspect: [4, 3],
+				quality: 0.8,
+			});
+
+			if (!result.canceled && result.assets[0]) {
+				setSelectedImageUri(result.assets[0].uri);
+			}
+		} catch (error) {
+			console.error('Error picking image:', error);
+			Alert.alert('Error', 'Failed to pick image. Please try again.');
+		} finally {
+			setIsLoadingImage(false);
+		}
+	};
+
+	const handleAddStyle = () => {
+		if (newStyleName.trim() && selectedImageUri) {
+			const newStyle: Style = {
+				id: `custom-${Date.now()}`,
+				name: newStyleName.trim(),
+				description: '', // Empty description
+				imageUrl:
+					selectedImageUri ||
+					'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop&crop=center', // Use selected image or default
+				isCustom: true,
+			};
+
+			const updatedCustomStyles = [...customStyles, newStyle];
+			setCustomStyles(updatedCustomStyles);
+			saveCustomStyles(updatedCustomStyles);
+
+			// Auto-select the newly added style
+			setSelectedStyleId(newStyle.id);
+			onStyleSelect?.(newStyle);
+
+			setNewStyleName('');
+			setShowAddModal(false);
+		}
+	};
+
+	const handleCancelAdd = () => {
+		setNewStyleName('');
+		setSelectedImageUri(null);
+		setIsLoadingImage(false);
+		setShowAddModal(false);
+	};
+
+	const handleLongPress = (style: Style) => {
+		if (style.isCustom) {
+			setEditingStyle(style);
+			setEditStyleName(style.name);
+			setEditImageUri(style.imageUrl);
+			setShowEditModal(true);
+		}
+	};
+
+	const handleEditImageSelect = async () => {
+		try {
+			setIsLoadingEditImage(true);
+
+			// Request permissions first
+			const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+			if (permissionResult.status !== 'granted') {
+				Alert.alert(
+					'Permission Required',
+					'Please grant camera roll permissions to select an image.'
+				);
+				return;
+			}
+
+			const result = await ImagePicker.launchImageLibraryAsync({
+				mediaTypes: ImagePicker.MediaTypeOptions.Images,
+				allowsEditing: true,
+				aspect: [4, 3],
+				quality: 0.8,
+			});
+
+			if (!result.canceled && result.assets[0]) {
+				setEditImageUri(result.assets[0].uri);
+			}
+		} catch (error) {
+			console.error('Error picking image:', error);
+			Alert.alert('Error', 'Failed to pick image. Please try again.');
+		} finally {
+			setIsLoadingEditImage(false);
+		}
+	};
+
+	const handleEditStyle = () => {
+		if (editingStyle && editStyleName.trim()) {
+			const updatedCustomStyles = customStyles.map((style) =>
+				style.id === editingStyle.id
+					? {
+							...style,
+							name: editStyleName.trim(),
+							description: '', // Empty description
+							imageUrl: editImageUri || style.imageUrl,
+						}
+					: style
+			);
+			setCustomStyles(updatedCustomStyles);
+			saveCustomStyles(updatedCustomStyles);
+
+			// Update selected style if it was the one being edited
+			if (selectedStyleId === editingStyle.id) {
+				const updatedStyle = {
+					...editingStyle,
+					name: editStyleName.trim(),
+					description: '', // Empty description
+					imageUrl: editImageUri || editingStyle.imageUrl,
+				};
+				onStyleSelect?.(updatedStyle);
+			}
+
+			setEditStyleName('');
+			setEditImageUri(null);
+			setEditingStyle(null);
+			setShowEditModal(false);
+		}
+	};
+
+	const handleDeleteStyle = () => {
+		if (editingStyle) {
+			const updatedCustomStyles = customStyles.filter(
+				(style) => style.id !== editingStyle.id
+			);
+			setCustomStyles(updatedCustomStyles);
+			saveCustomStyles(updatedCustomStyles);
+
+			// Clear selection if the deleted style was selected
+			if (selectedStyleId === editingStyle.id) {
+				setSelectedStyleId(null);
+				onStyleSelect?.(null);
+			}
+
+			setEditStyleName('');
+			setEditImageUri(null);
+			setEditingStyle(null);
+			setShowEditModal(false);
+		}
+	};
+
+	const handleCancelEdit = () => {
+		setEditStyleName('');
+		setEditImageUri(null);
+		setIsLoadingEditImage(false);
+		setEditingStyle(null);
+		setShowEditModal(false);
+	};
+
+	return (
+		<View className="flex-1 px-6">
+			<View className="items-start mb-6">
+				<ThemedText variant="title-md" className="text-gray-900 mb-2 text-center" extraBold>
+					{config.title}
+				</ThemedText>
+				<ThemedText variant="body" className="text-gray-600">
+					{config.description}
+				</ThemedText>
+			</View>
+
+			<ScrollView
+				className="flex-1"
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{ paddingBottom: 100 }}
+			>
+				<View className="flex-row flex-wrap justify-between gap-3">
+					{/* Add Style Button */}
+					<TouchableOpacity
+						onPress={() => {
+							setShowAddModal(true);
+							setNewStyleName('');
+							setSelectedImageUri(null);
+							setIsLoadingImage(false);
+						}}
+						className="w-[48%] h-32 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50"
+						activeOpacity={0.7}
+					>
+						<View className="flex-1 items-center justify-center">
+							<View className="w-12 h-12 rounded-full items-center justify-center mb-3 bg-gray-100">
+								<Octicons name="plus" size={24} color="#6B7280" />
+							</View>
+							<ThemedText
+								variant="body"
+								className="font-semibold text-center text-gray-600"
+							>
+								Add Style
+							</ThemedText>
+						</View>
+					</TouchableOpacity>
+					{allStyles.map((style) => {
+						const isSelected = selectedStyleId === style.id;
+
+						return (
+							<TouchableOpacity
+								key={style.id}
+								onPress={() => handleStyleSelect(style)}
+								onLongPress={() => handleLongPress(style)}
+								className={`w-[48%] h-32 rounded-2xl overflow-hidden border-2 border-gray-200 ${
+									isSelected ? '!border-blue-500' : ''
+								}`}
+								activeOpacity={0.8}
+							>
+								<ImageBackground
+									source={{ uri: style.imageUrl }}
+									className="flex-1"
+									resizeMode="cover"
+								>
+									<View className="flex-1 bg-black/40 justify-end p-3">
+										<ThemedText
+											variant="body"
+											className="text-white font-bold"
+											extraBold
+										>
+											{style.name}
+										</ThemedText>
+									</View>
+								</ImageBackground>
+							</TouchableOpacity>
+						);
+					})}
+				</View>
+			</ScrollView>
+
+			{/* Add Style Modal */}
+			<Modal
+				visible={showAddModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={handleCancelAdd}
+			>
+				<View className="flex-1 bg-black/50 justify-center items-center px-6">
+					<TouchableOpacity
+						className="absolute inset-0"
+						activeOpacity={1}
+						onPress={handleCancelAdd}
+					/>
+					<View className="bg-white rounded-2xl p-4 w-full relative">
+						<TouchableOpacity
+							onPress={handleCancelAdd}
+							className="absolute top-4 right-4 z-10"
+							activeOpacity={0.7}
+						>
+							<Octicons name="x" size={20} color="#6B7280" />
+						</TouchableOpacity>
+						<ThemedText variant="title-md" className="text-gray-900" extraBold>
+							Add New Style
+						</ThemedText>
+						<ThemedText variant="body" className="text-gray-600 mb-3">
+							Enter the name and upload an image for the style you want to add
+						</ThemedText>
+
+						{/* Image Upload Section */}
+						<View className="mb-4">
+							<TouchableOpacity
+								onPress={handleImageSelect}
+								className="bg-gray-100 h-48 w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center overflow-hidden"
+								activeOpacity={0.7}
+							>
+								{selectedImageUri ? (
+									<View className="absolute inset-0">
+										<Image
+											source={{ uri: selectedImageUri }}
+											className="w-full h-full"
+											resizeMode="cover"
+										/>
+										{/* Overlay for changing photo */}
+										<View className="absolute inset-0 bg-black/20 items-center justify-center">
+											<View className="bg-white/90 rounded-full p-3">
+												<Octicons name="pencil" size={24} color="#111827" />
+											</View>
+										</View>
+									</View>
+								) : (
+									<View className="items-center">
+										<Octicons
+											name="image"
+											size={60}
+											color="#D1D5DB"
+											className="mb-4"
+										/>
+
+										<CustomButton
+											title={isLoadingImage ? 'Loading...' : 'Select image'}
+											onPress={handleImageSelect}
+											icon={isLoadingImage ? undefined : 'plus'}
+											iconPosition="left"
+											className="!w-fit"
+											variant="primary"
+											size="sm"
+											disabled={isLoadingImage}
+											loading={isLoadingImage}
+										/>
+									</View>
+								)}
+							</TouchableOpacity>
+						</View>
+
+						<TextInput
+							value={newStyleName}
+							onChangeText={setNewStyleName}
+							placeholder="e.g., Art Deco, Mid-Century, etc."
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							autoFocus
+						/>
+
+						<View className="flex-row gap-2 mb-8">
+							<CustomButton
+								title="Cancel"
+								onPress={handleCancelAdd}
+								variant="ghost"
+								size="sm"
+								className="flex-1"
+							/>
+							<CustomButton
+								title="Add"
+								onPress={handleAddStyle}
+								variant="primary"
+								size="sm"
+								className="flex-1"
+								disabled={!newStyleName.trim() || !selectedImageUri}
+							/>
+						</View>
+					</View>
+				</View>
+			</Modal>
+
+			{/* Edit Style Modal */}
+			<Modal
+				visible={showEditModal}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={handleCancelEdit}
+			>
+				<View className="flex-1 bg-black/50 justify-center items-center px-6">
+					<TouchableOpacity
+						className="absolute inset-0"
+						activeOpacity={1}
+						onPress={handleCancelEdit}
+					/>
+					<View className="bg-white rounded-2xl p-4 w-full relative">
+						<TouchableOpacity
+							onPress={handleCancelEdit}
+							className="absolute top-4 right-4 z-10"
+							activeOpacity={0.7}
+						>
+							<Octicons name="x" size={20} color="#6B7280" />
+						</TouchableOpacity>
+						<ThemedText variant="title-md" className="text-gray-900" extraBold>
+							Edit Style
+						</ThemedText>
+						<ThemedText variant="body" className="text-gray-600 mb-3">
+							Update the name and image for this style
+						</ThemedText>
+
+						{/* Image Upload Section */}
+						<View className="mb-4">
+							<TouchableOpacity
+								onPress={handleEditImageSelect}
+								className="bg-gray-100 h-48 w-full flex justify-center border-dashed border-gray-300 rounded-3xl p-12 items-center overflow-hidden"
+								activeOpacity={0.7}
+							>
+								{editImageUri ? (
+									<View className="absolute inset-0">
+										<Image
+											source={{ uri: editImageUri }}
+											className="w-full h-full"
+											resizeMode="cover"
+										/>
+										{/* Overlay for changing photo */}
+										<View className="absolute inset-0 bg-black/20 items-center justify-center">
+											<View className="bg-white/90 rounded-full p-3">
+												<Octicons name="pencil" size={24} color="#111827" />
+											</View>
+										</View>
+									</View>
+								) : (
+									<View className="items-center">
+										<Octicons
+											name="image"
+											size={60}
+											color="#D1D5DB"
+											className="mb-4"
+										/>
+
+										<CustomButton
+											title={
+												isLoadingEditImage ? 'Loading...' : 'Select image'
+											}
+											onPress={handleEditImageSelect}
+											icon={isLoadingEditImage ? undefined : 'plus'}
+											iconPosition="left"
+											className="!w-fit"
+											variant="primary"
+											size="sm"
+											disabled={isLoadingEditImage}
+											loading={isLoadingEditImage}
+										/>
+									</View>
+								)}
+							</TouchableOpacity>
+						</View>
+
+						<TextInput
+							value={editStyleName}
+							onChangeText={setEditStyleName}
+							placeholder="e.g., Art Deco, Mid-Century, etc."
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							autoFocus
+						/>
+
+						<View className="flex-row gap-2 mb-8">
+							<CustomButton
+								title="Delete"
+								onPress={handleDeleteStyle}
+								variant="ghost"
+								size="sm"
+								className="flex-1"
+							/>
+							<CustomButton
+								title="Save"
+								onPress={handleEditStyle}
+								variant="primary"
+								size="sm"
+								className="flex-1"
+								disabled={!editStyleName.trim()}
+							/>
+						</View>
+					</View>
+				</View>
+			</Modal>
+		</View>
+	);
+}

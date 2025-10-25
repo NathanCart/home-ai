@@ -1,9 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { TouchableOpacity, Animated, Pressable } from 'react-native';
 import { ThemedText } from './ThemedText';
 import * as Haptics from 'expo-haptics';
 import Octicons from '@expo/vector-icons/Octicons';
-
+import AntDesign from '@expo/vector-icons/AntDesign';
 interface CustomButtonProps {
 	title: string;
 	onPress: () => void;
@@ -31,6 +31,28 @@ export function CustomButton({
 }: CustomButtonProps) {
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
+	const rotationAnimation = useRef(new Animated.Value(0)).current;
+
+	// Handle loading animation
+	useEffect(() => {
+		if (loading) {
+			const startRotation = () => {
+				rotationAnimation.setValue(0);
+				Animated.timing(rotationAnimation, {
+					toValue: 1,
+					duration: 1000,
+					useNativeDriver: true,
+				}).start(() => {
+					if (loading) {
+						startRotation();
+					}
+				});
+			};
+			startRotation();
+		} else {
+			rotationAnimation.stopAnimation();
+		}
+	}, [loading, rotationAnimation]);
 
 	const getButtonStyles = () => {
 		const baseStyles = 'rounded-3xl flex-row items-center justify-center';
@@ -151,32 +173,6 @@ export function CustomButton({
 		);
 	};
 
-	const renderLoadingIcon = () => {
-		if (!loading) return null;
-
-		return (
-			<Animated.View
-				style={{
-					transform: [
-						{
-							rotate: '0deg',
-						},
-					],
-				}}
-			>
-				<Octicons
-					name="sync"
-					size={getIconSize()}
-					color={getIconColor()}
-					style={{
-						marginRight: iconPosition === 'left' ? 8 : 0,
-						marginLeft: iconPosition === 'right' ? 8 : 0,
-					}}
-				/>
-			</Animated.View>
-		);
-	};
-
 	return (
 		<Animated.View
 			className={`${className}`}
@@ -197,8 +193,6 @@ export function CustomButton({
 					},
 				]}
 			>
-				{iconPosition === 'left' && (renderIcon() || renderLoadingIcon())}
-
 				<ThemedText
 					variant="body"
 					className={`${getTextStyles()} !text-xl`}
@@ -206,10 +200,7 @@ export function CustomButton({
 				>
 					{loading ? 'Loading...' : title}
 				</ThemedText>
-
-				{iconPosition === 'right' && (renderIcon() || renderLoadingIcon())}
 			</Pressable>
 		</Animated.View>
 	);
 }
-

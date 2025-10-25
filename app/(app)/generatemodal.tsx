@@ -5,6 +5,7 @@ import { ThemedText } from 'components/ThemedText';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
 import { RoomStep } from 'components/generatesteps/RoomStep';
+import { StyleStep } from 'components/generatesteps/StyleStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -15,10 +16,11 @@ export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
 	const { mode } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(4);
+	const [totalSteps] = useState(5);
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [selectedRoom, setSelectedRoom] = useState<any>(null);
+	const [selectedStyle, setSelectedStyle] = useState<any>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 	const slideAnimation = useRef(new Animated.Value(0)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
@@ -134,6 +136,11 @@ export default function GenerateModal() {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 	};
 
+	const handleStyleSelect = (style: any) => {
+		setSelectedStyle(style);
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+	};
+
 	const renderStepContent = () => {
 		const config = getStepConfig(mode as string, currentStep);
 
@@ -156,9 +163,17 @@ export default function GenerateModal() {
 				);
 			case 3:
 				return (
+					<StyleStep
+						onStyleSelect={handleStyleSelect}
+						config={config}
+						selectedStyle={selectedStyle}
+					/>
+				);
+			case 4:
+				return (
 					<View className="flex-1 px-6">
 						<View className="items-center mb-8">
-							<View className="w-24 h-24 bg-gradient-to-br from-purple-500 to-pink-600 rounded-3xl items-center justify-center mb-6">
+							<View className="w-24 h-24 bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl items-center justify-center mb-6">
 								<Octicons name={config.icon as any} size={40} color="white" />
 							</View>
 							<ThemedText
@@ -177,7 +192,7 @@ export default function GenerateModal() {
 						</View>
 					</View>
 				);
-			case 4:
+			case 5:
 				return (
 					<View className="flex-1 px-6">
 						<View className="items-center mb-8">
@@ -247,7 +262,8 @@ export default function GenerateModal() {
 						className="flex-1"
 						disabled={
 							(currentStep === 1 && !hasImageSelected) ||
-							(currentStep === 2 && !selectedRoom)
+							(currentStep === 2 && !selectedRoom) ||
+							(currentStep === 3 && !selectedStyle)
 						}
 					/>
 				</View>
