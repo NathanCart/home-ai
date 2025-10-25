@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from 'components/ThemedText';
@@ -27,6 +27,31 @@ export default function GenerateModal() {
 	const [isTransitioning, setIsTransitioning] = useState(false);
 	const slideAnimation = useRef(new Animated.Value(0)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
+	const headerAnimation = useRef(new Animated.Value(0)).current;
+	const footerAnimation = useRef(new Animated.Value(0)).current;
+
+	// Animate header and footer when reaching generating step
+	useEffect(() => {
+		if (currentStep >= totalSteps + 1) {
+			// Animate header up and footer down
+			Animated.parallel([
+				Animated.timing(headerAnimation, {
+					toValue: -200,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+				Animated.timing(footerAnimation, {
+					toValue: 100,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+			]).start();
+		} else {
+			// Reset animations when not on generating step
+			headerAnimation.setValue(0);
+			footerAnimation.setValue(0);
+		}
+	}, [currentStep]);
 
 	const handleClose = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -195,8 +220,12 @@ export default function GenerateModal() {
 
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
-			{/* Header - Hide on generating step */}
-			{currentStep !== 5 && (
+			{/* Header - Animate up on generating step */}
+			<Animated.View
+				style={{
+					transform: [{ translateY: headerAnimation }],
+				}}
+			>
 				<ModalHeader
 					currentStep={currentStep}
 					totalSteps={totalSteps}
@@ -204,7 +233,7 @@ export default function GenerateModal() {
 					onPrevious={handlePreviousStep}
 					showPrevious={currentStep > 1}
 				/>
-			)}
+			</Animated.View>
 
 			{/* Content */}
 			<Animated.View
@@ -216,7 +245,7 @@ export default function GenerateModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName={`mt-4 ${currentStep === totalSteps + 1 ? 'flex-1' : ''}`}
+					contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
 					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
@@ -224,8 +253,12 @@ export default function GenerateModal() {
 				</ScrollView>
 			</Animated.View>
 
-			{/* Footer - Hide on generating step */}
-			{currentStep !== 5 && (
+			{/* Footer - Animate down on generating step */}
+			<Animated.View
+				style={{
+					transform: [{ translateY: footerAnimation }],
+				}}
+			>
 				<View
 					className="px-6 py-6 bg-gray-50/50"
 					style={{ paddingBottom: insets.bottom + 8 }}
@@ -248,7 +281,7 @@ export default function GenerateModal() {
 						/>
 					</View>
 				</View>
-			)}
+			</Animated.View>
 		</View>
 	);
 }

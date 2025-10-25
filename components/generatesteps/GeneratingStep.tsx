@@ -101,7 +101,7 @@ export function GeneratingStep({ onComplete }: GeneratingStepProps) {
 	});
 
 	return (
-		<View className="flex-1 bg-gray-50 justify-center items-center px-6">
+		<View className="flex-1 bg-gray-50 justify-center items-center px-6 h-full">
 			{/* Spinning circles */}
 			<View className="relative w-full h-52 mb-12  mx-auto justify-center items-center">
 				{/* Outer ring */}
