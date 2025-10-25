@@ -36,56 +36,114 @@ const styleTypes: Style[] = [
 		name: 'Modern',
 		description: 'Clean lines and minimal design',
 		imageUrl:
-			'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop&crop=center',
+			'https://plus.unsplash.com/premium_photo-1661882126637-5b2ba33aab27?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&?w=400&h=300&fit=crop&crop=center',
 	},
 	{
 		id: 'bohemian',
 		name: 'Bohemian',
 		description: 'Eclectic and artistic flair',
 		imageUrl:
-			'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop&crop=center',
+			'https://lh3.googleusercontent.com/yy7xrn8b_jjQ_2uMBm6blAp10PtcrtPb3wjbQMZR0PX8OSlXjPPR-Yl-OPnnfP2lyD6RTAdYOx-tREZRkg7TFsMX944quW40b36O6E_PYfG9lfe7p3HusBcWqYqa-zakrlbPG0TiA0ZDw0hV2fM',
+	},
+	{
+		id: 'dark-behemian',
+		name: 'Dark Bohemian',
+		description: 'Dark and mysterious Bohemian vibes',
+		imageUrl: 'https://s3.amazonaws.com/ideas-after/ac868352-43de-40d8-9fe2-b0d1d1887487.jpeg',
 	},
 	{
 		id: 'scandinavian',
 		name: 'Scandinavian',
 		description: 'Light, airy, and functional',
 		imageUrl:
-			'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=400&h=300&fit=crop&crop=center',
+			'https://www.mydomaine.com/thmb/KhcOIhDFlUNcxugQvwspAreI95E=/1920x0/filters:no_upscale():strip_icc()/cocolapinescandinavianlivingroom-c602a303414341fb932f2d31e8769699.jpeg',
 	},
 	{
 		id: 'industrial',
 		name: 'Industrial',
 		description: 'Raw materials and urban feel',
 		imageUrl:
-			'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop&crop=center',
+			'https://cdn.home-designing.com/wp-content/uploads/2017/06/concrete-panel-walls-industrial-style-bedroom.jpg',
 	},
 	{
 		id: 'traditional',
 		name: 'Traditional',
 		description: 'Classic and timeless elegance',
 		imageUrl:
-			'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop&crop=center',
+			'https://buildifyltd.co.uk/wp-content/uploads/2025/03/Traditional-Living-Room-Design.png',
 	},
 	{
 		id: 'minimalist',
 		name: 'Minimalist',
 		description: 'Less is more philosophy',
-		imageUrl:
-			'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=400&h=300&fit=crop&crop=center',
+		imageUrl: 'https://www.dormeo.co.uk/media/wysiwyg/blog/minimalist-bedroom.jpg',
 	},
 	{
 		id: 'rustic',
 		name: 'Rustic',
 		description: 'Natural materials and warmth',
 		imageUrl:
-			'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=400&h=300&fit=crop&crop=center',
+			'https://blog.canadianloghomes.com/wp-content/uploads/2018/01/rustic-style-interior-design-ideas.jpg',
 	},
 	{
 		id: 'contemporary',
 		name: 'Contemporary',
 		description: 'Current trends and fresh design',
 		imageUrl:
-			'https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop&crop=center',
+			'https://www.marthastewart.com/thmb/lxfu2-95SWCS0jwciHs1mkbsGUM=/1500x0/filters:no_upscale():max_bytes(150000):strip_icc()/modern-living-rooms-wb-1-bc45b0dc70e541f0ba40364ae6bd8421.jpg',
+	},
+	{
+		id: 'tropical',
+		name: 'Tropical',
+		description: 'Relaxing and refreshing tropical vibes',
+		imageUrl: 'https://app.dropinblog.com/uploaded/blogs/34241141/files/Tropical.png',
+	},
+	{
+		id: 'art-deco',
+		name: 'Art Deco',
+		description: 'Classic and timeless elegance',
+		imageUrl:
+			'https://hemmingandwills.co.uk/cdn/shop/articles/art_deco_bedroom_1074x.jpg?v=1712660661',
+	},
+	{
+		id: 'modern-farmhouse',
+		name: 'Modern Farmhouse',
+		description: 'Modern and farmhouse vibes',
+		imageUrl:
+			'https://images.ctfassets.net/wlzmdirin2hy/1kiccSjRbi7653tKGEpUAe/22a4573a905a8ec150b8f227019fd2ec/lx_southeast17_hom_hager_01?w=3840&q=75',
+	},
+	{
+		id: 'coastal',
+		name: 'Coastal',
+		description: 'Relaxing and refreshing coastal vibes',
+		imageUrl: 'https://st.hzcdn.com/simgs/f8b1869e09a96bf7_14-3445/_.jpg',
+	},
+	{
+		id: 'japandi',
+		name: 'Japanese',
+		description: 'Relaxing and refreshing Japanese vibes',
+		imageUrl:
+			'https://www.porcelanosa.com/trendbook/app/uploads/2021/11/Japandi-bedroom-ideas-7.jpg',
+	},
+	{
+		id: 'french-country',
+		name: 'French Country',
+		description: 'Relaxing and refreshing French country vibes',
+		imageUrl:
+			'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQk7wGuWolcrIZMWxkK1DsBNVV2tqohynxJWg&s',
+	},
+	{
+		id: 'shabby-chic',
+		name: 'Shabby Chic',
+		description: 'Relaxing and refreshing Shabby Chic vibes',
+		imageUrl: 'https://i.pinimg.com/564x/45/82/92/4582924db95a00f44804f4fba6431527.jpg',
+	},
+	{
+		id: 'transitional',
+		name: 'Transitional',
+		description: 'Relaxing and refreshing Transitional vibes',
+		imageUrl:
+			'https://eu-central-1.graphassets.com/ALdVU93uSfuiaR3RsZgFXz/wG2wBXtSUWg9HuSMq1JJ',
 	},
 ];
 
@@ -365,7 +423,7 @@ export function StyleStep({ onStyleSelect, config, selectedStyle }: StyleStepPro
 									className="flex-1"
 									resizeMode="cover"
 								>
-									<View className="flex-1 bg-black/40 justify-end p-3">
+									<View className="flex-1 bg-black/30 justify-end p-3">
 										<ThemedText
 											variant="body"
 											className="text-white font-bold"
