@@ -46,6 +46,15 @@ export function useRunwareAI() {
 		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
 			try {
 				console.log(`🔄 Generation attempt ${attempt}/${MAX_RETRIES}`);
+
+				// Reset progress for retry attempts
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
 				const result = await attemptGeneration(params, onProgress);
 				return result;
 			} catch (error) {
@@ -54,6 +63,11 @@ export function useRunwareAI() {
 
 				if (attempt < MAX_RETRIES) {
 					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					// Reset progress before waiting
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
 					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
 				}
 			}
@@ -130,7 +144,7 @@ export function useRunwareAI() {
 					width: 1024,
 					height: 1024,
 					strength: 0.7, // Higher strength for stronger style transformation
-					CFGScale: 10, // High CFG for strong prompt influence
+					CFGScale: 9, // High CFG for strong prompt influence
 					steps: 40, // More steps for better quality
 					numberResults: 1,
 					seedImage: params.imageUri,
