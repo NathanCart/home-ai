@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { TouchableOpacity, Animated, Pressable } from 'react-native';
+import { TouchableOpacity, Animated, Pressable, View } from 'react-native';
 import { ThemedText } from './ThemedText';
 import * as Haptics from 'expo-haptics';
 import Octicons from '@expo/vector-icons/Octicons';
@@ -15,6 +15,7 @@ interface CustomButtonProps {
 	className?: string;
 	iconPosition?: 'left' | 'right';
 	hapticFeedback?: boolean;
+	vertical?: boolean;
 }
 
 export function CustomButton({
@@ -28,6 +29,7 @@ export function CustomButton({
 	className = '',
 	iconPosition = 'left',
 	hapticFeedback = true,
+	vertical = false,
 }: CustomButtonProps) {
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
@@ -55,7 +57,8 @@ export function CustomButton({
 	}, [loading, rotationAnimation]);
 
 	const getButtonStyles = () => {
-		const baseStyles = 'rounded-3xl flex-row items-center justify-center';
+		const layoutStyles = vertical ? 'flex-col' : 'flex-row';
+		const baseStyles = `rounded-3xl ${layoutStyles} items-center justify-center`;
 
 		// Size styles
 		const sizeStyles = {
@@ -160,16 +163,15 @@ export function CustomButton({
 	const renderIcon = () => {
 		if (!icon || loading) return null;
 
-		return (
-			<Octicons
-				name={icon}
-				size={getIconSize()}
-				color={getIconColor()}
-				style={{
+		const marginStyle = vertical
+			? { marginBottom: 4 }
+			: {
 					marginRight: iconPosition === 'left' ? 8 : 0,
 					marginLeft: iconPosition === 'right' ? 8 : 0,
-				}}
-			/>
+				};
+
+		return (
+			<Octicons name={icon} size={getIconSize()} color={getIconColor()} style={marginStyle} />
 		);
 	};
 
@@ -193,15 +195,30 @@ export function CustomButton({
 					},
 				]}
 			>
-				{iconPosition === 'left' && renderIcon()}
-				<ThemedText
-					variant="body"
-					className={`${getTextStyles()} !text-xl`}
-					bold={variant === 'primary' || variant === 'secondary'}
-				>
-					{loading ? 'Loading...' : title}
-				</ThemedText>
-				{iconPosition === 'right' && renderIcon()}
+				{vertical ? (
+					<>
+						{renderIcon()}
+						<ThemedText
+							variant="body"
+							className={`${getTextStyles()} text-xs`}
+							bold={variant === 'primary' || variant === 'secondary'}
+						>
+							{loading ? 'Loading...' : title}
+						</ThemedText>
+					</>
+				) : (
+					<>
+						{iconPosition === 'left' && renderIcon()}
+						<ThemedText
+							variant="body"
+							className={`${getTextStyles()} !text-xl`}
+							bold={variant === 'primary' || variant === 'secondary'}
+						>
+							{loading ? 'Loading...' : title}
+						</ThemedText>
+						{iconPosition === 'right' && renderIcon()}
+					</>
+				)}
 			</Pressable>
 		</Animated.View>
 	);

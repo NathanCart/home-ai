@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { getStylePrompt, hasStylePrompt } from '../utils/stylePrompts';
+import { getRoomPrompt, hasRoomPrompt } from '../utils/roomPrompts';
 
 interface ColorPalette {
 	colors?: string[] | string;
@@ -36,6 +37,36 @@ export function useRunwareAI() {
 	const [generationProgress, setGenerationProgress] = useState(0);
 
 	const generateImage = async (
+		params: GenerateImageParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Generation attempt ${attempt}/${MAX_RETRIES}`);
+				const result = await attemptGeneration(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		// All retries failed
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+		setError(errorMessage);
+		return { success: false, error: errorMessage };
+	};
+
+	const attemptGeneration = async (
 		params: GenerateImageParams,
 		onProgress?: (progress: number) => void
 	): Promise<RunwareResponse> => {
@@ -142,17 +173,35 @@ export function useRunwareAI() {
 				setGenerationProgress(estimatedProgress);
 			}, 200); // Update every 200ms
 
-			const response = await fetch(RUNWARE_API_URL, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Authorization: `Bearer ${RUNWARE_API_KEY}`,
-				},
-				body: JSON.stringify(requestBody),
-			}).catch((fetchError) => {
+			// Create fetch with timeout (60 seconds for image generation)
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+			let response;
+			try {
+				response = await fetch(RUNWARE_API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${RUNWARE_API_KEY}`,
+					},
+					body: JSON.stringify(requestBody),
+					signal: controller.signal,
+				});
+			} catch (fetchError: any) {
+				clearTimeout(timeoutId);
 				console.error('❌ Fetch error details:', fetchError);
-				throw new Error(`Network error: ${fetchError.message}`);
-			});
+
+				if (fetchError.name === 'AbortError') {
+					throw new Error(
+						'Request timed out. The image generation is taking longer than expected. Please try again.'
+					);
+				}
+
+				throw new Error(`Network error: ${fetchError.message || 'Connection failed'}`);
+			}
+
+			clearTimeout(timeoutId);
 
 			console.log('📥 Response status:', response.status);
 
@@ -251,6 +300,15 @@ function buildPrompt(params: GenerateImageParams): string {
 	const roomType = params.room ? params.room.toLowerCase() : 'room';
 	parts.push(`A ${roomType} interior`);
 
+	// Add room-specific requirements (essential elements for the room type)
+	if (params.room) {
+		const roomId = roomType.replace(/\s+/g, '-');
+		if (hasRoomPrompt(roomId)) {
+			const roomDetails = getRoomPrompt(roomId);
+			parts.push(roomDetails);
+		}
+	}
+
 	// Style emphasis with detailed descriptions
 	if (params.style) {
 		const styleName = params.style.toLowerCase();
@@ -269,26 +327,31 @@ function buildPrompt(params: GenerateImageParams): string {
 		}
 	}
 
-	// Color palette - be specific about colors
+	// Color palette - make it VERY prominent and specific
 	if (params.palette) {
+		let colorDescription = '';
+
 		if (typeof params.palette === 'string') {
-			parts.push(`color palette: ${params.palette}`);
+			colorDescription = params.palette;
 		} else if (params.palette.colors) {
 			const colors = Array.isArray(params.palette.colors)
-				? params.palette.colors.join(', ')
-				: params.palette.colors;
-			parts.push(`featuring ${colors} colors throughout the space`);
+				? params.palette.colors
+				: [params.palette.colors];
+			colorDescription = colors.join(' and ');
+		}
+
+		if (colorDescription) {
+			// Emphasize colors multiple times for stronger adherence
+			parts.push(`${colorDescription} color scheme`);
+			parts.push(`walls and surfaces in ${colorDescription} tones`);
+			parts.push(`furniture and decor featuring ${colorDescription} colors`);
+			parts.push(`dominant ${colorDescription} palette throughout`);
 		}
 	}
 
-	// Quality descriptors
-	parts.push(
-		'professional interior design photography, high resolution, realistic lighting, detailed textures'
-	);
-
-	parts.push(
-		'Ensure the room structure is preserved. Do not change the room corners or walls. Keep windows and doors in the same positions. Maintain the same zoom level and perspective. Keep windows and doors as windows and doors.'
-	);
+	// Quality and preservation descriptors
+	parts.push('professional interior photography, high quality, realistic lighting');
+	parts.push('preserve room structure, maintain layout and perspective');
 
 	return parts.join(', ');
 }

@@ -4,7 +4,6 @@ import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
 import { RoomStep } from 'components/generatesteps/RoomStep';
 import { StyleStep } from 'components/generatesteps/StyleStep';
-import { ColorPaletteStep } from 'components/generatesteps/ColorPaletteStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
@@ -18,12 +17,11 @@ export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
 	const { mode } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(4); // Now includes confirmation step
+	const [totalSteps] = useState(3); // Photo, Room, Style (no color palette)
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [selectedRoom, setSelectedRoom] = useState<any>(null);
 	const [selectedStyle, setSelectedStyle] = useState<any>(null);
-	const [selectedPalette, setSelectedPalette] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -76,11 +74,6 @@ export default function GenerateModal() {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 	};
 
-	const handlePaletteSelect = (palette: any) => {
-		setSelectedPalette(palette);
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-	};
-
 	const handleGenerationComplete = (imageUrl: string) => {
 		setGeneratedImageUrl(imageUrl);
 
@@ -99,8 +92,8 @@ export default function GenerateModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate to confirmation step (step 6)
-			setCurrentStep(6);
+			// Navigate to confirmation step (step 5)
+			setCurrentStep(5);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(1);
@@ -147,8 +140,8 @@ export default function GenerateModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate back to generating step (step 5)
-			setCurrentStep(5);
+			// Navigate back to generating step (step 4)
+			setCurrentStep(4);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(-1);
@@ -201,31 +194,22 @@ export default function GenerateModal() {
 				);
 			case 4:
 				return (
-					<ColorPaletteStep
-						onPaletteSelect={handlePaletteSelect}
-						config={config}
-						selectedPalette={selectedPalette}
-						selectedStyle={selectedStyle?.id}
-					/>
-				);
-			case 5:
-				return (
 					<GeneratingStep
 						onComplete={() => router.back()}
 						onGenerationComplete={handleGenerationComplete}
 						room={selectedRoom}
 						style={selectedStyle}
-						palette={selectedPalette}
+						palette={null}
 						imageUri={selectedImageUri}
 					/>
 				);
-			case 6:
+			case 5:
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
 						room={selectedRoom}
 						style={selectedStyle}
-						palette={selectedPalette}
+						palette={null}
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}
@@ -240,7 +224,7 @@ export default function GenerateModal() {
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
 			{/* Header - Hide on confirmation step */}
-			{currentStep !== 6 && (
+			{currentStep !== 5 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -275,7 +259,7 @@ export default function GenerateModal() {
 			</Animated.View>
 
 			{/* Footer - Hide on confirmation step */}
-			{currentStep !== 6 && (
+			{currentStep !== 5 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -287,7 +271,7 @@ export default function GenerateModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 4 ? 'Generate' : 'Continue'}
+								title={currentStep === 3 ? 'Generate' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -297,8 +281,7 @@ export default function GenerateModal() {
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
 									(currentStep === 2 && !selectedRoom) ||
-									(currentStep === 3 && !selectedStyle) ||
-									(currentStep === 4 && !selectedPalette)
+									(currentStep === 3 && !selectedStyle)
 								}
 							/>
 						</View>

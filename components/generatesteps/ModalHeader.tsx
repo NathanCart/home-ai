@@ -57,7 +57,7 @@ export function ModalHeader({
 
 			{/* Progress Steps */}
 			<View className="flex-row items-center justify-between w-full">
-				{[1, 2, 3, 4].map((step) => (
+				{[1, 2, 3].map((step) => (
 					<Animated.View
 						key={step}
 						className="h-1 rounded-full flex-1"
