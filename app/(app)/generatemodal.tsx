@@ -123,6 +123,54 @@ export default function GenerateModal() {
 		});
 	};
 
+	const handleSaveComplete = () => {
+		// Navigate to projects page
+		router.replace('/projects');
+	};
+
+	const handleRegenerate = () => {
+		// Clear the generated image
+		setGeneratedImageUrl(null);
+
+		// Trigger the animation to transition back to generating step
+		setIsTransitioning(true);
+
+		Animated.parallel([
+			Animated.timing(slideAnimation, {
+				toValue: 1,
+				duration: 300,
+				useNativeDriver: true,
+			}),
+			Animated.timing(opacityAnimation, {
+				toValue: 0,
+				duration: 300,
+				useNativeDriver: true,
+			}),
+		]).start(() => {
+			// Navigate back to generating step (step 5)
+			setCurrentStep(5);
+
+			// Reset animations for the next step
+			slideAnimation.setValue(-1);
+			opacityAnimation.setValue(0);
+
+			Animated.parallel([
+				Animated.timing(slideAnimation, {
+					toValue: 0,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+				Animated.timing(opacityAnimation, {
+					toValue: 1,
+					duration: 300,
+					useNativeDriver: true,
+				}),
+			]).start(() => {
+				setIsTransitioning(false);
+			});
+		});
+	};
+
 	const renderStepContent = () => {
 		const config = getStepConfig(mode as string, currentStep);
 
@@ -179,6 +227,9 @@ export default function GenerateModal() {
 						style={selectedStyle}
 						palette={selectedPalette}
 						onComplete={() => router.back()}
+						onRegenerate={handleRegenerate}
+						imageUri={selectedImageUri}
+						onSaveComplete={handleSaveComplete}
 					/>
 				) : null;
 			default:

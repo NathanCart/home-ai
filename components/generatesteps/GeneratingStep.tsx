@@ -63,6 +63,7 @@ export function GeneratingStep({
 					style: styleName,
 					palette,
 					imageUri: imageUri || undefined,
+					styleImageUri: style?.imageUrl || undefined,
 				},
 				(progress) => {
 					// Update progress from the API callback
