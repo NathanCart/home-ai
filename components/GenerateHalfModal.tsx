@@ -171,11 +171,7 @@ export function GenerateHalfModal({
 					opacity: backgroundOpacity,
 				}}
 			>
-				<TouchableOpacity 
-					className="flex-1" 
-					activeOpacity={1} 
-					onPress={handleClose}
-				/>
+				<TouchableOpacity className="flex-1" activeOpacity={1} onPress={handleClose} />
 				<PanGestureHandler
 					ref={panGestureRef}
 					onGestureEvent={onGestureEvent}

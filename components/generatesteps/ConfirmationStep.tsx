@@ -122,6 +122,12 @@ export function ConfirmationStep({
 
 	const handleSaveToProjects = async () => {
 		try {
+			// Get all unique variants (removing any duplicates)
+			const allUniqueVariants = [...new Set(allVariants)];
+
+			// Remove the current imageUrl from alternatives since it's already the main image
+			const alternativesWithoutCurrent = allUniqueVariants.filter((url) => url !== imageUrl);
+
 			const projectData = {
 				imageUrl,
 				room,
@@ -131,7 +137,7 @@ export function ConfirmationStep({
 				createdAt: new Date().toISOString(),
 				type: 'ai-generated',
 				alternativeGenerations:
-					alternativeGenerations.length > 0 ? alternativeGenerations : undefined,
+					alternativesWithoutCurrent.length > 0 ? alternativesWithoutCurrent : undefined,
 			};
 
 			// Get existing projects
@@ -160,6 +166,8 @@ export function ConfirmationStep({
 		setShowModal(false);
 		// Add to alternative generations
 		setAlternativeGenerations((prev) => [...prev, newImageUrl]);
+		// Auto-select the new image
+		setImageUrl(newImageUrl);
 	};
 
 	const handleOpenModal = () => {
@@ -194,31 +202,34 @@ export function ConfirmationStep({
 
 	return (
 		<View className="flex-1 bg-gray-50">
+			{/* Sticky Header */}
+			<View
+				className="bg-gray-50 border-b border-gray-200"
+				style={{ paddingBottom: 8, paddingHorizontal: 24 }}
+			>
+				<View className="flex-row items-center justify-between">
+					<ThemedText variant="title-lg" className="text-gray-900" extraBold>
+						Your Design is Ready!
+					</ThemedText>
+					<TouchableOpacity onPress={onComplete}>
+						<Ionicons name="close" size={28} color="#111827" />
+					</TouchableOpacity>
+				</View>
+				{(roomName || styleName) && (
+					<ThemedText variant="body" className="text-gray-600">
+						{roomName && styleName
+							? `${roomName} · ${styleName}`
+							: roomName || styleName}
+					</ThemedText>
+				)}
+			</View>
+
 			<ScrollView
 				className="flex-1"
 				contentContainerStyle={{ paddingBottom: 20 }}
 				showsVerticalScrollIndicator={false}
 			>
-				<View className="px-6">
-					{/* Header */}
-					<View className="mb-6">
-						<View className="flex-row items-center justify-between mb-2">
-							<ThemedText variant="title-lg" className="text-gray-900" extraBold>
-								Your Design is Ready!
-							</ThemedText>
-							<TouchableOpacity onPress={onComplete}>
-								<Ionicons name="close" size={28} color="#111827" />
-							</TouchableOpacity>
-						</View>
-						{(roomName || styleName) && (
-							<ThemedText variant="body" className="text-gray-600">
-								{roomName && styleName
-									? `${roomName} · ${styleName}`
-									: roomName || styleName}
-							</ThemedText>
-						)}
-					</View>
-
+				<View className="px-6" style={{ paddingTop: 16 }}>
 					{/* Toggle Buttons */}
 					{hasOriginalImage && (
 						<View className="flex-row mb-4 bg-gray-200 rounded-full p-1">
@@ -443,8 +454,8 @@ export function ConfirmationStep({
 
 					{/* Variants Section */}
 					{allVariants.length > 1 && (
-						<View className="mt-6 mb-6">
-							<ThemedText variant="title-md" className="text-gray-900 mb-3" bold>
+						<View className="mt-6 mb-6 -mx-6">
+							<ThemedText variant="title-md" className="text-gray-900 mb-3 px-6" bold>
 								Variants
 							</ThemedText>
 							<FlatList
@@ -452,7 +463,7 @@ export function ConfirmationStep({
 								data={allVariants}
 								keyExtractor={(item, index) => `variant-${index}`}
 								showsHorizontalScrollIndicator={false}
-								contentContainerStyle={{ gap: 12 }}
+								contentContainerStyle={{ gap: 12, paddingHorizontal: 24 }}
 								renderItem={({ item, index }) => (
 									<TouchableOpacity
 										onPress={() => {

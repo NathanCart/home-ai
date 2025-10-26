@@ -109,6 +109,8 @@ export default function ProjectDetailPage() {
 		setShowModal(false);
 		// Add to alternative generations
 		setAlternativeGenerations((prev) => [...prev, newImageUrl]);
+		// Auto-select the new image
+		setImageUrl(newImageUrl);
 	};
 
 	const handleOpenModal = () => {
@@ -207,29 +209,32 @@ export default function ProjectDetailPage() {
 
 	return (
 		<View className="flex-1 bg-gray-50">
+			{/* Sticky Header */}
+			<View
+				className="bg-gray-50 border-b border-gray-200"
+				style={{ paddingTop: insets.top + 16, paddingBottom: 8, paddingHorizontal: 24 }}
+			>
+				<View className="flex-row items-center justify-between mb-2">
+					<ThemedText variant="title-lg" className="text-gray-900" extraBold>
+						{roomName || 'Design'}
+					</ThemedText>
+					<TouchableOpacity onPress={() => router.back()}>
+						<Ionicons name="close" size={28} color="#111827" />
+					</TouchableOpacity>
+				</View>
+				{styleName && (
+					<ThemedText variant="body" className="text-gray-600">
+						{styleName}
+					</ThemedText>
+				)}
+			</View>
+
 			<ScrollView
 				className="flex-1"
 				contentContainerStyle={{ paddingBottom: 20 }}
 				showsVerticalScrollIndicator={false}
 			>
-				<View className="px-6" style={{ paddingTop: insets.top + 16 }}>
-					{/* Header */}
-					<View className="mb-6">
-						<View className="flex-row items-center justify-between mb-2">
-							<ThemedText variant="title-lg" className="text-gray-900" extraBold>
-								{roomName || 'Design'}
-							</ThemedText>
-							<TouchableOpacity onPress={() => router.back()}>
-								<Ionicons name="close" size={28} color="#111827" />
-							</TouchableOpacity>
-						</View>
-						{styleName && (
-							<ThemedText variant="body" className="text-gray-600">
-								{styleName}
-							</ThemedText>
-						)}
-					</View>
-
+				<View className="px-6" style={{ paddingTop: 16 }}>
 					{/* Toggle Buttons */}
 					{hasOriginalImage && (
 						<View className="flex-row mb-4 bg-gray-200 rounded-full p-1">
@@ -440,8 +445,8 @@ export default function ProjectDetailPage() {
 
 					{/* Variants Section */}
 					{allVariants.length > 1 && (
-						<View className="mt-6 mb-6">
-							<ThemedText variant="title-md" className="text-gray-900 mb-3" bold>
+						<View className="mt-6 mb-6 -mx-6">
+							<ThemedText variant="title-md" className="text-gray-900 mb-3 px-6" bold>
 								Variants
 							</ThemedText>
 							<FlatList
@@ -449,7 +454,7 @@ export default function ProjectDetailPage() {
 								data={allVariants}
 								keyExtractor={(item, index) => `variant-${index}`}
 								showsHorizontalScrollIndicator={false}
-								contentContainerStyle={{ gap: 12 }}
+								contentContainerStyle={{ gap: 12, paddingHorizontal: 24 }}
 								renderItem={({ item, index }) => (
 									<TouchableOpacity
 										onPress={() => {
