@@ -105,27 +105,6 @@ export function useRunwareAI() {
 			console.log(buildPrompt(params), 'runway prompt');
 
 			// Convert style reference image to base64 if provided for IP-Adapter
-			let styleImageBase64: string | null = null;
-			if (params.styleImageUri) {
-				try {
-					console.log(
-						'📸 Converting style reference image to base64:',
-						params.styleImageUri
-					);
-					styleImageBase64 = await imageUrlToBase64(params.styleImageUri);
-					console.log(
-						'✅ Style image converted to base64 (length:',
-						styleImageBase64.length,
-						')'
-					);
-				} catch (conversionError) {
-					console.error(
-						'❌ Failed to convert style image, continuing without IP-Adapter:',
-						conversionError
-					);
-					// Continue without IP-Adapter if conversion fails
-				}
-			}
 
 			console.log('🖼️ Seed image URI:', params.imageUri);
 
@@ -135,14 +114,14 @@ export function useRunwareAI() {
 				{
 					taskType: 'imageInference',
 					taskUUID,
-					model: 'runware:101@1',
+					model: 'runware:104@1',
 					positivePrompt: buildPrompt(params),
-					negativePrompt:
-						'low quality, blurry, distorted, bad anatomy, poorly drawn, cartoon, illustration, unrealistic',
+					// negativePrompt:
+					// 	'low quality, blurry, distorted, bad anatomy, poorly drawn, cartoon, illustration, unrealistic',
 					width: 1024,
 					height: 1024,
-					strength: 0.8, // Higher strength for stronger style transformation
-					CFGScale: 10, // High CFG for strong prompt influence
+					strength: 0.75, // Higher strength for stronger style transformation
+					CFGScale: 7, // High CFG for strong prompt influence
 					steps: 40, // More steps for better quality
 					numberResults: 1,
 					seedImage: params.imageUri,
@@ -153,7 +132,7 @@ export function useRunwareAI() {
 									{
 										model: 'runware:105@1',
 										guideImage: params.styleImageUri, // Base64 data URI
-										weight: 0.85, // Strong style influence (0-1 scale)
+										weight: 0.9, // Strong style influence (0-1 scale)
 									},
 								],
 							}
@@ -338,6 +317,10 @@ function buildPrompt(params: GenerateImageParams): string {
 	// Quality descriptors
 	parts.push(
 		'professional interior design photography, high resolution, realistic lighting, detailed textures'
+	);
+
+	parts.push(
+		'Ensure the room structure is preserved. Do not change the room corners or walls. Keep windows and doors in the same positions. Maintain the same zoom level and perspective.'
 	);
 
 	return parts.join(', ');

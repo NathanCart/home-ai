@@ -108,7 +108,6 @@ export function ConfirmationStep({
 		}
 	};
 
-	const [showComparison, setShowComparison] = useState(true);
 	const roomName = room?.name || room?.label || '';
 	const styleName = style?.name || style?.label || '';
 	const hasOriginalImage = !!imageUri;
@@ -141,39 +140,9 @@ export function ConfirmationStep({
 						)}
 					</View>
 
-					{/* Comparison Toggle */}
-					{hasOriginalImage && (
-						<View className="flex-row mb-4 bg-white rounded-xl p-1 ">
-							<TouchableOpacity
-								onPress={() => setShowComparison(true)}
-								className={`flex-1 py-3 rounded-lg ${showComparison ? 'bg-gray-900' : 'bg-transparent'}`}
-							>
-								<ThemedText
-									variant="body"
-									className={`text-center ${showComparison ? 'text-white' : 'text-gray-600'}`}
-									extraBold={showComparison}
-								>
-									Comparison
-								</ThemedText>
-							</TouchableOpacity>
-							<TouchableOpacity
-								onPress={() => setShowComparison(false)}
-								className={`flex-1 py-3 rounded-lg ${!showComparison ? 'bg-gray-900' : 'bg-transparent'}`}
-							>
-								<ThemedText
-									variant="body"
-									className={`text-center ${!showComparison ? 'text-white' : 'text-gray-600'}`}
-									extraBold={!showComparison}
-								>
-									After Only
-								</ThemedText>
-							</TouchableOpacity>
-						</View>
-					)}
-
-					{/* Image Display */}
+					{/* Image Display - Always show comparison if original image exists */}
 					<View style={{ height: 600 }}>
-						{showComparison && hasOriginalImage ? (
+						{hasOriginalImage ? (
 							<View className="flex-1">
 								{/* Before Image */}
 								<View className="flex-1 mb-3">
