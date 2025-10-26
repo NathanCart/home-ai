@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Easing, Image } from 'react-native';
+import { View, Animated, Easing } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRunwareAI } from '../useRunwareAI';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface GeneratingStepProps {
 	onComplete?: () => void;
+	onGenerationComplete?: (imageUrl: string) => void;
 	room?: any;
 	style?: any;
 	palette?: any;
@@ -24,6 +26,7 @@ const loadingMessages = [
 
 export function GeneratingStep({
 	onComplete,
+	onGenerationComplete,
 	room,
 	style,
 	palette,
@@ -47,22 +50,60 @@ export function GeneratingStep({
 			console.log('🎨 Starting image generation...');
 			console.log('📋 Input data:', { room, style, palette });
 
+			// Start progress at 0
+			setProgress(0);
+
 			// Get room and style names
 			const roomName = room?.name || room?.label || '';
 			const styleName = style?.name || style?.label || '';
 
-			const result = await generateImage({
-				room: roomName,
-				style: styleName,
-				palette,
-				imageUri: imageUri || undefined,
-			});
+			const result = await generateImage(
+				{
+					room: roomName,
+					style: styleName,
+					palette,
+					imageUri: imageUri || undefined,
+				},
+				(progress) => {
+					// Update progress from the API callback
+					setProgress(progress);
+				}
+			);
 
 			if (result.success && result.imageUrl) {
 				console.log('✅ Image generated successfully');
-				// Wait a bit before calling onComplete to show the result
+
+				// Save to AsyncStorage
+				try {
+					const imageData = {
+						imageUrl: result.imageUrl,
+						room: room,
+						style: style,
+						palette: palette,
+						createdAt: new Date().toISOString(),
+					};
+
+					// Get existing saved images
+					const existingImages = await AsyncStorage.getItem('generated_images');
+					const images = existingImages ? JSON.parse(existingImages) : [];
+
+					// Add new image to the beginning
+					images.unshift(imageData);
+
+					// Keep only the last 50 images
+					const trimmedImages = images.slice(0, 50);
+
+					await AsyncStorage.setItem('generated_images', JSON.stringify(trimmedImages));
+					console.log('✅ Image saved to AsyncStorage');
+				} catch (storageError) {
+					console.error('❌ Error saving to AsyncStorage:', storageError);
+				}
+
+				// Call onGenerationComplete callback to navigate to confirmation step
 				setTimeout(() => {
-					if (onComplete) {
+					if (onGenerationComplete && result.imageUrl) {
+						onGenerationComplete(result.imageUrl);
+					} else if (onComplete) {
 						onComplete();
 					}
 				}, 2000);
@@ -113,7 +154,7 @@ export function GeneratingStep({
 		).start();
 	}, []);
 
-	// Message rotation and progress
+	// Message rotation
 	useEffect(() => {
 		const messageInterval = setInterval(() => {
 			setCurrentMessageIndex((prev) => {
@@ -124,18 +165,8 @@ export function GeneratingStep({
 			});
 		}, 3000);
 
-		const progressInterval = setInterval(() => {
-			setProgress((prev) => {
-				if (prev < 95) {
-					return prev + 1;
-				}
-				return prev;
-			});
-		}, 200);
-
 		return () => {
 			clearInterval(messageInterval);
-			clearInterval(progressInterval);
 		};
 	}, []);
 
@@ -220,17 +251,6 @@ export function GeneratingStep({
 					{loadingMessages[currentMessageIndex]}
 				</ThemedText>
 			</Animated.View>
-
-			{/* Generated Image or Error */}
-			{generatedImageUrl && (
-				<View className="mt-6 w-full h-64 rounded-lg overflow-hidden">
-					<Image
-						source={{ uri: generatedImageUrl }}
-						className="w-full h-full"
-						resizeMode="cover"
-					/>
-				</View>
-			)}
 
 			{error && (
 				<View className="mt-4 px-4 py-2 bg-red-100 rounded-lg">

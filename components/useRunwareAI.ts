@@ -31,14 +31,21 @@ export function useRunwareAI() {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
+	const [generationProgress, setGenerationProgress] = useState(0);
 
-	const generateImage = async (params: GenerateImageParams): Promise<RunwareResponse> => {
+	const generateImage = async (
+		params: GenerateImageParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
 		setIsGenerating(true);
 		setError(null);
 		setGeneratedImageUrl(null);
 
 		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
 		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		// Declare progress interval variable at function scope
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
 
 		try {
 			// Build prompt from the form inputs
@@ -74,6 +81,38 @@ export function useRunwareAI() {
 			console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
 			console.log('🌐 Making request to:', RUNWARE_API_URL);
 
+			// Track request start time
+			const startTime = Date.now();
+
+			// Simulate progress updates during the request
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				// Estimate progress based on typical generation time (10-30 seconds)
+				// Start with quick initial progress, then slow down
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					// First 3 seconds: 0-30%
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					// 3-15 seconds: 30-80%
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 50;
+				} else if (elapsed < 45000) {
+					// 15-45 seconds: 80-95%
+					estimatedProgress = 80 + ((elapsed - 15000) / 30000) * 15;
+				} else {
+					// After 45 seconds: 95-98% (keep it loading)
+					estimatedProgress = Math.min(95 + ((elapsed - 45000) / 60000) * 3, 98);
+				}
+
+				estimatedProgress = Math.floor(estimatedProgress);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200); // Update every 200ms
+
 			const response = await fetch(RUNWARE_API_URL, {
 				method: 'POST',
 				headers: {
@@ -107,6 +146,9 @@ export function useRunwareAI() {
 			const data = await response.json();
 			console.log('✅ API Response:', JSON.stringify(data, null, 2));
 
+			// Clear the progress interval
+			clearInterval(progressInterval);
+
 			// Extract the image URL from the response
 			// Runware returns: { data: [{ taskUUID: "...", imageURL: "..." }] }
 			const imageUrl =
@@ -120,11 +162,22 @@ export function useRunwareAI() {
 				throw new Error('No image URL in response. Response format may have changed.');
 			}
 
+			// Set progress to 100%
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
 			setGeneratedImageUrl(imageUrl);
 			console.log('✅ Image generated successfully:', imageUrl);
 
 			return { success: true, imageUrl };
 		} catch (err) {
+			// Clear the progress interval in case of error
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+
 			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
 			console.error('❌ Error generating image:', errorMessage);
 
@@ -148,6 +201,7 @@ export function useRunwareAI() {
 	const reset = () => {
 		setError(null);
 		setGeneratedImageUrl(null);
+		setGenerationProgress(0);
 		setIsGenerating(false);
 	};
 
@@ -156,6 +210,7 @@ export function useRunwareAI() {
 		isGenerating,
 		error,
 		generatedImageUrl,
+		generationProgress,
 		reset,
 	};
 }
