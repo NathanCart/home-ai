@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	Animated,
 	Dimensions,
+	FlatList,
 } from 'react-native';
 import { ThemedText } from 'components/ThemedText';
 import * as MediaLibrary from 'expo-media-library';
@@ -17,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GenerateHalfModal } from 'components/GenerateHalfModal';
 
 interface Project {
 	imageUrl: string;
@@ -26,15 +28,22 @@ interface Project {
 	originalImage?: string;
 	createdAt: string;
 	type: string;
+	alternativeGenerations?: string[];
 }
 
 export default function ProjectDetailPage() {
 	const { slug } = useLocalSearchParams();
 	const insets = useSafeAreaInsets();
 	const [project, setProject] = useState<Project | null>(null);
+	const [imageUrl, setImageUrl] = useState<string>('');
+	const [alternativeGenerations, setAlternativeGenerations] = useState<string[]>([]);
+	const [showModal, setShowModal] = useState(false);
 	const screenWidth = Dimensions.get('window').width - 48;
 	const slideAnim = useRef(new Animated.Value(1)).current; // 0 = before (left), 1 = after (right)
 	const dividerAnim = useRef(new Animated.Value(1)).current;
+
+	// Create variants array that includes the original image + alternatives
+	const allVariants = project ? [project.imageUrl, ...alternativeGenerations] : [];
 
 	// Load project data
 	useEffect(() => {
@@ -48,6 +57,11 @@ export default function ProjectDetailPage() {
 					);
 					if (foundProject) {
 						setProject(foundProject);
+						setImageUrl(foundProject.imageUrl);
+						// Load alternative generations if they exist
+						if (foundProject.alternativeGenerations) {
+							setAlternativeGenerations(foundProject.alternativeGenerations);
+						}
 					}
 				}
 			} catch (error) {
@@ -57,6 +71,49 @@ export default function ProjectDetailPage() {
 
 		loadProject();
 	}, [slug]);
+
+	// Auto-save project when alternative generations change
+	useEffect(() => {
+		if (!project || alternativeGenerations.length === 0) return;
+
+		const saveAlternativeGenerations = async () => {
+			try {
+				const storedProjects = await AsyncStorage.getItem('projects');
+				if (storedProjects) {
+					const projects = JSON.parse(storedProjects);
+					const projectIndex = projects.findIndex((p: Project) =>
+						p.imageUrl.includes(slug as string)
+					);
+
+					if (projectIndex !== -1) {
+						// Update the project with new alternative generations
+						projects[projectIndex] = {
+							...projects[projectIndex],
+							alternativeGenerations: alternativeGenerations,
+						};
+
+						await AsyncStorage.setItem('projects', JSON.stringify(projects));
+						console.log('✅ Alternative generations saved to project');
+					}
+				}
+			} catch (error) {
+				console.error('Error saving alternative generations:', error);
+			}
+		};
+
+		saveAlternativeGenerations();
+	}, [alternativeGenerations, project, slug]);
+
+	// Add regenerate handlers
+	const handleGenerationComplete = (newImageUrl: string) => {
+		setShowModal(false);
+		// Add to alternative generations
+		setAlternativeGenerations((prev) => [...prev, newImageUrl]);
+	};
+
+	const handleOpenModal = () => {
+		setShowModal(true);
+	};
 
 	const toggleView = (targetValue: number) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -101,12 +158,12 @@ export default function ProjectDetailPage() {
 	});
 
 	const handleShare = async () => {
-		if (!project?.imageUrl) return;
+		if (!imageUrl) return;
 
 		try {
 			const result = await Share.share({
 				message: 'Check out my AI-generated design!',
-				url: project.imageUrl,
+				url: imageUrl,
 			});
 
 			if (result.action === Share.sharedAction) {
@@ -119,7 +176,7 @@ export default function ProjectDetailPage() {
 	};
 
 	const handleSaveToGallery = async () => {
-		if (!project?.imageUrl) return;
+		if (!imageUrl) return;
 
 		try {
 			const { status } = await MediaLibrary.requestPermissionsAsync();
@@ -128,7 +185,7 @@ export default function ProjectDetailPage() {
 				return;
 			}
 
-			await MediaLibrary.saveToLibraryAsync(project.imageUrl);
+			await MediaLibrary.saveToLibraryAsync(imageUrl);
 			Alert.alert('Success', 'Image saved to gallery!');
 		} catch (error) {
 			console.error('Error saving image:', error);
@@ -278,7 +335,7 @@ export default function ProjectDetailPage() {
 									}}
 								>
 									<Image
-										source={{ uri: project.imageUrl }}
+										source={{ uri: imageUrl }}
 										style={{
 											width: '100%',
 											height: '100%',
@@ -373,13 +430,49 @@ export default function ProjectDetailPage() {
 						) : (
 							<View className="flex-1 rounded-2xl overflow-hidden bg-white">
 								<Image
-									source={{ uri: project.imageUrl }}
+									source={{ uri: imageUrl }}
 									className="w-full h-full"
 									resizeMode="cover"
 								/>
 							</View>
 						)}
 					</View>
+
+					{/* Variants Section */}
+					{allVariants.length > 1 && (
+						<View className="mt-6 mb-6">
+							<ThemedText variant="title-md" className="text-gray-900 mb-3" bold>
+								Variants
+							</ThemedText>
+							<FlatList
+								horizontal
+								data={allVariants}
+								keyExtractor={(item, index) => `variant-${index}`}
+								showsHorizontalScrollIndicator={false}
+								contentContainerStyle={{ gap: 12 }}
+								renderItem={({ item, index }) => (
+									<TouchableOpacity
+										onPress={() => {
+											// Swap the main image with this variant
+											setImageUrl(item);
+											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+										}}
+										className="rounded-2xl bg-transparent"
+										style={{ width: 120, height: 120 }}
+									>
+										<Image
+											source={{ uri: item }}
+											className="w-full h-full rounded-2xl"
+											resizeMode="cover"
+										/>
+										{imageUrl === item && (
+											<View className="absolute rounded-2xl inset-0  border-2 border-blue-500" />
+										)}
+									</TouchableOpacity>
+								)}
+							/>
+						</View>
+					)}
 				</View>
 			</ScrollView>
 
@@ -389,6 +482,16 @@ export default function ProjectDetailPage() {
 				style={{ paddingBottom: insets.bottom + 16 }}
 			>
 				<View className="flex-row gap-3">
+					<View className="flex-1">
+						<CustomButton
+							title="Retry"
+							onPress={handleOpenModal}
+							icon="sync"
+							variant="secondary"
+							size="lg"
+							vertical
+						/>
+					</View>
 					<View className="flex-1">
 						<CustomButton
 							title="Share"
@@ -411,6 +514,16 @@ export default function ProjectDetailPage() {
 					</View>
 				</View>
 			</View>
+
+			{/* Generate Half Modal */}
+			<GenerateHalfModal
+				visible={showModal}
+				onClose={() => setShowModal(false)}
+				onGenerationComplete={handleGenerationComplete}
+				initialImageUri={project?.originalImage}
+				initialRoom={project?.room}
+				initialStyle={project?.style}
+			/>
 		</View>
 	);
 }

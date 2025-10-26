@@ -25,6 +25,7 @@ interface Project {
 	originalImage?: string;
 	createdAt: string;
 	type: string;
+	alternativeGenerations?: string[];
 }
 
 // Animated Project Card Component

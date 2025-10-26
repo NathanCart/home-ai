@@ -13,6 +13,7 @@ interface GeneratingStepProps {
 	style?: any;
 	palette?: any;
 	imageUri?: string | null;
+	compact?: boolean;
 }
 
 const loadingMessages = [
@@ -31,6 +32,7 @@ export function GeneratingStep({
 	style,
 	palette,
 	imageUri,
+	compact = false,
 }: GeneratingStepProps) {
 	const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 	const [progress, setProgress] = useState(0);
@@ -186,6 +188,73 @@ export function GeneratingStep({
 		outputRange: ['0deg', '360deg'],
 	});
 
+	// Compact version for half modal
+	if (compact) {
+		return (
+			<View className="flex-1 justify-center items-center px-6">
+				{/* Compact Spinning circles */}
+				<View className="relative w-32 h-32 mb-6 mx-auto justify-center items-center">
+					{/* Outer ring */}
+					<Animated.View
+						style={{
+							position: 'absolute',
+							width: 128,
+							height: 128,
+							top: 0,
+							transform: [{ rotate: spin }],
+						}}
+					>
+						<View className="w-full h-full rounded-full border-4 border-gray-600 border-t-transparent" />
+					</Animated.View>
+
+					{/* Inner circle with pulse */}
+					<Animated.View
+						style={{
+							position: 'absolute',
+							width: 64,
+							height: 64,
+							top: 32,
+							transform: [{ scale: pulseValue }],
+						}}
+					>
+						<LinearGradient
+							colors={['#374151', '#111827']}
+							start={{ x: 0, y: 0 }}
+							end={{ x: 1, y: 1 }}
+							style={{
+								width: '100%',
+								height: '100%',
+								borderRadius: 32,
+								justifyContent: 'center',
+								alignItems: 'center',
+							}}
+						>
+							<ThemedText variant="title-md" className="text-white" extraBold>
+								{progress}%
+							</ThemedText>
+						</LinearGradient>
+					</Animated.View>
+				</View>
+
+				{/* Loading message */}
+				<Animated.View style={{ opacity: fadeValue, marginBottom: 8 }}>
+					<ThemedText variant="body" className="text-gray-900 text-center" bold>
+						{loadingMessages[currentMessageIndex]}
+					</ThemedText>
+				</Animated.View>
+
+				{error && (
+					<View className="mt-4 px-4 py-2 bg-red-100 rounded-lg">
+						<ThemedText variant="body" className="text-red-600 text-center text-sm">
+							Error: {error}
+						</ThemedText>
+					</View>
+				)}
+			</View>
+		);
+	}
+
+	// Full version for regular modal
 	return (
 		<View className="flex-1 bg-gray-50 justify-center items-center px-6 h-full">
 			{/* Spinning circles */}

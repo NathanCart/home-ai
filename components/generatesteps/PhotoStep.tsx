@@ -11,6 +11,7 @@ interface PhotoStepProps {
 	onImageSelect?: (imageUri?: string) => void;
 	config: StepConfig;
 	selectedImageUri?: string | null;
+	compact?: boolean;
 }
 
 const exampleImages = [
@@ -95,7 +96,12 @@ const exampleImages = [
 	},
 ];
 
-export function PhotoStep({ onImageSelect, config, selectedImageUri }: PhotoStepProps) {
+export function PhotoStep({
+	onImageSelect,
+	config,
+	selectedImageUri,
+	compact = false,
+}: PhotoStepProps) {
 	const [showTipsModal, setShowTipsModal] = useState(false);
 	const [showMediaSourceModal, setShowMediaSourceModal] = useState(false);
 
@@ -111,6 +117,47 @@ export function PhotoStep({ onImageSelect, config, selectedImageUri }: PhotoStep
 		onImageSelect?.(imageSource.uri);
 	};
 
+	// Compact layout
+	if (compact) {
+		return (
+			<View className="px-6">
+				<TouchableOpacity
+					className="bg-gray-100 min-h-[135px] max-h-[135px] w-full flex justify-center border-2 border-dashed border-gray-300 rounded-2xl p-8 items-center overflow-hidden"
+					onPress={handleCardPress}
+				>
+					{selectedImageUri ? (
+						<View className="absolute inset-0">
+							<Image
+								source={{ uri: selectedImageUri }}
+								className="w-full h-full"
+								resizeMode="cover"
+							/>
+							<View className="absolute inset-0 bg-black/20 items-center justify-center">
+								<View className="bg-white/90 rounded-full p-2">
+									<Octicons name="pencil" size={20} color="#111827" />
+								</View>
+							</View>
+						</View>
+					) : (
+						<View className="items-center">
+							<Octicons name="image" size={48} color="#D1D5DB" className="mb-2" />
+							<ThemedText variant="body" className="text-gray-600 text-sm mt-2">
+								Tap to upload photo
+							</ThemedText>
+						</View>
+					)}
+				</TouchableOpacity>
+
+				<MediaSourceModal
+					visible={showMediaSourceModal}
+					onClose={() => setShowMediaSourceModal(false)}
+					onImageSelected={handleImageSelected}
+				/>
+			</View>
+		);
+	}
+
+	// Default full layout
 	return (
 		<View className="flex-1 -20">
 			<View className="items-start mb-4 px-6">

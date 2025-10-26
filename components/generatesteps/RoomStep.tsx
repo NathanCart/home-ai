@@ -22,6 +22,7 @@ interface RoomStepProps {
 	onRoomSelect?: (room: Room | null) => void;
 	config: StepConfig;
 	selectedRoom?: Room | null;
+	compact?: boolean;
 }
 
 const roomTypes: Room[] = [
@@ -92,7 +93,7 @@ const roomTypes: Room[] = [
 	},
 ];
 
-export function RoomStep({ onRoomSelect, config, selectedRoom }: RoomStepProps) {
+export function RoomStep({ onRoomSelect, config, selectedRoom, compact = false }: RoomStepProps) {
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(selectedRoom?.id || null);
 	const [customRooms, setCustomRooms] = useState<Room[]>([]);
 	const [showAddModal, setShowAddModal] = useState<boolean>(false);
@@ -218,6 +219,88 @@ export function RoomStep({ onRoomSelect, config, selectedRoom }: RoomStepProps) 
 		setShowEditModal(false);
 	};
 
+	// Compact horizontal layout
+	if (compact) {
+		return (
+			<View className="flex mt-auto mb-auto items-center justify-center">
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+				>
+					{allRooms.map((room) => {
+						const isSelected = selectedRoomId === room.id;
+						const isCustomRoom = room.isCustom;
+
+						return (
+							<TouchableOpacity
+								key={room.id}
+								onPress={() => handleRoomSelect(room)}
+								className={`p-2 aspect-square flex items-center justify-center rounded-2xl border-2 ${
+									isSelected
+										? 'bg-blue-50 border-blue-500'
+										: 'bg-gray-50 border-gray-200'
+								}`}
+								activeOpacity={0.7}
+								style={{ minWidth: 140 }}
+							>
+								<View className="items-center">
+									{isCustomRoom ? (
+										<View className="w-12 h-12 rounded-full items-center justify-center mb-1 bg-gray-100">
+											<Octicons name="home" size={24} color="#6B7280" />
+										</View>
+									) : (
+										<View
+											className={`w-12 h-12 rounded-full items-center justify-center mb-1 ${
+												isSelected ? 'bg-blue-100' : 'bg-gray-100'
+											}`}
+										>
+											{room.iconType === 'material' ? (
+												<MaterialIcons
+													name={room.icon as any}
+													size={24}
+													color={isSelected ? '#3B82F6' : '#6B7280'}
+												/>
+											) : room.iconType === 'material-community' ? (
+												<MaterialCommunityIcons
+													name={room.icon as any}
+													size={24}
+													color={isSelected ? '#3B82F6' : '#6B7280'}
+												/>
+											) : room.iconType === 'ionicons' ? (
+												<Ionicons
+													name={room.icon as any}
+													size={24}
+													color={isSelected ? '#3B82F6' : '#6B7280'}
+												/>
+											) : (
+												<Octicons
+													name={room.icon as any}
+													size={24}
+													color={isSelected ? '#3B82F6' : '#6B7280'}
+												/>
+											)}
+										</View>
+									)}
+
+									<ThemedText
+										variant="body"
+										className={`font-semibold text-center  ${
+											isSelected ? 'text-blue-900' : 'text-gray-900'
+										}`}
+									>
+										{room.name}
+									</ThemedText>
+								</View>
+							</TouchableOpacity>
+						);
+					})}
+				</ScrollView>
+			</View>
+		);
+	}
+
+	// Default grid layout
 	return (
 		<View className="flex-1 px-6">
 			<View className="items-start mb-6">

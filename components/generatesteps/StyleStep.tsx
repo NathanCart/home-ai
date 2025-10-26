@@ -20,6 +20,7 @@ interface StyleStepProps {
 	onStyleSelect?: (style: Style | null) => void;
 	config: StepConfig;
 	selectedStyle?: Style | null;
+	compact?: boolean;
 }
 
 interface Style {
@@ -154,7 +155,12 @@ const styleTypes: Style[] = [
 	},
 ];
 
-export function StyleStep({ onStyleSelect, config, selectedStyle }: StyleStepProps) {
+export function StyleStep({
+	onStyleSelect,
+	config,
+	selectedStyle,
+	compact = false,
+}: StyleStepProps) {
 	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
 		selectedStyle?.id || null
 	);
@@ -372,6 +378,53 @@ export function StyleStep({ onStyleSelect, config, selectedStyle }: StyleStepPro
 		setShowEditModal(false);
 	};
 
+	// Compact horizontal layout
+	if (compact) {
+		return (
+			<View className="mt-auto flex-1 items-end justify-center">
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					className="mt-auto mb-auto"
+					contentContainerClassName="mt-auto mb-auto"
+					contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
+				>
+					{allStyles.map((style) => {
+						const isSelected = selectedStyleId === style.id;
+
+						return (
+							<TouchableOpacity
+								key={style.id}
+								onPress={() => handleStyleSelect(style)}
+								className={`w-40 h-40 rounded-2xl overflow-hidden border-2 ${
+									isSelected ? 'border-blue-500' : 'border-gray-200'
+								}`}
+								activeOpacity={0.8}
+							>
+								<ImageBackground
+									source={{ uri: style.imageUrl }}
+									className="flex-1"
+									resizeMode="cover"
+								>
+									<View className="flex-1 bg-black/30 justify-end p-2">
+										<ThemedText
+											variant="body"
+											className="text-white font-bold text-xs"
+											extraBold
+										>
+											{style.name}
+										</ThemedText>
+									</View>
+								</ImageBackground>
+							</TouchableOpacity>
+						);
+					})}
+				</ScrollView>
+			</View>
+		);
+	}
+
+	// Default grid layout
 	return (
 		<View className="flex-1 px-6">
 			<View className="items-start mb-6">

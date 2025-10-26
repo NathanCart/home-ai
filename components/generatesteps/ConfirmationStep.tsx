@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
 	View,
 	Image,
@@ -8,6 +8,7 @@ import {
 	ScrollView,
 	Animated,
 	Dimensions,
+	FlatList,
 } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import * as MediaLibrary from 'expo-media-library';
@@ -15,6 +16,9 @@ import { CustomButton } from '../CustomButton';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { GenerateHalfModal } from '../GenerateHalfModal';
+import { useRunwareAI } from '../useRunwareAI';
 
 interface ConfirmationStepProps {
 	imageUrl: string;
@@ -28,7 +32,7 @@ interface ConfirmationStepProps {
 }
 
 export function ConfirmationStep({
-	imageUrl,
+	imageUrl: initialImageUrl,
 	room,
 	style,
 	palette,
@@ -41,6 +45,13 @@ export function ConfirmationStep({
 	const dividerAnim = useRef(new Animated.Value(1)).current; // Separate animation for divider
 	const insets = useSafeAreaInsets();
 	const screenWidth = Dimensions.get('window').width - 48; // Account for padding
+
+	const [imageUrl, setImageUrl] = useState(initialImageUrl);
+	const [alternativeGenerations, setAlternativeGenerations] = useState<string[]>([]);
+	const [showModal, setShowModal] = useState(false);
+
+	// Create variants array that includes the original image + alternatives
+	const allVariants = [initialImageUrl, ...alternativeGenerations];
 
 	const toggleView = (targetValue: number) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -111,10 +122,6 @@ export function ConfirmationStep({
 
 	const handleSaveToProjects = async () => {
 		try {
-			const { default: AsyncStorage } = await import(
-				'@react-native-async-storage/async-storage'
-			);
-
 			const projectData = {
 				imageUrl,
 				room,
@@ -123,6 +130,8 @@ export function ConfirmationStep({
 				originalImage: imageUri,
 				createdAt: new Date().toISOString(),
 				type: 'ai-generated',
+				alternativeGenerations:
+					alternativeGenerations.length > 0 ? alternativeGenerations : undefined,
 			};
 
 			// Get existing projects
@@ -145,6 +154,16 @@ export function ConfirmationStep({
 			console.error('Error saving to projects:', error);
 			Alert.alert('Error', 'Failed to save project.');
 		}
+	};
+
+	const handleGenerationComplete = (newImageUrl: string) => {
+		setShowModal(false);
+		// Add to alternative generations
+		setAlternativeGenerations((prev) => [...prev, newImageUrl]);
+	};
+
+	const handleOpenModal = () => {
+		setShowModal(true);
 	};
 
 	const handleShare = async () => {
@@ -421,6 +440,42 @@ export function ConfirmationStep({
 							</View>
 						)}
 					</View>
+
+					{/* Variants Section */}
+					{allVariants.length > 1 && (
+						<View className="mt-6 mb-6">
+							<ThemedText variant="title-md" className="text-gray-900 mb-3" bold>
+								Variants
+							</ThemedText>
+							<FlatList
+								horizontal
+								data={allVariants}
+								keyExtractor={(item, index) => `variant-${index}`}
+								showsHorizontalScrollIndicator={false}
+								contentContainerStyle={{ gap: 12 }}
+								renderItem={({ item, index }) => (
+									<TouchableOpacity
+										onPress={() => {
+											// Swap the main image with this variant
+											setImageUrl(item);
+											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+										}}
+										className="rounded-2xl bg-transparent"
+										style={{ width: 120, height: 120 }}
+									>
+										<Image
+											source={{ uri: item }}
+											className="w-full h-full rounded-2xl"
+											resizeMode="cover"
+										/>
+										{imageUrl === item && (
+											<View className="absolute rounded-2xl inset-0  border-2 border-blue-500" />
+										)}
+									</TouchableOpacity>
+								)}
+							/>
+						</View>
+					)}
 				</View>
 			</ScrollView>
 
@@ -430,18 +485,16 @@ export function ConfirmationStep({
 				style={{ paddingBottom: insets.bottom + 16 }}
 			>
 				<View className="flex-row gap-3">
-					{onRegenerate && (
-						<View className="flex-1">
-							<CustomButton
-								title="Retry"
-								onPress={onRegenerate}
-								icon="sync"
-								variant="secondary"
-								size="lg"
-								vertical
-							/>
-						</View>
-					)}
+					<View className="flex-1">
+						<CustomButton
+							title="Retry"
+							onPress={handleOpenModal}
+							icon="sync"
+							variant="secondary"
+							size="lg"
+							vertical
+						/>
+					</View>
 
 					<View className="flex-1">
 						<CustomButton
@@ -466,6 +519,16 @@ export function ConfirmationStep({
 					</View>
 				</View>
 			</View>
+
+			{/* Generate Half Modal */}
+			<GenerateHalfModal
+				visible={showModal}
+				onClose={() => setShowModal(false)}
+				onGenerationComplete={handleGenerationComplete}
+				initialImageUri={imageUri}
+				initialRoom={room}
+				initialStyle={style}
+			/>
 		</View>
 	);
 }
