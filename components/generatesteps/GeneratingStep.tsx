@@ -14,6 +14,7 @@ interface GeneratingStepProps {
 	palette?: any;
 	imageUri?: string | null;
 	compact?: boolean;
+	shouldStart?: boolean;
 }
 
 const loadingMessages = [
@@ -33,6 +34,7 @@ export function GeneratingStep({
 	palette,
 	imageUri,
 	compact = false,
+	shouldStart = true, // Default to true for backward compatibility
 }: GeneratingStepProps) {
 	const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 	const [progress, setProgress] = useState(0);
@@ -46,8 +48,12 @@ export function GeneratingStep({
 	const pulseValue = useRef(new Animated.Value(1)).current;
 	const fadeValue = useRef(new Animated.Value(1)).current;
 
-	// Start image generation when component mounts
+	// Start image generation when shouldStart is true
 	useEffect(() => {
+		if (!shouldStart) {
+			return;
+		}
+
 		const startGeneration = async () => {
 			console.log('🎨 Starting image generation...');
 			console.log('📋 Input data:', { room, style, palette });
@@ -123,7 +129,7 @@ export function GeneratingStep({
 
 		startGeneration();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, []);
+	}, [shouldStart]);
 
 	// Spinning animation
 	useEffect(() => {

@@ -273,6 +273,7 @@ export function GenerateHalfModal({
 									palette={null}
 									imageUri={selectedImageUri}
 									compact
+									shouldStart={isGenerating}
 								/>
 							</View>
 						</ScrollView>
