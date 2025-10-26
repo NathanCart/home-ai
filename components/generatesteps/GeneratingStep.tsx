@@ -1,11 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Animated, Easing } from 'react-native';
+import { View, Animated, Easing, Image } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRunwareAI } from '../useRunwareAI';
 
 interface GeneratingStepProps {
 	onComplete?: () => void;
+	room?: any;
+	style?: any;
+	palette?: any;
+	imageUri?: string | null;
 }
 
 const loadingMessages = [
@@ -17,15 +22,64 @@ const loadingMessages = [
 	'Almost there...',
 ];
 
-export function GeneratingStep({ onComplete }: GeneratingStepProps) {
+export function GeneratingStep({
+	onComplete,
+	room,
+	style,
+	palette,
+	imageUri,
+}: GeneratingStepProps) {
 	const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
 	const [progress, setProgress] = useState(0);
 	const insets = useSafeAreaInsets();
+
+	// Runware AI hook
+	const { generateImage, isGenerating, error, generatedImageUrl } = useRunwareAI();
 
 	// Animation values - use useRef to persist across renders
 	const spinValue = useRef(new Animated.Value(0)).current;
 	const pulseValue = useRef(new Animated.Value(1)).current;
 	const fadeValue = useRef(new Animated.Value(1)).current;
+
+	// Start image generation when component mounts
+	useEffect(() => {
+		const startGeneration = async () => {
+			console.log('🎨 Starting image generation...');
+			console.log('📋 Input data:', { room, style, palette });
+
+			// Get room and style names
+			const roomName = room?.name || room?.label || '';
+			const styleName = style?.name || style?.label || '';
+
+			const result = await generateImage({
+				room: roomName,
+				style: styleName,
+				palette,
+				imageUri: imageUri || undefined,
+			});
+
+			if (result.success && result.imageUrl) {
+				console.log('✅ Image generated successfully');
+				// Wait a bit before calling onComplete to show the result
+				setTimeout(() => {
+					if (onComplete) {
+						onComplete();
+					}
+				}, 2000);
+			} else {
+				console.error('❌ Image generation failed:', result.error);
+				// Still complete after a delay to show error state
+				setTimeout(() => {
+					if (onComplete) {
+						onComplete();
+					}
+				}, 3000);
+			}
+		};
+
+		startGeneration();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	// Spinning animation
 	useEffect(() => {
@@ -166,6 +220,25 @@ export function GeneratingStep({ onComplete }: GeneratingStepProps) {
 					{loadingMessages[currentMessageIndex]}
 				</ThemedText>
 			</Animated.View>
+
+			{/* Generated Image or Error */}
+			{generatedImageUrl && (
+				<View className="mt-6 w-full h-64 rounded-lg overflow-hidden">
+					<Image
+						source={{ uri: generatedImageUrl }}
+						className="w-full h-full"
+						resizeMode="cover"
+					/>
+				</View>
+			)}
+
+			{error && (
+				<View className="mt-4 px-4 py-2 bg-red-100 rounded-lg">
+					<ThemedText variant="body" className="text-red-600 text-center">
+						Error: {error}
+					</ThemedText>
+				</View>
+			)}
 
 			{/* Warning text - absolute positioned at bottom */}
 			<View

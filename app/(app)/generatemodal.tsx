@@ -117,7 +117,15 @@ export default function GenerateModal() {
 					/>
 				);
 			case 5:
-				return <GeneratingStep onComplete={() => router.back()} />;
+				return (
+					<GeneratingStep
+						onComplete={() => router.back()}
+						room={selectedRoom}
+						style={selectedStyle}
+						palette={selectedPalette}
+						imageUri={selectedImageUri}
+					/>
+				);
 			default:
 				return null;
 		}
