@@ -29,61 +29,35 @@ function generateUUID(): string {
 	});
 }
 
-// Upload an image to Runware and return its UUID
-async function uploadImageToRunware(imageUrl: string, apiKey: string): Promise<string> {
-	const RUNWARE_API_URL = 'https://api.runware.ai/v1';
-
+// Convert image URL to base64 data URI
+async function imageUrlToBase64(imageUrl: string): Promise<string> {
 	try {
-		console.log('📤 Uploading style reference image to Runware...');
-		console.log('🔗 Image URL:', imageUrl);
+		console.log('🔄 Converting image to base64:', imageUrl);
 
-		const taskUUID = generateUUID();
-		const requestBody = [
-			{
-				taskType: 'imageUpload',
-				taskUUID,
-				image: imageUrl, // Can be: UUID, data URI, base64, or public URL
-			},
-		];
-
-		console.log('📤 Upload request:', JSON.stringify(requestBody, null, 2));
-
-		const response = await fetch(RUNWARE_API_URL, {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json',
-				Authorization: `Bearer ${apiKey}`,
-			},
-			body: JSON.stringify(requestBody),
-		}).catch((fetchError) => {
-			console.error('❌ Network error during upload:', fetchError);
-			throw new Error(`Network error: ${fetchError.message}`);
-		});
-
-		console.log('📥 Upload response status:', response.status);
+		// Fetch the image
+		const response = await fetch(imageUrl);
 
 		if (!response.ok) {
-			const errorText = await response.text();
-			console.error('❌ Image upload error response:', errorText);
-			throw new Error(`Failed to upload image: ${response.status}`);
+			throw new Error(`Failed to fetch image: ${response.status}`);
 		}
 
-		const data = await response.json();
-		console.log('✅ Image upload response:', JSON.stringify(data, null, 2));
+		// Get the image as a blob
+		const blob = await response.blob();
 
-		// Extract the image UUID from the response
-		const imageUUID = data.data?.[0]?.imageUUID;
-
-		if (!imageUUID) {
-			console.error('❌ No imageUUID in upload response:', data);
-			throw new Error('No imageUUID returned from upload');
-		}
-
-		console.log('✅ Style image uploaded successfully. UUID:', imageUUID);
-		return imageUUID;
+		// Convert blob to base64
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onloadend = () => {
+				const base64String = reader.result as string;
+				console.log('✅ Image converted to base64 (length:', base64String.length, ')');
+				resolve(base64String);
+			};
+			reader.onerror = reject;
+			reader.readAsDataURL(blob);
+		});
 	} catch (error) {
 		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		console.error('❌ Error uploading image to Runware:', errorMessage);
+		console.error('❌ Error converting image to base64:', errorMessage);
 		throw error;
 	}
 }
@@ -130,43 +104,38 @@ export function useRunwareAI() {
 
 			console.log(buildPrompt(params), 'runway prompt');
 
-			// Try to upload style reference image if provided to get UUID for IP-Adapter
-			// If upload fails, try using the URL directly as fallback
-			let styleImageReference: string | null = null;
+			// Convert style reference image to base64 if provided for IP-Adapter
+			let styleImageBase64: string | null = null;
 			if (params.styleImageUri) {
 				try {
-					console.log('📸 Uploading style reference image:', params.styleImageUri);
-					styleImageReference = await uploadImageToRunware(
-						params.styleImageUri,
-						RUNWARE_API_KEY
+					console.log(
+						'📸 Converting style reference image to base64:',
+						params.styleImageUri
 					);
-					console.log('✅ Style image UUID:', styleImageReference);
-				} catch (uploadError) {
-					console.warn(
-						'⚠️ Image upload failed, trying direct URL as fallback:',
-						uploadError
+					styleImageBase64 = await imageUrlToBase64(params.styleImageUri);
+					console.log(
+						'✅ Style image converted to base64 (length:',
+						styleImageBase64.length,
+						')'
 					);
-					// Try using the URL directly as fallback (if it's a public URL)
-					if (params.styleImageUri.startsWith('http')) {
-						styleImageReference = params.styleImageUri;
-						console.log('🔗 Using direct URL for IP-Adapter:', styleImageReference);
-					} else {
-						console.error('❌ Cannot use IP-Adapter: not a valid URL or UUID');
-					}
+				} catch (conversionError) {
+					console.error(
+						'❌ Failed to convert style image, continuing without IP-Adapter:',
+						conversionError
+					);
+					// Continue without IP-Adapter if conversion fails
 				}
 			}
 
 			console.log('🖼️ Seed image URI:', params.imageUri);
 
-			// Use SDXL model when we have IP-Adapter, FLUX otherwise
-			const useIpAdapter = !!styleImageReference;
+			const useIpAdapter = !!params.styleImageUri;
 
 			const requestBody: any = [
 				{
 					taskType: 'imageInference',
 					taskUUID,
 					model: 'runware:101@1',
-
 					positivePrompt: buildPrompt(params),
 					negativePrompt:
 						'low quality, blurry, distorted, bad anatomy, poorly drawn, cartoon, illustration, unrealistic',
@@ -177,13 +146,13 @@ export function useRunwareAI() {
 					steps: 40, // More steps for better quality
 					numberResults: 1,
 					seedImage: params.imageUri,
-					// Add IP-Adapter if we have a style image reference (UUID or URL)
+					// Add IP-Adapter with base64 image directly
 					...(useIpAdapter
 						? {
 								ipAdapters: [
 									{
 										model: 'runware:105@1',
-										guideImage: styleImageReference,
+										guideImage: params.styleImageUri, // Base64 data URI
 										weight: 0.85, // Strong style influence (0-1 scale)
 									},
 								],
