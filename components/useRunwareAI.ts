@@ -29,39 +29,6 @@ function generateUUID(): string {
 	});
 }
 
-// Convert image URL to base64 data URI
-async function imageUrlToBase64(imageUrl: string): Promise<string> {
-	try {
-		console.log('🔄 Converting image to base64:', imageUrl);
-
-		// Fetch the image
-		const response = await fetch(imageUrl);
-
-		if (!response.ok) {
-			throw new Error(`Failed to fetch image: ${response.status}`);
-		}
-
-		// Get the image as a blob
-		const blob = await response.blob();
-
-		// Convert blob to base64
-		return new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onloadend = () => {
-				const base64String = reader.result as string;
-				console.log('✅ Image converted to base64 (length:', base64String.length, ')');
-				resolve(base64String);
-			};
-			reader.onerror = reject;
-			reader.readAsDataURL(blob);
-		});
-	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-		console.error('❌ Error converting image to base64:', errorMessage);
-		throw error;
-	}
-}
-
 export function useRunwareAI() {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -120,23 +87,23 @@ export function useRunwareAI() {
 					// 	'low quality, blurry, distorted, bad anatomy, poorly drawn, cartoon, illustration, unrealistic',
 					width: 1024,
 					height: 1024,
-					strength: 0.75, // Higher strength for stronger style transformation
-					CFGScale: 7, // High CFG for strong prompt influence
+					strength: 0.7, // Higher strength for stronger style transformation
+					CFGScale: 10, // High CFG for strong prompt influence
 					steps: 40, // More steps for better quality
 					numberResults: 1,
 					seedImage: params.imageUri,
 					// Add IP-Adapter with base64 image directly
-					...(useIpAdapter
-						? {
-								ipAdapters: [
-									{
-										model: 'runware:105@1',
-										guideImage: params.styleImageUri, // Base64 data URI
-										weight: 0.9, // Strong style influence (0-1 scale)
-									},
-								],
-							}
-						: {}),
+					// ...(useIpAdapter
+					// 	? {
+					// 			ipAdapters: [
+					// 				{
+					// 					model: 'runware:105@1',
+					// 					guideImage: params.styleImageUri, // Base64 data URI
+					// 					weight: 0.9, // Strong style influence (0-1 scale)
+					// 				},
+					// 			],
+					// 		}
+					// 	: {}),
 				},
 			];
 
@@ -320,7 +287,7 @@ function buildPrompt(params: GenerateImageParams): string {
 	);
 
 	parts.push(
-		'Ensure the room structure is preserved. Do not change the room corners or walls. Keep windows and doors in the same positions. Maintain the same zoom level and perspective.'
+		'Ensure the room structure is preserved. Do not change the room corners or walls. Keep windows and doors in the same positions. Maintain the same zoom level and perspective. Keep windows and doors as windows and doors.'
 	);
 
 	return parts.join(', ');
