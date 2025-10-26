@@ -62,8 +62,19 @@ export function useRunwareAI() {
 		// All retries failed
 		setIsGenerating(false);
 		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
-		setError(errorMessage);
-		return { success: false, error: errorMessage };
+
+		// More helpful error messages after all retries
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError =
+				'Unable to reach Runware API after 3 attempts. Please check your internet connection and try again.';
+		} else if (errorMessage.includes('API key not configured')) {
+			userFriendlyError = errorMessage;
+		}
+
+		console.error(`❌ All ${MAX_RETRIES} attempts failed. Final error:`, userFriendlyError);
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
 	};
 
 	const attemptGeneration = async (
@@ -257,22 +268,11 @@ export function useRunwareAI() {
 			}
 
 			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-			console.error('❌ Error generating image:', errorMessage);
+			console.error('❌ Error in generation attempt:', errorMessage);
 
-			// More helpful error messages
-			if (errorMessage.includes('Network request failed')) {
-				setError(
-					'Unable to reach Runware API. Please check your internet connection and try again.'
-				);
-			} else if (errorMessage.includes('API key not configured')) {
-				setError(errorMessage);
-			} else {
-				setError(errorMessage);
-			}
-
-			return { success: false, error: errorMessage };
-		} finally {
-			setIsGenerating(false);
+			// Don't set error state here - let the retry logic handle it
+			// Just throw the error so the retry wrapper can catch it
+			throw err;
 		}
 	};
 
@@ -352,6 +352,8 @@ function buildPrompt(params: GenerateImageParams): string {
 	// Quality and preservation descriptors
 	parts.push('professional interior photography, high quality, realistic lighting');
 	parts.push('preserve room structure, maintain layout and perspective');
+	parts.push('Windows must remain windows and not be replaced with any other object');
+	parts.push('Doors must remain doors and not be replaced with any other object');
 
 	return parts.join(', ');
 }
