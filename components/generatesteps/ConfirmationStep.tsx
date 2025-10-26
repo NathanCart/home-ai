@@ -220,10 +220,7 @@ export function ConfirmationStep({
 									<Animated.Text
 										style={{
 											textAlign: 'center',
-											fontWeight: slideAnim.interpolate({
-												inputRange: [0, 1],
-												outputRange: ['700' as any, '400' as any],
-											}),
+
 											color: slideAnim.interpolate({
 												inputRange: [0, 1],
 												outputRange: [
@@ -254,10 +251,7 @@ export function ConfirmationStep({
 									<Animated.Text
 										style={{
 											textAlign: 'center',
-											fontWeight: slideAnim.interpolate({
-												inputRange: [0, 1],
-												outputRange: ['400' as any, '700' as any],
-											}),
+
 											color: slideAnim.interpolate({
 												inputRange: [0, 1],
 												outputRange: [

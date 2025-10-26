@@ -120,6 +120,12 @@ export default function RootLayout() {
 								}}
 							/>
 							<Stack.Screen
+								name="projects"
+								options={{
+									animation: screenAnimation,
+								}}
+							/>
+							<Stack.Screen
 								name="onboarding"
 								options={{
 									animation: 'fade',
@@ -151,6 +157,14 @@ export default function RootLayout() {
 							/>
 							<Stack.Screen
 								name="generatemodal"
+								options={{
+									presentation: 'fullScreenModal',
+									animation: 'slide_from_bottom',
+									headerShown: false,
+								}}
+							/>
+							<Stack.Screen
+								name="project/[slug]"
 								options={{
 									presentation: 'fullScreenModal',
 									animation: 'slide_from_bottom',

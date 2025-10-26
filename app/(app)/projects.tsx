@@ -220,19 +220,19 @@ function AnimatedProjectCard({ project, onPress }: { project: Project; onPress: 
 
 				{/* Project Info */}
 				<View className="p-4">
-					<ThemedText className="text-gray-900 mb-2" variant="title-md" extraBold>
+					<ThemedText className="text-gray-900 " variant="title-sm" extraBold>
 						{project.room?.name || project.room?.label || 'Design'}
 					</ThemedText>
 
 					{project.style && (
-						<View className="flex-row items-center mb-2">
+						<View className="flex-row items-center">
 							<ThemedText className="text-gray-600" variant="body">
 								{project.style?.name || project.style?.label}
 							</ThemedText>
 						</View>
 					)}
 
-					<ThemedText className="text-gray-500" variant="body">
+					<ThemedText className="text-gray-600 absolute top-4 right-4" variant="body">
 						{formatDate(project.createdAt)}
 					</ThemedText>
 				</View>
