@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
 	View,
-	ScrollView,
+	FlatList,
 	Image,
 	TouchableOpacity,
 	RefreshControl,
@@ -28,53 +28,233 @@ interface Project {
 	alternativeGenerations?: string[];
 }
 
-// Animated Project Card Component
-function AnimatedProjectCard({ project, onPress }: { project: Project; onPress: () => void }) {
-	const slideAnim = useRef(new Animated.Value(1)).current; // Start at after state (100%)
-	const pressAnim = useRef(new Animated.Value(1)).current; // For press animation
-	const { width: screenWidth } = useWindowDimensions();
-	const cardWidth = screenWidth - 48; // Account for px-6 padding (24px each side)
+// Simple Project Card Component (memoized for performance)
+const AnimatedProjectCard = React.memo(
+	({
+		project,
+		onPress,
+		sharedAnimation,
+	}: {
+		project: Project;
+		onPress: () => void;
+		sharedAnimation: Animated.Value;
+	}) => {
+		const pressAnim = useRef(new Animated.Value(1)).current; // For press animation
+		const { width: screenWidth } = useWindowDimensions();
+		const cardWidth = screenWidth - 48; // Account for px-6 padding (24px each side)
 
-	const handlePress = () => {
-		// Haptic feedback
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+		// Always use shared animation - it's more performant and smoother
+		const revealPosition = sharedAnimation.interpolate({
+			inputRange: [0, 1],
+			outputRange: [0, cardWidth],
+		});
 
-		// Scale down animation
-		Animated.sequence([
-			Animated.timing(pressAnim, {
-				toValue: 0.95,
-				duration: 100,
-				useNativeDriver: true,
-			}),
-			Animated.timing(pressAnim, {
-				toValue: 1,
-				duration: 100,
-				useNativeDriver: true,
-			}),
-		]).start();
+		// Label opacities
+		const beforeLabelOpacity = sharedAnimation.interpolate({
+			inputRange: [0, 0.25, 0.95],
+			outputRange: [1, 0, 0],
+		});
 
-		// Call the onPress after animation
-		setTimeout(() => {
-			onPress();
-		}, 150);
-	};
+		const afterLabelOpacity = sharedAnimation.interpolate({
+			inputRange: [0, 0.5, 0.95],
+			outputRange: [0, 0, 1],
+		});
+
+		const handlePress = () => {
+			// Haptic feedback
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+			// Scale down animation
+			Animated.sequence([
+				Animated.timing(pressAnim, {
+					toValue: 0.95,
+					duration: 100,
+					useNativeDriver: true,
+				}),
+				Animated.timing(pressAnim, {
+					toValue: 1,
+					duration: 100,
+					useNativeDriver: true,
+				}),
+			]).start();
+
+			// Call the onPress after animation
+			setTimeout(() => {
+				onPress();
+			}, 150);
+		};
+
+		const formatDate = (dateString: string) => {
+			const date = new Date(dateString);
+			const now = new Date();
+			const diffTime = Math.abs(now.getTime() - date.getTime());
+			const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+			if (diffDays === 0) return 'Today';
+			if (diffDays === 1) return 'Yesterday';
+			if (diffDays < 7) return `${diffDays} days ago`;
+			if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+			if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+			return `${Math.floor(diffDays / 365)} years ago`;
+		};
+
+		return (
+			<Animated.View
+				style={{
+					transform: [{ scale: pressAnim }],
+				}}
+			>
+				<TouchableOpacity
+					onPress={handlePress}
+					className="bg-white rounded-3xl overflow-hidden border-2 border-gray-200"
+				>
+					{/* Project Image - Animated Split View */}
+					{project.originalImage ? (
+						<View className="w-full h-48 relative">
+							{/* Before Image (Full Width - Base Layer) */}
+							<Image
+								source={{ uri: project.originalImage }}
+								style={{
+									width: '100%',
+									height: '100%',
+								}}
+								resizeMode="cover"
+							/>
+
+							{/* After Image (Clipped by Width - Top Layer) */}
+							<Animated.View
+								style={{
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									bottom: 0,
+									width: revealPosition,
+									overflow: 'hidden',
+								}}
+							>
+								<Image
+									source={{ uri: project.imageUrl }}
+									style={{
+										width: cardWidth,
+										height: '100%',
+									}}
+									resizeMode="cover"
+								/>
+							</Animated.View>
+
+							{/* Animated Divider Line */}
+							<Animated.View
+								style={{
+									position: 'absolute',
+									top: 0,
+									bottom: 0,
+									left: revealPosition,
+									width: 2,
+									backgroundColor: '#fff',
+									shadowColor: '#000',
+									shadowOffset: { width: 0, height: 0 },
+									shadowOpacity: 0.3,
+									shadowRadius: 4,
+									elevation: 5,
+								}}
+							/>
+
+							{/* Before Label */}
+							<Animated.View
+								style={{
+									position: 'absolute',
+									top: 8,
+									right: 8,
+									opacity: beforeLabelOpacity,
+								}}
+							>
+								<View className="bg-gray-50 px-2 py-1 rounded-full">
+									<ThemedText
+										variant="body"
+										className="text-gray-900 text-xs"
+										bold
+									>
+										Before
+									</ThemedText>
+								</View>
+							</Animated.View>
+
+							{/* After Label */}
+							<Animated.View
+								style={{
+									position: 'absolute',
+									top: 8,
+									right: 8,
+									opacity: afterLabelOpacity,
+								}}
+							>
+								<View className="bg-gray-50 px-2 py-1 rounded-full">
+									<ThemedText
+										variant="body"
+										className="text-gray-900 text-xs"
+										bold
+									>
+										After
+									</ThemedText>
+								</View>
+							</Animated.View>
+						</View>
+					) : (
+						<Image
+							source={{ uri: project.imageUrl }}
+							className="w-full h-48"
+							resizeMode="cover"
+						/>
+					)}
+
+					{/* Project Info */}
+					<View className="p-4">
+						<ThemedText className="text-gray-900 " variant="title-sm" extraBold>
+							{project.room?.name || project.room?.label || 'Design'}
+						</ThemedText>
+
+						{project.style && (
+							<View className="flex-row items-center">
+								<ThemedText className="text-gray-600" variant="body">
+									{project.style?.name || project.style?.label}
+								</ThemedText>
+							</View>
+						)}
+
+						<ThemedText className="text-gray-600 absolute top-4 right-4" variant="body">
+							{formatDate(project.createdAt)}
+						</ThemedText>
+					</View>
+				</TouchableOpacity>
+			</Animated.View>
+		);
+	}
+);
+
+export default function ProjectsPage() {
+	const insets = useSafeAreaInsets();
+	const [projects, setProjects] = useState<Project[]>([]);
+	const [isLoading, setIsLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
+	const sharedAnimation = useRef(new Animated.Value(1)).current; // Shared animation for all cards
+	const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
 	useEffect(() => {
-		// Create looping animation (starts at 100%, goes to 0, then back to 100%)
+		loadProjects();
+	}, []);
+
+	// Start the shared animation loop once when component mounts
+	useEffect(() => {
 		const animation = Animated.loop(
 			Animated.sequence([
-				// Wait 0.5 seconds
 				Animated.delay(500),
-				// Slide back to reveal before (1.5 seconds)
-				Animated.timing(slideAnim, {
+				Animated.timing(sharedAnimation, {
 					toValue: 0,
 					duration: 1500,
 					useNativeDriver: false,
 				}),
-				// Wait 0.5 seconds
 				Animated.delay(500),
-				// Slide to reveal after (1.5 seconds, goes to 100%)
-				Animated.timing(slideAnim, {
+				Animated.timing(sharedAnimation, {
 					toValue: 1,
 					duration: 1500,
 					useNativeDriver: false,
@@ -82,174 +262,14 @@ function AnimatedProjectCard({ project, onPress }: { project: Project; onPress: 
 			])
 		);
 
+		animationRef.current = animation;
 		animation.start();
 
-		return () => animation.stop();
-	}, [slideAnim]);
-
-	// Interpolate reveal position for divider (0 = show before, 1 = show after)
-	const revealPosition = slideAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: ['0%', '100%'],
-	});
-
-	// Label opacities (adjusted for 0-0.8 range)
-	const beforeLabelOpacity = slideAnim.interpolate({
-		inputRange: [0, 0.25, 0.95],
-		outputRange: [1, 0, 0],
-	});
-
-	const afterLabelOpacity = slideAnim.interpolate({
-		inputRange: [0, 0.5, 0.95],
-		outputRange: [0, 0, 1],
-	});
-
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString);
-		const now = new Date();
-		const diffTime = Math.abs(now.getTime() - date.getTime());
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-		if (diffDays === 0) return 'Today';
-		if (diffDays === 1) return 'Yesterday';
-		if (diffDays < 7) return `${diffDays} days ago`;
-		if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
-		if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
-		return `${Math.floor(diffDays / 365)} years ago`;
-	};
-
-	return (
-		<Animated.View
-			style={{
-				transform: [{ scale: pressAnim }],
-			}}
-		>
-			<TouchableOpacity
-				onPress={handlePress}
-				className="bg-white rounded-3xl overflow-hidden border-2 border-gray-200"
-			>
-				{/* Project Image - Animated Split View */}
-				{project.originalImage ? (
-					<View className="w-full h-48 relative">
-						{/* Before Image (Full Width - Base Layer) */}
-						<Image
-							source={{ uri: project.originalImage }}
-							style={{
-								width: '100%',
-								height: '100%',
-							}}
-							resizeMode="cover"
-						/>
-
-						{/* After Image (Clipped by Width - Top Layer) */}
-						<Animated.View
-							style={{
-								position: 'absolute',
-								top: 0,
-								left: 0,
-								bottom: 0,
-								width: revealPosition,
-								overflow: 'hidden',
-							}}
-						>
-							<Image
-								source={{ uri: project.imageUrl }}
-								style={{
-									width: cardWidth,
-									height: '100%',
-								}}
-								resizeMode="cover"
-							/>
-						</Animated.View>
-
-						{/* Animated Divider Line */}
-						<Animated.View
-							style={{
-								position: 'absolute',
-								top: 0,
-								bottom: 0,
-								left: revealPosition,
-								width: 2,
-								backgroundColor: '#fff',
-								shadowColor: '#000',
-								shadowOffset: { width: 0, height: 0 },
-								shadowOpacity: 0.3,
-								shadowRadius: 4,
-								elevation: 5,
-							}}
-						/>
-
-						{/* Before Label */}
-						<Animated.View
-							style={{
-								position: 'absolute',
-								top: 8,
-								right: 8,
-								opacity: beforeLabelOpacity,
-							}}
-						>
-							<View className="bg-gray-50 px-2 py-1 rounded-full">
-								<ThemedText variant="body" className="text-gray-900 text-xs" bold>
-									Before
-								</ThemedText>
-							</View>
-						</Animated.View>
-
-						{/* After Label */}
-						<Animated.View
-							style={{
-								position: 'absolute',
-								top: 8,
-								right: 8,
-								opacity: afterLabelOpacity,
-							}}
-						>
-							<View className="bg-gray-50 px-2 py-1 rounded-full">
-								<ThemedText variant="body" className="text-gray-900 text-xs" bold>
-									After
-								</ThemedText>
-							</View>
-						</Animated.View>
-					</View>
-				) : (
-					<Image
-						source={{ uri: project.imageUrl }}
-						className="w-full h-48"
-						resizeMode="cover"
-					/>
-				)}
-
-				{/* Project Info */}
-				<View className="p-4">
-					<ThemedText className="text-gray-900 " variant="title-sm" extraBold>
-						{project.room?.name || project.room?.label || 'Design'}
-					</ThemedText>
-
-					{project.style && (
-						<View className="flex-row items-center">
-							<ThemedText className="text-gray-600" variant="body">
-								{project.style?.name || project.style?.label}
-							</ThemedText>
-						</View>
-					)}
-
-					<ThemedText className="text-gray-600 absolute top-4 right-4" variant="body">
-						{formatDate(project.createdAt)}
-					</ThemedText>
-				</View>
-			</TouchableOpacity>
-		</Animated.View>
-	);
-}
-
-export default function ProjectsPage() {
-	const insets = useSafeAreaInsets();
-	const [projects, setProjects] = useState<Project[]>([]);
-	const [isLoading, setIsLoading] = useState(true);
-	const [refreshing, setRefreshing] = useState(false);
-
-	useEffect(() => {
-		loadProjects();
+		return () => {
+			if (animationRef.current) {
+				animationRef.current.stop();
+			}
+		};
 	}, []);
 
 	const loadProjects = async () => {
@@ -267,12 +287,12 @@ export default function ProjectsPage() {
 		}
 	};
 
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(() => {
 		setRefreshing(true);
 		loadProjects();
-	};
+	}, []);
 
-	const handleProjectPress = (project: Project) => {
+	const handleProjectPress = useCallback((project: Project) => {
 		// Generate a slug from the project
 		const slug = project.imageUrl.substring(
 			project.imageUrl.lastIndexOf('/') + 1,
@@ -286,7 +306,20 @@ export default function ProjectsPage() {
 			pathname: '/project/[slug]',
 			params: { slug },
 		});
-	};
+	}, []);
+
+	const renderItem = useCallback(
+		({ item, index }: { item: Project; index: number }) => (
+			<AnimatedProjectCard
+				project={item}
+				onPress={() => handleProjectPress(item)}
+				sharedAnimation={sharedAnimation}
+			/>
+		),
+		[handleProjectPress, sharedAnimation]
+	);
+
+	const keyExtractor = useCallback((item: Project, index: number) => index.toString(), []);
 
 	if (isLoading) {
 		return <LoadingScreen message="Loading projects..." />;
@@ -315,24 +348,21 @@ export default function ProjectsPage() {
 					</ThemedText>
 				</View>
 			) : (
-				<ScrollView
-					className="flex-1"
-					contentContainerClassName="px-6 pb-8"
+				<FlatList<Project>
+					data={projects}
+					renderItem={renderItem}
+					keyExtractor={keyExtractor}
+					contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 32, gap: 16 }}
+					ItemSeparatorComponent={() => <View style={{ height: 0 }} />}
 					showsVerticalScrollIndicator={false}
 					refreshControl={
 						<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
 					}
-				>
-					<View className="gap-4">
-						{projects.map((project, index) => (
-							<AnimatedProjectCard
-								key={index}
-								project={project}
-								onPress={() => handleProjectPress(project)}
-							/>
-						))}
-					</View>
-				</ScrollView>
+					removeClippedSubviews={false}
+					maxToRenderPerBatch={10}
+					windowSize={1.5}
+					initialNumToRender={4}
+				/>
 			)}
 		</View>
 	);
