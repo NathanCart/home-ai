@@ -17,37 +17,37 @@ export interface ModeConfig {
 export const stepConfigs: Record<string, ModeConfig> = {
 	'interior-design': {
 		step1: {
-			title: 'Upload a Photo of Your Room',
+			title: 'Upload a photo of your room',
 			subtitle: 'Take a photo or upload an existing image to get started',
 			icon: 'device-camera',
 			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
 		},
 		step2: {
-			title: 'Choose a Room Type',
+			title: 'Choose a room type',
 			subtitle: 'Select the type of room you want to design',
 			icon: 'home',
 			description: 'Choose the type of room you want to design',
 		},
 		step3: {
-			title: 'Choose Design Style',
+			title: 'Choose design style',
 			subtitle: 'Select your preferred interior design style',
 			icon: 'palette',
 			description: 'Pick a style that matches your vision and personality',
 		},
 		step4: {
-			title: 'Choose Color Palette',
+			title: 'Choose color palette',
 			subtitle: 'Select a color scheme for your design',
 			icon: 'paintbrush',
 			description: 'Pick colors that create the perfect mood and atmosphere',
 		},
 		step5: {
-			title: 'Generate Design',
+			title: 'Generate design',
 			subtitle: 'AI will create your personalized interior design',
 			icon: 'sparkle',
 			description: 'Review your preferences and generate your AI-powered design',
 		},
 		step6: {
-			title: 'Design Complete',
+			title: 'Design complete',
 			subtitle: 'Your interior design has been generated successfully',
 			icon: 'check-circle',
 			description: 'Your personalized interior design is ready!',
@@ -55,14 +55,14 @@ export const stepConfigs: Record<string, ModeConfig> = {
 	},
 	paint: {
 		step1: {
-			title: 'Upload a Photo to Paint',
+			title: 'Upload a photo to paint',
 			subtitle: 'Take a photo of your space to begin painting your space with AI',
 			icon: 'device-camera',
 			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
 		},
 		step2: {
-			title: 'Pick your colors',
-			subtitle: 'Select the colors you want to paint your space with',
+			title: 'Select an area to paint',
+			subtitle: 'Using the tools below, select the area you want to paint',
 			icon: 'paintbrush',
 			description: 'Pick colors that create the perfect mood and atmosphere',
 		},

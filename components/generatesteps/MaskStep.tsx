@@ -8,6 +8,8 @@ import {
 	GestureResponderEvent,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import Slider from '@react-native-community/slider';
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import {
 	Canvas,
 	Image as SkiaImage,
@@ -38,7 +40,7 @@ interface MaskStepProps {
 	compact?: boolean;
 }
 
-type Tool = 'brush' | 'auto';
+type Tool = 'brush' | 'auto' | 'eraser';
 
 const BRUSH_SIZES = [10, 20, 30, 40, 50];
 
@@ -55,7 +57,7 @@ export function MaskStep({
 	compact = false,
 }: MaskStepProps) {
 	// UI state
-	const [selectedTool, setSelectedTool] = useState<Tool>('auto');
+	const [selectedTool, setSelectedTool] = useState<Tool>('brush');
 	const [brushSize, setBrushSize] = useState(30); // screen pixels
 	const [isDrawing, setIsDrawing] = useState(false);
 
@@ -82,6 +84,10 @@ export function MaskStep({
 
 	// Counter to throttle mask updates during drawing
 	const segmentCounterRef = useRef(0);
+
+	// Controls overlay state
+	const [showBrushControls, setShowBrushControls] = useState(false);
+	const [showToleranceControls, setShowToleranceControls] = useState(false);
 
 	// Layout
 	const screenWidth = Dimensions.get('window').width;
@@ -110,6 +116,7 @@ export function MaskStep({
 			containerSize.width,
 			containerSize.height
 		);
+
 		const ix = Math.min(imgW - 1, Math.max(0, (vx - offsetX) / scale));
 		const iy = Math.min(imgH - 1, Math.max(0, (vy - offsetY) / scale));
 		return { ix, iy, scale };
@@ -141,14 +148,22 @@ export function MaskStep({
 	const drawStrokeSegmentOnMask = (
 		p1: { x: number; y: number },
 		p2: { x: number; y: number },
-		brushImagePx: number
+		brushImagePx: number,
+		isErasing: boolean = false
 	) => {
 		const surface = maskSurfaceRef.current;
 		if (!surface) return;
 		const canvas = surface.getCanvas();
 
+		// For eraser, use DST_OUT blend mode to remove the mask
+		// For brush, use white to add to the mask
 		const paint = Skia.Paint();
-		paint.setColor(Skia.Color('white')); // WHITE = edit region
+		if (isErasing) {
+			paint.setColor(Skia.Color('black')); // Black with DST_OUT will erase
+			paint.setBlendMode(BlendMode.DstOut);
+		} else {
+			paint.setColor(Skia.Color('white')); // WHITE = edit region
+		}
 		paint.setStyle(PaintStyle.Stroke);
 		paint.setStrokeWidth(Math.max(1, brushImagePx));
 		paint.setAntiAlias(true);
@@ -157,7 +172,12 @@ export function MaskStep({
 		// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
 		if (Math.hypot(p2.x - p1.x, p2.y - p1.y) < 0.001) {
 			const dotPaint = Skia.Paint();
-			dotPaint.setColor(Skia.Color('white'));
+			if (isErasing) {
+				dotPaint.setColor(Skia.Color('black'));
+				dotPaint.setBlendMode(BlendMode.DstOut);
+			} else {
+				dotPaint.setColor(Skia.Color('white'));
+			}
 			dotPaint.setStyle(PaintStyle.Fill);
 			canvas.drawCircle(p1.x, p1.y, brushImagePx * 0.5, dotPaint);
 		} else {
@@ -186,12 +206,10 @@ export function MaskStep({
 
 	const panResponder = PanResponder.create({
 		onStartShouldSetPanResponder: () => {
-			console.log('🟢 onStartShouldSetPanResponder', selectedTool);
-			return selectedTool === 'brush';
+			return selectedTool === 'brush' || selectedTool === 'eraser';
 		},
 		onMoveShouldSetPanResponder: () => {
-			console.log('🟢 onMoveShouldSetPanResponder', selectedTool);
-			return selectedTool === 'brush';
+			return selectedTool === 'brush' || selectedTool === 'eraser';
 		},
 		onPanResponderGrant: (evt) => {
 			console.log(
@@ -200,7 +218,7 @@ export function MaskStep({
 				!!skImage,
 				!!maskSurfaceRef.current
 			);
-			if (selectedTool !== 'brush' || !skImage) return;
+			if ((selectedTool !== 'brush' && selectedTool !== 'eraser') || !skImage) return;
 			const { locationX, locationY } = evt.nativeEvent;
 			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
 			const brushPx = brushSize / (scale ?? 1);
@@ -213,11 +231,12 @@ export function MaskStep({
 			p.moveTo(locationX, locationY);
 			setLiveStrokePath(p);
 
-			drawStrokeSegmentOnMask({ x: ix, y: iy }, { x: ix, y: iy }, brushPx);
+			const isErasing = selectedTool === 'eraser';
+			drawStrokeSegmentOnMask({ x: ix, y: iy }, { x: ix, y: iy }, brushPx, isErasing);
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		},
 		onPanResponderMove: (evt) => {
-			if (selectedTool !== 'brush' || !skImage) return;
+			if ((selectedTool !== 'brush' && selectedTool !== 'eraser') || !skImage) return;
 			const { locationX, locationY } = evt.nativeEvent;
 			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
 			const prev = lastImgPointRef.current;
@@ -231,7 +250,8 @@ export function MaskStep({
 			});
 
 			const brushPx = brushSize / (scale ?? 1);
-			drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx);
+			const isErasing = selectedTool === 'eraser';
+			drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx, isErasing);
 			lastImgPointRef.current = { x: ix, y: iy };
 
 			// Update mask snapshot every 5 segments for smooth feedback without lag
@@ -443,56 +463,9 @@ export function MaskStep({
 				</ThemedText>
 			</View>
 
-			{/* Tool Selection */}
-			<View className="flex-row gap-2 mb-3">
-				<TouchableOpacity
-					onPress={() => setSelectedTool('auto')}
-					className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-						selectedTool === 'auto'
-							? 'border-blue-500 bg-blue-50'
-							: 'border-gray-200 bg-white'
-					}`}
-				>
-					<Octicons
-						name="paintbrush"
-						size={20}
-						color={selectedTool === 'auto' ? '#3B82F6' : '#6B7280'}
-					/>
-					<ThemedText
-						variant="body"
-						className={`ml-2 ${selectedTool === 'auto' ? 'text-blue-600' : 'text-gray-700'}`}
-						bold={selectedTool === 'auto'}
-					>
-						Auto-Select
-					</ThemedText>
-				</TouchableOpacity>
-
-				<TouchableOpacity
-					onPress={() => setSelectedTool('brush')}
-					className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
-						selectedTool === 'brush'
-							? 'border-blue-500 bg-blue-50'
-							: 'border-gray-200 bg-white'
-					}`}
-				>
-					<Octicons
-						name="pencil"
-						size={20}
-						color={selectedTool === 'brush' ? '#3B82F6' : '#6B7280'}
-					/>
-					<ThemedText
-						variant="body"
-						className={`ml-2 ${selectedTool === 'brush' ? 'text-blue-600' : 'text-gray-700'}`}
-						bold={selectedTool === 'brush'}
-					>
-						Draw
-					</ThemedText>
-				</TouchableOpacity>
-			</View>
-
 			{/* Selected Color Preview (optional, from your original) */}
 			{selectedColor && (
-				<View className="bg-blue-50 rounded-xl p-4 mb-4 flex-row items-center">
+				<View className="bg-gray-50 rounded-xl p-4 mb-4 flex-row items-center">
 					<View
 						className="w-12 h-12 rounded-lg border-2 border-gray-300"
 						style={{ backgroundColor: selectedColorHex }}
@@ -504,70 +477,6 @@ export function MaskStep({
 						<ThemedText variant="body" className="text-gray-600">
 							{selectedColorHex}
 						</ThemedText>
-					</View>
-				</View>
-			)}
-
-			{/* Brush Size Selector */}
-			{selectedTool === 'brush' && (
-				<View className="flex-row items-center mb-3">
-					<ThemedText variant="body" className="text-gray-700 mr-3">
-						Size:
-					</ThemedText>
-					<View className="flex-row gap-2 flex-1">
-						{BRUSH_SIZES.map((size) => (
-							<TouchableOpacity
-								key={size}
-								onPress={() => setBrushSize(size)}
-								className={`w-10 h-10 rounded-full border-2 items-center justify-center ${
-									brushSize === size
-										? 'border-blue-500 bg-blue-50'
-										: 'border-gray-300 bg-white'
-								}`}
-							>
-								<View
-									className="rounded-full bg-gray-900"
-									style={{
-										width: size / 3,
-										height: size / 3,
-									}}
-								/>
-							</TouchableOpacity>
-						))}
-					</View>
-				</View>
-			)}
-
-			{/* Auto-Select Tolerance Selection */}
-			{selectedTool === 'auto' && (
-				<View className="mb-3">
-					<ThemedText variant="body" className="text-gray-700 mb-2">
-						Tolerance: {tolerance}
-					</ThemedText>
-					<View className="flex-row gap-2">
-						{[
-							{ label: 'Low', value: 15 },
-							{ label: 'Med', value: 28 },
-							{ label: 'High', value: 45 },
-						].map(({ label, value }) => (
-							<TouchableOpacity
-								key={label}
-								onPress={() => setTolerance(value)}
-								className={`flex-1 py-3 rounded-xl border-2 ${
-									tolerance === value
-										? 'border-blue-500 bg-blue-50'
-										: 'border-gray-200 bg-white'
-								}`}
-							>
-								<ThemedText
-									variant="body"
-									className={`text-center ${tolerance === value ? 'text-blue-600' : 'text-gray-700'}`}
-									bold={tolerance === value}
-								>
-									{label}
-								</ThemedText>
-							</TouchableOpacity>
-						))}
 					</View>
 				</View>
 			)}
@@ -610,7 +519,7 @@ export function MaskStep({
 								y={0}
 								width={containerSize.width}
 								height={containerSize.height}
-								color="rgba(255,0,0,0.8)"
+								color="rgba(255,0,0,0.6)"
 							/>
 						</SkiaMask>
 					)}
@@ -645,6 +554,80 @@ export function MaskStep({
 							</View>
 						</View>
 					)}
+			</View>
+
+			{/* Tool Selection Below Image - Small Icon Buttons */}
+			<View className="flex-row gap-3  mb-6">
+				<View className="border-r pr-3 border-gray-300">
+					<TouchableOpacity
+						onPress={() => setSelectedTool('brush')}
+						className={`w-12 h-12 rounded-full  items-center justify-center ${
+							selectedTool === 'brush'
+								? 'bg-gray-900 text-gray-50'
+								: 'text-gray-900 bg-transparent border-0'
+						}`}
+					>
+						<Octicons
+							name="pencil"
+							size={22}
+							color={selectedTool === 'brush' ? '#f9fafb' : '#9CA3AF'}
+						/>
+					</TouchableOpacity>
+				</View>
+				<TouchableOpacity
+					onPress={() => setSelectedTool('auto')}
+					className={`w-12 h-12 rounded-full items-center justify-center ${
+						selectedTool === 'auto'
+							? 'bg-gray-900 text-gray-50'
+							: 'text-gray-900 bg-transparent border-0'
+					}`}
+				>
+					<Octicons
+						name="paintbrush"
+						size={22}
+						color={selectedTool === 'auto' ? '#f9fafb' : '#9CA3AF'}
+					/>
+				</TouchableOpacity>
+
+				<TouchableOpacity
+					onPress={() => setSelectedTool('eraser')}
+					className={`w-12 h-12 rounded-full items-center justify-center ${
+						selectedTool === 'eraser'
+							? 'bg-gray-900 text-gray-50'
+							: 'text-gray-900 bg-transparent border-0'
+					}`}
+				>
+					<FontAwesome6
+						name="eraser"
+						size={22}
+						color={selectedTool === 'eraser' ? '#f9fafb' : '#9CA3AF'}
+					/>
+				</TouchableOpacity>
+			</View>
+
+			{/* Unified Slider for All Tools */}
+			<View className="mb-4 bg-gray-50 rounded-xl">
+				<ThemedText variant="body" className="text-gray-700 mb-3">
+					{selectedTool === 'brush' && `Brush Size: ${brushSize}px`}
+					{selectedTool === 'auto' && `Tolerance: ${tolerance}`}
+					{selectedTool === 'eraser' && `Eraser Size: ${brushSize}px`}
+				</ThemedText>
+				<Slider
+					minimumValue={selectedTool === 'auto' ? 15 : 10}
+					maximumValue={selectedTool === 'auto' ? 45 : 50}
+					step={selectedTool === 'auto' ? 1 : 5}
+					value={selectedTool === 'auto' ? tolerance : brushSize}
+					onValueChange={(value: number) => {
+						if (selectedTool === 'auto') {
+							setTolerance(value);
+						} else {
+							setBrushSize(value);
+						}
+					}}
+					minimumTrackTintColor="#111827"
+					maximumTrackTintColor="#D1D5DB"
+					thumbTintColor="#111827"
+				/>
 			</View>
 
 			{/* Actions */}
