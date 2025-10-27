@@ -20,6 +20,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from '../GenerateHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
 
+interface AlternativeGeneration {
+	imageUrl: string;
+	style?: any;
+	room?: any;
+}
+
 interface ConfirmationStepProps {
 	imageUrl: string;
 	room?: any;
@@ -47,11 +53,16 @@ export function ConfirmationStep({
 	const screenWidth = Dimensions.get('window').width - 48; // Account for padding
 
 	const [imageUrl, setImageUrl] = useState(initialImageUrl);
-	const [alternativeGenerations, setAlternativeGenerations] = useState<string[]>([]);
+	const [alternativeGenerations, setAlternativeGenerations] = useState<AlternativeGeneration[]>(
+		[]
+	);
 	const [showModal, setShowModal] = useState(false);
 
 	// Create variants array that includes the original image + alternatives
-	const allVariants = [initialImageUrl, ...alternativeGenerations];
+	const allVariants: Array<{ imageUrl: string; style?: any; room?: any }> = [
+		{ imageUrl: initialImageUrl, style, room },
+		...alternativeGenerations,
+	];
 
 	const toggleView = (targetValue: number) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -122,11 +133,10 @@ export function ConfirmationStep({
 
 	const handleSaveToProjects = async () => {
 		try {
-			// Get all unique variants (removing any duplicates)
-			const allUniqueVariants = [...new Set(allVariants)];
-
 			// Remove the current imageUrl from alternatives since it's already the main image
-			const alternativesWithoutCurrent = allUniqueVariants.filter((url) => url !== imageUrl);
+			const alternativesWithoutCurrent = alternativeGenerations.filter(
+				(alt) => alt.imageUrl !== imageUrl
+			);
 
 			const projectData = {
 				imageUrl,
@@ -162,10 +172,13 @@ export function ConfirmationStep({
 		}
 	};
 
-	const handleGenerationComplete = (newImageUrl: string) => {
+	const handleGenerationComplete = (newImageUrl: string, newStyle?: any, newRoom?: any) => {
 		setShowModal(false);
-		// Add to alternative generations
-		setAlternativeGenerations((prev) => [...prev, newImageUrl]);
+		// Add to alternative generations with style and room info
+		setAlternativeGenerations((prev) => [
+			...prev,
+			{ imageUrl: newImageUrl, style: newStyle, room: newRoom },
+		]);
 		// Auto-select the new image
 		setImageUrl(newImageUrl);
 	};
@@ -299,7 +312,7 @@ export function ConfirmationStep({
 					)}
 
 					{/* Image Display with Sliding Reveal */}
-					<View style={{ height: 450 }}>
+					<View style={{ height: 270 }}>
 						{hasOriginalImage ? (
 							<View className="flex-1 rounded-2xl overflow-hidden bg-white relative">
 								{/* Before Image with crossfade */}
@@ -461,29 +474,43 @@ export function ConfirmationStep({
 							<FlatList
 								horizontal
 								data={allVariants}
-								keyExtractor={(item, index) => `variant-${index}`}
+								keyExtractor={(item, index) => item.imageUrl || `variant-${index}`}
 								showsHorizontalScrollIndicator={false}
 								contentContainerStyle={{ gap: 12, paddingHorizontal: 24 }}
-								renderItem={({ item, index }) => (
-									<TouchableOpacity
-										onPress={() => {
-											// Swap the main image with this variant
-											setImageUrl(item);
-											Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-										}}
-										className="rounded-2xl bg-transparent"
-										style={{ width: 120, height: 120 }}
-									>
-										<Image
-											source={{ uri: item }}
-											className="w-full h-full rounded-2xl"
-											resizeMode="cover"
-										/>
-										{imageUrl === item && (
-											<View className="absolute rounded-2xl inset-0  border-2 border-blue-500" />
-										)}
-									</TouchableOpacity>
-								)}
+								renderItem={({ item, index }) => {
+									const variantStyleName =
+										item.style?.name || item.style?.label || '';
+									return (
+										<View>
+											<TouchableOpacity
+												onPress={() => {
+													// Swap the main image with this variant
+													setImageUrl(item.imageUrl);
+													Haptics.impactAsync(
+														Haptics.ImpactFeedbackStyle.Medium
+													);
+												}}
+												className="rounded-2xl bg-transparent"
+												style={{ width: 120, height: 120 }}
+											>
+												<Image
+													source={{ uri: item.imageUrl }}
+													className="w-full h-full rounded-2xl"
+													resizeMode="cover"
+												/>
+												{imageUrl === item.imageUrl && (
+													<View className="absolute rounded-2xl inset-0  border-2 border-blue-500" />
+												)}
+											</TouchableOpacity>
+											<ThemedText
+												variant="body"
+												className="text-gray-900 text-center"
+											>
+												{variantStyleName}
+											</ThemedText>
+										</View>
+									);
+								}}
 							/>
 						</View>
 					)}

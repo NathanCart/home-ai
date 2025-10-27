@@ -15,7 +15,7 @@ import { getStepConfig } from 'config/stepConfig';
 interface GenerateHalfModalProps {
 	visible: boolean;
 	onClose: () => void;
-	onGenerationComplete: (imageUrl: string) => void;
+	onGenerationComplete: (imageUrl: string, style?: any, room?: any) => void;
 	initialImageUri?: string | null;
 	initialRoom?: any;
 	initialStyle?: any;
@@ -151,7 +151,7 @@ export function GenerateHalfModal({
 
 	const handleGenerationComplete = (imageUrl: string) => {
 		setIsGenerating(false);
-		onGenerationComplete(imageUrl);
+		onGenerationComplete(imageUrl, selectedStyle, selectedRoom);
 
 		// Reset state for next time
 		setTimeout(() => {
