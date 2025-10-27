@@ -72,7 +72,7 @@ export function ToolCard({
 			style={{
 				transform: [{ scale: scaleAnimation }],
 			}}
-			className="mb-8"
+			className=""
 		>
 			<Pressable
 				onPress={handlePress}

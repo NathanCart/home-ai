@@ -53,6 +53,32 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your personalized interior design is ready!',
 		},
 	},
+	paint: {
+		step1: {
+			title: 'Upload a Photo to Paint',
+			subtitle: 'Take a photo of your space to begin painting your space with AI',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step2: {
+			title: 'Pick your colors',
+			subtitle: 'Select the colors you want to paint your space with',
+			icon: 'paintbrush',
+			description: 'Pick colors that create the perfect mood and atmosphere',
+		},
+		step3: {
+			title: 'Generate Design',
+			subtitle: 'AI will create your personalized interior design',
+			icon: 'sparkle',
+			description: 'Review your preferences and generate your AI-powered design',
+		},
+		step6: {
+			title: 'Design Complete',
+			subtitle: 'Your interior design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized interior design is ready!',
+		},
+	},
 	default: {
 		step1: {
 			title: 'Upload Your Photo',
