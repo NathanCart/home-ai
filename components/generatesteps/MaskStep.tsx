@@ -29,7 +29,7 @@ import {
 } from '@shopify/react-native-skia';
 import { ThemedText } from '../ThemedText';
 import { CustomButton } from '../CustomButton';
-import { Octicons } from '@expo/vector-icons';
+import { FontAwesome5, Octicons } from '@expo/vector-icons';
 import { StepConfig } from '../../config/stepConfig';
 
 interface MaskStepProps {
@@ -94,6 +94,13 @@ export function MaskStep({
 	const [sliderOpacity, setSliderOpacity] = useState(0);
 	const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+	// Mask history for undo/redo
+	const [maskHistory, setMaskHistory] = useState<
+		Array<ReturnType<typeof Skia.Image.MakeImageFromEncoded> | null>
+	>([]);
+	const [historyIndex, setHistoryIndex] = useState(-1);
+	const isHistoryActionRef = useRef(false);
+
 	// Layout
 	const screenWidth = Dimensions.get('window').width;
 	const containerSize = useMemo(() => {
@@ -145,7 +152,12 @@ export function MaskStep({
 			canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
 			surface?.flush();
 			const snap = surface?.makeImageSnapshot()?.makeNonTextureImage(); // for using on JS thread safely
-			if (snap) setMaskSnapshot(snap);
+			if (snap) {
+				setMaskSnapshot(snap);
+				// Add initial empty mask to history
+				setMaskHistory([snap]);
+				setHistoryIndex(0);
+			}
 		}
 	}, [skImage, imageUri]);
 
@@ -198,12 +210,59 @@ export function MaskStep({
 		surface.flush();
 	};
 
-	const refreshMaskSnapshot = () => {
+	const refreshMaskSnapshot = (saveToHistory: boolean = false) => {
 		const surface = maskSurfaceRef.current;
 		if (!surface) return;
 		surface.flush();
 		const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
-		if (snap) setMaskSnapshot(snap);
+		if (snap) {
+			setMaskSnapshot(snap);
+			// Save to history only when explicitly requested and not during history navigation
+			if (saveToHistory && !isHistoryActionRef.current) {
+				const newHistory = maskHistory.slice(0, historyIndex + 1);
+				newHistory.push(snap);
+				setMaskHistory(newHistory);
+				setHistoryIndex(newHistory.length - 1);
+			}
+		}
+	};
+
+	const handleUndo = () => {
+		if (historyIndex > 0) {
+			isHistoryActionRef.current = true;
+			const newIndex = historyIndex - 1;
+			setHistoryIndex(newIndex);
+			setMaskSnapshot(maskHistory[newIndex]);
+			// Also update the actual surface
+			if (maskHistory[newIndex] && maskSurfaceRef.current) {
+				const canvas = maskSurfaceRef.current.getCanvas();
+				canvas.clear(Skia.Color('black'));
+				canvas.drawImage(maskHistory[newIndex], 0, 0);
+				maskSurfaceRef.current.flush();
+			}
+			setTimeout(() => {
+				isHistoryActionRef.current = false;
+			}, 100);
+		}
+	};
+
+	const handleRedo = () => {
+		if (historyIndex < maskHistory.length - 1) {
+			isHistoryActionRef.current = true;
+			const newIndex = historyIndex + 1;
+			setHistoryIndex(newIndex);
+			setMaskSnapshot(maskHistory[newIndex]);
+			// Also update the actual surface
+			if (maskHistory[newIndex] && maskSurfaceRef.current) {
+				const canvas = maskSurfaceRef.current.getCanvas();
+				canvas.clear(Skia.Color('black'));
+				canvas.drawImage(maskHistory[newIndex], 0, 0);
+				maskSurfaceRef.current.flush();
+			}
+			setTimeout(() => {
+				isHistoryActionRef.current = false;
+			}, 100);
+		}
 	};
 
 	// PanResponder for brush
@@ -259,19 +318,19 @@ export function MaskStep({
 			drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx, isErasing);
 			lastImgPointRef.current = { x: ix, y: iy };
 
-			// Update mask snapshot every 5 segments for smooth feedback without lag
+			// Update mask snapshot every 5 segments for smooth feedback without lag (don't save to history)
 			segmentCounterRef.current++;
 			if (segmentCounterRef.current % 5 === 0) {
-				refreshMaskSnapshot();
+				refreshMaskSnapshot(false);
 			}
 		},
 		onPanResponderRelease: () => {
 			setIsDrawing(false);
 			lastImgPointRef.current = null;
 			setLiveStrokePath(null);
-			// snapshot after each stroke
+			// snapshot after each stroke and save to history
 			segmentCounterRef.current = 0;
-			refreshMaskSnapshot();
+			refreshMaskSnapshot(true);
 			setHasMaskContent(true);
 		},
 		onPanResponderTerminate: () => {
@@ -279,7 +338,7 @@ export function MaskStep({
 			lastImgPointRef.current = null;
 			setLiveStrokePath(null);
 			segmentCounterRef.current = 0;
-			refreshMaskSnapshot();
+			refreshMaskSnapshot(true);
 			setHasMaskContent(true);
 		},
 	});
@@ -488,7 +547,7 @@ export function MaskStep({
 
 			{/* Image & Mask Canvas */}
 			<View
-				className="mb-4 relative rounded-2xl overflow-hidden bg-gray-100"
+				className="mb-2.5 relative rounded-2xl overflow-hidden bg-gray-100"
 				style={{ height: containerSize.height }}
 			>
 				<Canvas ref={useCanvasRef()} style={{ width: '100%', height: '100%' }}>
@@ -610,8 +669,8 @@ export function MaskStep({
 			</View>
 
 			{/* Tool Selection Below Image - Small Icon Buttons */}
-			<View className="flex-row gap-3  mb-6">
-				<View className="border-r pr-3 border-gray-300">
+			<View className="flex-row gap-3 items-center mb-6">
+				<View className="flex-row border-r pr-3 border-gray-300">
 					<TouchableOpacity
 						onPress={() => setSelectedTool('brush')}
 						className={`w-12 h-12 rounded-full  items-center justify-center ${
@@ -656,6 +715,36 @@ export function MaskStep({
 						color={selectedTool === 'eraser' ? '#f9fafb' : '#9CA3AF'}
 					/>
 				</TouchableOpacity>
+
+				{/* Undo/Redo buttons */}
+				<View className="flex-row ml-auto">
+					<TouchableOpacity
+						onPress={handleUndo}
+						disabled={historyIndex <= 0}
+						className={`w-12 h-12 rounded-full items-center justify-center ${
+							historyIndex <= 0 ? 'opacity-30' : 'opacity-100'
+						}`}
+					>
+						<FontAwesome5
+							name="undo"
+							size={22}
+							color={historyIndex <= 0 ? '#9CA3AF' : '#111827'}
+						/>
+					</TouchableOpacity>
+					<TouchableOpacity
+						onPress={handleRedo}
+						disabled={historyIndex >= maskHistory.length - 1}
+						className={`w-12 h-12 rounded-full items-center justify-center ${
+							historyIndex >= maskHistory.length - 1 ? 'opacity-30' : 'opacity-100'
+						}`}
+					>
+						<FontAwesome5
+							name="redo"
+							size={22}
+							color={historyIndex >= maskHistory.length - 1 ? '#9CA3AF' : '#111827'}
+						/>
+					</TouchableOpacity>
+				</View>
 			</View>
 
 			{/* Unified Slider for All Tools */}
