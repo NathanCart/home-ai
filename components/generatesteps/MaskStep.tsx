@@ -89,6 +89,11 @@ export function MaskStep({
 	const [showBrushControls, setShowBrushControls] = useState(false);
 	const [showToleranceControls, setShowToleranceControls] = useState(false);
 
+	// Slider preview state
+	const [isDraggingSlider, setIsDraggingSlider] = useState(false);
+	const [sliderOpacity, setSliderOpacity] = useState(0);
+	const fadeIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
 	// Layout
 	const screenWidth = Dimensions.get('window').width;
 	const containerSize = useMemo(() => {
@@ -523,6 +528,57 @@ export function MaskStep({
 							/>
 						</SkiaMask>
 					)}
+
+					{/* Size preview circle when dragging slider */}
+					{(selectedTool === 'brush' || selectedTool === 'eraser') &&
+						isDraggingSlider &&
+						(() => {
+							// Create a nice looking preview with both fill and stroke
+							const centerX = containerSize.width / 2;
+							const centerY = containerSize.height / 2;
+							const radius = brushSize / 2;
+
+							// Inner circle path with stroke
+							const strokePath = Skia.Path.Make();
+							strokePath.addCircle(centerX, centerY, radius);
+
+							// Outer circle path for background glow effect
+							const glowPath = Skia.Path.Make();
+							glowPath.addCircle(centerX, centerY, radius + 8);
+
+							const mainColor =
+								selectedTool === 'eraser'
+									? 'rgba(0, 0, 0, 0.4)'
+									: 'rgba(0, 0, 0, 0.4)';
+							const strokeColor =
+								selectedTool === 'eraser'
+									? 'rgba(0, 0, 0, 0.8)'
+									: 'rgba(0, 0, 0, 0.8)';
+
+							return (
+								<Group opacity={sliderOpacity}>
+									{/* Glow background */}
+									<SkiaPathComponent
+										path={glowPath}
+										color="rgba(0, 0, 0, 0.1)"
+										style="fill"
+									/>
+									{/* Main circle fill */}
+									<SkiaPathComponent
+										path={strokePath}
+										color={mainColor}
+										style="fill"
+									/>
+									{/* Stroke outline */}
+									<SkiaPathComponent
+										path={strokePath}
+										color={strokeColor}
+										style="stroke"
+										strokeWidth={2}
+									/>
+								</Group>
+							);
+						})()}
 				</Canvas>
 
 				{/* Gesture layers */}
@@ -541,10 +597,7 @@ export function MaskStep({
 					skImage !== null &&
 					((selectedTool === 'auto' && !autoSelecting) ||
 						(selectedTool === 'brush' && !isDrawing)) && (
-						<View
-							pointerEvents="none"
-							className="absolute inset-0 items-center justify-center"
-						>
+						<View pointerEvents="none" className="absolute inset-0 top-4 left-4">
 							<View className="bg-black/60 rounded-xl px-4 py-3 max-w-xs">
 								<ThemedText variant="body" className="text-white text-center">
 									{selectedTool === 'auto'
@@ -614,7 +667,7 @@ export function MaskStep({
 				</ThemedText>
 				<Slider
 					minimumValue={selectedTool === 'auto' ? 15 : 10}
-					maximumValue={selectedTool === 'auto' ? 45 : 50}
+					maximumValue={selectedTool === 'auto' ? 45 : 100}
 					step={selectedTool === 'auto' ? 1 : 5}
 					value={selectedTool === 'auto' ? tolerance : brushSize}
 					onValueChange={(value: number) => {
@@ -623,6 +676,43 @@ export function MaskStep({
 						} else {
 							setBrushSize(value);
 						}
+					}}
+					onSlidingStart={() => {
+						// Clear any existing fade interval
+						if (fadeIntervalRef.current) {
+							clearInterval(fadeIntervalRef.current);
+						}
+						setIsDraggingSlider(true);
+						// Fade in
+						let opacity = 0;
+						const interval = setInterval(() => {
+							opacity += 0.1;
+							setSliderOpacity(opacity);
+							if (opacity >= 1) {
+								clearInterval(interval);
+								fadeIntervalRef.current = null;
+							}
+						}, 16); // ~60fps
+						fadeIntervalRef.current = interval;
+					}}
+					onSlidingComplete={() => {
+						// Clear any existing fade interval
+						if (fadeIntervalRef.current) {
+							clearInterval(fadeIntervalRef.current);
+						}
+						// Fade out - keep isDraggingSlider true during fade
+						let opacity = 1;
+						const interval = setInterval(() => {
+							opacity -= 0.05;
+							setSliderOpacity(Math.max(0, opacity));
+							if (opacity <= 0) {
+								clearInterval(interval);
+								fadeIntervalRef.current = null;
+								// Only set isDraggingSlider to false after fade completes
+								setIsDraggingSlider(false);
+							}
+						}, 16); // ~60fps
+						fadeIntervalRef.current = interval;
 					}}
 					minimumTrackTintColor="#111827"
 					maximumTrackTintColor="#D1D5DB"
