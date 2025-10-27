@@ -20,6 +20,7 @@ export default function PaintModal() {
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [maskImageUri, setMaskImageUri] = useState<string | null>(null);
+	const [hasMaskContent, setHasMaskContent] = useState(false);
 	const [selectedPalette, setSelectedPalette] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
@@ -228,6 +229,7 @@ export default function PaintModal() {
 						config={config}
 						imageUri={selectedImageUri}
 						selectedColor={selectedPalette}
+						onHasMaskContentChange={setHasMaskContent}
 					/>
 				) : null;
 			case 3:
@@ -308,8 +310,8 @@ export default function PaintModal() {
 				)}
 			</Animated.View>
 
-			{/* Footer - Hide on confirmation step and mask step */}
-			{currentStep !== 5 && currentStep !== 2 && (
+			{/* Footer - Hide on confirmation step */}
+			{currentStep !== 5 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -330,6 +332,7 @@ export default function PaintModal() {
 								className="flex-1"
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
+									(currentStep === 2 && !hasMaskContent) ||
 									(currentStep === 3 && !selectedPalette)
 								}
 							/>

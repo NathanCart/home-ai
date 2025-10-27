@@ -38,6 +38,7 @@ interface MaskStepProps {
 	imageUri: string; // local file://, remote http(s)://, or data:image/*;base64,...
 	selectedColor?: any;
 	compact?: boolean;
+	onHasMaskContentChange?: (hasContent: boolean) => void;
 }
 
 type Tool = 'brush' | 'auto' | 'eraser';
@@ -55,6 +56,7 @@ export function MaskStep({
 	imageUri,
 	selectedColor,
 	compact = false,
+	onHasMaskContentChange,
 }: MaskStepProps) {
 	// UI state
 	const [selectedTool, setSelectedTool] = useState<Tool>('brush');
@@ -81,6 +83,11 @@ export function MaskStep({
 
 	// Track if mask has content (to hide helper overlay)
 	const [hasMaskContent, setHasMaskContent] = useState(false);
+
+	// Notify parent when mask content changes
+	useEffect(() => {
+		onHasMaskContentChange?.(hasMaskContent);
+	}, [hasMaskContent, onHasMaskContentChange]);
 
 	// Counter to throttle mask updates during drawing
 	const segmentCounterRef = useRef(0);
@@ -550,6 +557,16 @@ export function MaskStep({
 				className="mb-2.5 relative rounded-2xl overflow-hidden bg-gray-100"
 				style={{ height: containerSize.height }}
 			>
+				{/* Clear button in top right */}
+				<TouchableOpacity
+					onPress={handleClearMask}
+					className="absolute w-10 h-10 flex items-center justify-center top-2  right-2 z-10 bg-gray-900/80 rounded-full p-2"
+					style={{ opacity: hasMaskContent ? 1 : 0.3 }}
+					disabled={!hasMaskContent}
+				>
+					<Octicons name="trash" size={20} color="#ffffff" />
+				</TouchableOpacity>
+
 				<Canvas ref={useCanvasRef()} style={{ width: '100%', height: '100%' }}>
 					{/* Draw the base image to fit inside the square container (contain) */}
 					{skImage && (
@@ -807,29 +824,6 @@ export function MaskStep({
 					maximumTrackTintColor="#D1D5DB"
 					thumbTintColor="#111827"
 				/>
-			</View>
-
-			{/* Actions */}
-			<View className="flex-row gap-3 mt-2">
-				<View className="flex-1">
-					<CustomButton
-						title="Clear"
-						onPress={handleClearMask}
-						variant="ghost"
-						size="md"
-						icon="trash"
-					/>
-				</View>
-				<View className="flex-1">
-					<CustomButton
-						title="Next"
-						onPress={handleComplete}
-						variant="primary"
-						size="md"
-						icon="check"
-						iconPosition="right"
-					/>
-				</View>
 			</View>
 		</View>
 	);
