@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
+import { MaskStep } from 'components/generatesteps/MaskStep';
 import { ColorStep } from 'components/generatesteps/ColorStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
@@ -15,9 +16,10 @@ import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation'
 export default function PaintModal() {
 	const insets = useSafeAreaInsets();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(2); // Photo, Color
+	const [totalSteps] = useState(3); // Photo, Mask, Color
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [maskImageUri, setMaskImageUri] = useState<string | null>(null);
 	const [selectedPalette, setSelectedPalette] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
@@ -61,6 +63,12 @@ export default function PaintModal() {
 		console.log('Image select pressed');
 	};
 
+	const handleMaskComplete = (maskDataUri: string) => {
+		setMaskImageUri(maskDataUri);
+		// Auto-advance to next step
+		handleNextStep();
+	};
+
 	const handleColorSelect = (color: any | null) => {
 		setSelectedPalette(color);
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -84,8 +92,8 @@ export default function PaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate to confirmation step (step 4)
-			setCurrentStep(4);
+			// Navigate to confirmation step (step 5)
+			setCurrentStep(5);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(1);
@@ -132,8 +140,8 @@ export default function PaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate back to generating step (step 3)
-			setCurrentStep(3);
+			// Navigate back to generating step (step 4)
+			setCurrentStep(4);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(-1);
@@ -214,6 +222,15 @@ export default function PaintModal() {
 					/>
 				);
 			case 2:
+				return selectedImageUri ? (
+					<MaskStep
+						onMaskComplete={handleMaskComplete}
+						config={config}
+						imageUri={selectedImageUri}
+						selectedColor={selectedPalette}
+					/>
+				) : null;
+			case 3:
 				return (
 					<ColorStep
 						onColorSelect={handleColorSelect}
@@ -221,7 +238,7 @@ export default function PaintModal() {
 						selectedColor={selectedPalette}
 					/>
 				);
-			case 3:
+			case 4:
 				return (
 					<GeneratingStep
 						onComplete={() => router.back()}
@@ -232,7 +249,7 @@ export default function PaintModal() {
 						imageUri={selectedImageUri}
 					/>
 				);
-			case 4:
+			case 5:
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
@@ -253,7 +270,7 @@ export default function PaintModal() {
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
 			{/* Header - Hide on confirmation step */}
-			{currentStep !== 4 && (
+			{currentStep !== 5 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -277,18 +294,22 @@ export default function PaintModal() {
 					opacity: opacityAnimation,
 				}}
 			>
-				<ScrollView
-					className=""
-					contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
-					contentContainerStyle={{ paddingBottom: 24 }}
-					showsVerticalScrollIndicator={false}
-				>
-					{renderStepContent()}
-				</ScrollView>
+				{currentStep !== 2 ? (
+					<ScrollView
+						className=""
+						contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
+						contentContainerStyle={{ paddingBottom: 24 }}
+						showsVerticalScrollIndicator={false}
+					>
+						{renderStepContent()}
+					</ScrollView>
+				) : (
+					<View className="flex-1">{renderStepContent()}</View>
+				)}
 			</Animated.View>
 
-			{/* Footer - Hide on confirmation step */}
-			{currentStep !== 4 && (
+			{/* Footer - Hide on confirmation step and mask step */}
+			{currentStep !== 5 && currentStep !== 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -300,7 +321,7 @@ export default function PaintModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 2 ? 'Generate' : 'Continue'}
+								title={currentStep === 3 ? 'Generate' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -309,7 +330,7 @@ export default function PaintModal() {
 								className="flex-1"
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
-									(currentStep === 2 && !selectedPalette)
+									(currentStep === 3 && !selectedPalette)
 								}
 							/>
 						</View>

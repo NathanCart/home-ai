@@ -1,0 +1,663 @@
+// MaskStep.tsx
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+	View,
+	TouchableOpacity,
+	Dimensions,
+	PanResponder,
+	GestureResponderEvent,
+} from 'react-native';
+import * as Haptics from 'expo-haptics';
+import {
+	Canvas,
+	Image as SkiaImage,
+	useImage,
+	Skia,
+	ImageFormat,
+	useCanvasRef,
+	Rect,
+	Mask as SkiaMask,
+	Group,
+	PaintStyle,
+	BlendMode,
+	AlphaType,
+	ColorType,
+	Path as SkiaPathComponent,
+} from '@shopify/react-native-skia';
+import { ThemedText } from '../ThemedText';
+import { CustomButton } from '../CustomButton';
+import { Octicons } from '@expo/vector-icons';
+import { StepConfig } from '../../config/stepConfig';
+
+interface MaskStepProps {
+	onMaskComplete?: (maskDataUri: string) => void;
+	config: StepConfig;
+	imageUri: string; // local file://, remote http(s)://, or data:image/*;base64,...
+	selectedColor?: any;
+	compact?: boolean;
+}
+
+type Tool = 'brush' | 'auto';
+
+const BRUSH_SIZES = [10, 20, 30, 40, 50];
+
+interface TouchPoint {
+	x: number;
+	y: number;
+}
+
+export function MaskStep({
+	onMaskComplete,
+	config,
+	imageUri,
+	selectedColor,
+	compact = false,
+}: MaskStepProps) {
+	// UI state
+	const [selectedTool, setSelectedTool] = useState<Tool>('auto');
+	const [brushSize, setBrushSize] = useState(30); // screen pixels
+	const [isDrawing, setIsDrawing] = useState(false);
+
+	// Auto-select options
+	const [tolerance, setTolerance] = useState(28); // 0..255 color distance (Euclidean in RGB)
+	const [autoSelecting, setAutoSelecting] = useState(false);
+
+	// Skia image + mask
+	const skImage = useImage(imageUri);
+	const [maskSnapshot, setMaskSnapshot] = useState<ReturnType<
+		typeof Skia.Image.MakeImageFromEncoded
+	> | null>(null);
+
+	// Offscreen mask surface (full-resolution)
+	const maskSurfaceRef = useRef<ReturnType<typeof Skia.Surface.MakeOffscreen> | null>(null);
+
+	// For quick on-canvas stroke preview while drawing
+	const [liveStrokePath, setLiveStrokePath] = useState<ReturnType<typeof Skia.Path.Make> | null>(
+		null
+	);
+
+	// Track if mask has content (to hide helper overlay)
+	const [hasMaskContent, setHasMaskContent] = useState(false);
+
+	// Layout
+	const screenWidth = Dimensions.get('window').width;
+	const containerSize = useMemo(() => {
+		const w = screenWidth - 48; // matches your padding
+		return { width: w, height: w }; // square display area (like your original)
+	}, [screenWidth]);
+
+	// Mapping from view coords -> image coords (important for writing mask at native size)
+	const computeFitContain = (imgW: number, imgH: number, viewW: number, viewH: number) => {
+		const scale = Math.min(viewW / imgW, viewH / imgH);
+		const drawW = imgW * scale;
+		const drawH = imgH * scale;
+		const offsetX = (viewW - drawW) / 2;
+		const offsetY = (viewH - drawH) / 2;
+		return { scale, offsetX, offsetY, drawW, drawH };
+	};
+
+	const mapViewToImage = (vx: number, vy: number) => {
+		if (!skImage) return { ix: 0, iy: 0 };
+		const imgW = skImage.width();
+		const imgH = skImage.height();
+		const { scale, offsetX, offsetY } = computeFitContain(
+			imgW,
+			imgH,
+			containerSize.width,
+			containerSize.height
+		);
+		const ix = Math.min(imgW - 1, Math.max(0, (vx - offsetX) / scale));
+		const iy = Math.min(imgH - 1, Math.max(0, (vy - offsetY) / scale));
+		return { ix, iy, scale };
+	};
+
+	// Create/Reset full-res black mask when image loads/changes
+	useEffect(() => {
+		if (!skImage) return;
+		// Offscreen mask surface at image resolution
+		const imgW = skImage.width();
+		const imgH = skImage.height();
+		const surface = Skia.Surface.MakeOffscreen(imgW, imgH);
+		maskSurfaceRef.current = surface;
+
+		// Fill black (preserve areas). Runware expects white to be the edited area.
+		const canvas = surface?.getCanvas();
+		if (canvas) {
+			const paint = Skia.Paint();
+			paint.setColor(Skia.Color('black'));
+			paint.setStyle(PaintStyle.Fill);
+			canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
+			surface?.flush();
+			const snap = surface?.makeImageSnapshot()?.makeNonTextureImage(); // for using on JS thread safely
+			if (snap) setMaskSnapshot(snap);
+		}
+	}, [skImage, imageUri]);
+
+	// Draw helpers (write to full-res mask)
+	const drawStrokeSegmentOnMask = (
+		p1: { x: number; y: number },
+		p2: { x: number; y: number },
+		brushImagePx: number
+	) => {
+		const surface = maskSurfaceRef.current;
+		if (!surface) return;
+		const canvas = surface.getCanvas();
+
+		const paint = Skia.Paint();
+		paint.setColor(Skia.Color('white')); // WHITE = edit region
+		paint.setStyle(PaintStyle.Stroke);
+		paint.setStrokeWidth(Math.max(1, brushImagePx));
+		paint.setAntiAlias(true);
+		paint.setStrokeCap('round' as any);
+
+		// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
+		if (Math.hypot(p2.x - p1.x, p2.y - p1.y) < 0.001) {
+			const dotPaint = Skia.Paint();
+			dotPaint.setColor(Skia.Color('white'));
+			dotPaint.setStyle(PaintStyle.Fill);
+			canvas.drawCircle(p1.x, p1.y, brushImagePx * 0.5, dotPaint);
+		} else {
+			// draw line
+			const path = Skia.Path.Make();
+			path.moveTo(p1.x, p1.y);
+			path.lineTo(p2.x, p2.y);
+			canvas.drawPath(path, paint);
+		}
+
+		// Flush and update snapshot for live feedback
+		surface.flush();
+		const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
+		if (snap) setMaskSnapshot(snap);
+	};
+
+	const refreshMaskSnapshot = () => {
+		const surface = maskSurfaceRef.current;
+		if (!surface) return;
+		surface.flush();
+		const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
+		if (snap) setMaskSnapshot(snap);
+	};
+
+	// PanResponder for brush
+	const lastImgPointRef = useRef<{ x: number; y: number } | null>(null);
+
+	const panResponder = useRef(
+		PanResponder.create({
+			onStartShouldSetPanResponder: () => selectedTool === 'brush',
+			onMoveShouldSetPanResponder: () => selectedTool === 'brush',
+			onPanResponderGrant: (evt) => {
+				if (selectedTool !== 'brush' || !skImage) return;
+				const { locationX, locationY } = evt.nativeEvent;
+				const { ix, iy, scale } = mapViewToImage(locationX, locationY);
+				const brushPx = brushSize / (scale ?? 1);
+
+				lastImgPointRef.current = { x: ix, y: iy };
+				setIsDrawing(true);
+
+				// Live stroke preview path in view coords
+				const p = Skia.Path.Make();
+				p.moveTo(locationX, locationY);
+				setLiveStrokePath(p);
+
+				drawStrokeSegmentOnMask({ x: ix, y: iy }, { x: ix, y: iy }, brushPx);
+				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+			},
+			onPanResponderMove: (evt) => {
+				if (selectedTool !== 'brush' || !skImage) return;
+				const { locationX, locationY } = evt.nativeEvent;
+				const { ix, iy, scale } = mapViewToImage(locationX, locationY);
+				const prev = lastImgPointRef.current;
+				if (!prev) return;
+
+				// Update live preview path
+				setLiveStrokePath((old) => {
+					if (!old) return null;
+					old.lineTo(locationX, locationY);
+					return old.copy(); // triggers rerender
+				});
+
+				const brushPx = brushSize / (scale ?? 1);
+				drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx);
+				lastImgPointRef.current = { x: ix, y: iy };
+			},
+			onPanResponderRelease: () => {
+				setIsDrawing(false);
+				lastImgPointRef.current = null;
+				setLiveStrokePath(null);
+				// snapshot after each stroke
+				refreshMaskSnapshot();
+				setHasMaskContent(true);
+			},
+			onPanResponderTerminate: () => {
+				setIsDrawing(false);
+				lastImgPointRef.current = null;
+				setLiveStrokePath(null);
+				refreshMaskSnapshot();
+				setHasMaskContent(true);
+			},
+		})
+	).current;
+
+	// Auto-select (magic wand) flood fill on image pixels
+	const floodFillRegion = (
+		pixels: Uint8Array,
+		imgW: number,
+		imgH: number,
+		sx: number,
+		sy: number,
+		tol: number
+	) => {
+		// Returns a Uint8Array (RGBA_8888) where selected pixels are white, others transparent black
+		const idx = (x: number, y: number) => (y * imgW + x) * 4;
+		const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+		const sxI = clamp(Math.floor(sx), 0, imgW - 1);
+		const syI = clamp(Math.floor(sy), 0, imgH - 1);
+
+		const base = idx(sxI, syI);
+		const br = pixels[base],
+			bg = pixels[base + 1],
+			bb = pixels[base + 2];
+
+		const within = (x: number, y: number) => x >= 0 && x < imgW && y >= 0 && y < imgH;
+
+		const visited = new Uint8Array(imgW * imgH);
+		const out = new Uint8Array(imgW * imgH * 4); // RGBA
+
+		const qx = new Int32Array(imgW * imgH);
+		const qy = new Int32Array(imgW * imgH);
+		let qh = 0,
+			qt = 0;
+
+		const push = (x: number, y: number) => {
+			qx[qt] = x;
+			qy[qt] = y;
+			qt++;
+		};
+
+		const pop = () => {
+			const x = qx[qh],
+				y = qy[qh];
+			qh++;
+			return { x, y };
+		};
+
+		const colorDist = (r: number, g: number, b: number) => {
+			const dr = r - br,
+				dg = g - bg,
+				db = b - bb;
+			// Euclidean distance
+			return Math.sqrt(dr * dr + dg * dg + db * db);
+		};
+
+		const maxPixels = Math.min(imgW * imgH, 2_000_000); // fail-safe
+		let count = 0;
+
+		// Seed
+		visited[syI * imgW + sxI] = 1;
+		push(sxI, syI);
+
+		while (qh < qt && count < maxPixels) {
+			count++;
+			const { x, y } = pop();
+			const p = idx(x, y);
+			const r = pixels[p],
+				g = pixels[p + 1],
+				b = pixels[p + 2];
+
+			if (colorDist(r, g, b) <= tol) {
+				// Select
+				out[p] = 255;
+				out[p + 1] = 255;
+				out[p + 2] = 255;
+				out[p + 3] = 255;
+
+				// 4-neighbors (contiguous region)
+				const nbs = [
+					[x + 1, y],
+					[x - 1, y],
+					[x, y + 1],
+					[x, y - 1],
+				];
+				for (const [nx, ny] of nbs) {
+					if (within(nx, ny)) {
+						const vi = ny * imgW + nx;
+						if (visited[vi] === 0) {
+							visited[vi] = 1;
+							push(nx, ny);
+						}
+					}
+				}
+			}
+		}
+
+		return out;
+	};
+
+	const handleAutoSelectTap = async (event: GestureResponderEvent) => {
+		if (!skImage || autoSelecting) return;
+		setAutoSelecting(true);
+		try {
+			const { locationX, locationY } = event.nativeEvent;
+			const { ix, iy } = mapViewToImage(locationX, locationY);
+
+			// Read full image pixels (RGBA_8888)
+			const pixels = skImage.readPixels() as unknown as Uint8Array; // RN Skia returns UInt8Array
+			const imgW = skImage.width();
+			const imgH = skImage.height();
+			const regionBytes = floodFillRegion(pixels, imgW, imgH, ix, iy, tolerance);
+
+			// Convert regionBytes -> SkImage and draw onto the mask surface as white
+			const data = Skia.Data.fromBytes(regionBytes);
+			const regionImg = Skia.Image.MakeImage(
+				{
+					width: imgW,
+					height: imgH,
+					alphaType: AlphaType.Unpremul,
+					colorType: ColorType.RGBA_8888,
+				},
+				data,
+				imgW * 4
+			);
+
+			const surface = maskSurfaceRef.current;
+			if (surface && regionImg) {
+				const canvas = surface.getCanvas();
+				const paint = Skia.Paint();
+				// When we draw the white region over black mask, srcOver is fine
+				paint.setBlendMode(BlendMode.SrcOver as any);
+				canvas.drawImage(regionImg, 0, 0, paint);
+				refreshMaskSnapshot();
+				setHasMaskContent(true);
+			}
+
+			await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+		} catch (e) {
+			// no-op; keep UX flowing
+			console.warn('Auto-select failed:', e);
+		} finally {
+			setAutoSelecting(false);
+		}
+	};
+
+	// Clear mask (fill black)
+	const handleClearMask = () => {
+		const surface = maskSurfaceRef.current;
+		if (!surface || !skImage) return;
+		const imgW = skImage.width();
+		const imgH = skImage.height();
+		const canvas = surface.getCanvas();
+		const paint = Skia.Paint();
+		paint.setColor(Skia.Color('black')); // reset = preserve all
+		paint.setStyle(PaintStyle.Fill);
+		canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
+		refreshMaskSnapshot();
+		setLiveStrokePath(null);
+		setHasMaskContent(false);
+	};
+
+	// Export mask as data URI (PNG)
+	const handleComplete = async () => {
+		const surface = maskSurfaceRef.current;
+		if (!surface) return;
+		surface.flush();
+		const image = surface.makeImageSnapshot();
+		if (!image) return;
+		const b64 = image.encodeToBase64(ImageFormat.PNG, 100);
+		const dataUri = `data:image/png;base64,${b64}`;
+		onMaskComplete?.(dataUri);
+	};
+
+	const selectedColorHex = selectedColor?.hex || '#000000';
+
+	return (
+		<View className="flex-1 px-6">
+			<View className="items-start mb-4">
+				<ThemedText variant="title-md" className="text-gray-900 mb-2 text-center" extraBold>
+					{config.title || 'Mask the Area to Paint'}
+				</ThemedText>
+				<ThemedText variant="body" className="text-gray-600 leading-6">
+					{config.description ||
+						'Select the area where you want to apply the paint color'}
+				</ThemedText>
+			</View>
+
+			{/* Tool Selection */}
+			<View className="flex-row gap-2 mb-3">
+				<TouchableOpacity
+					onPress={() => setSelectedTool('auto')}
+					className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
+						selectedTool === 'auto'
+							? 'border-blue-500 bg-blue-50'
+							: 'border-gray-200 bg-white'
+					}`}
+				>
+					<Octicons
+						name="paintbrush"
+						size={20}
+						color={selectedTool === 'auto' ? '#3B82F6' : '#6B7280'}
+					/>
+					<ThemedText
+						variant="body"
+						className={`ml-2 ${selectedTool === 'auto' ? 'text-blue-600' : 'text-gray-700'}`}
+						bold={selectedTool === 'auto'}
+					>
+						Auto-Select
+					</ThemedText>
+				</TouchableOpacity>
+
+				<TouchableOpacity
+					onPress={() => setSelectedTool('brush')}
+					className={`flex-1 flex-row items-center justify-center py-3 rounded-xl border-2 ${
+						selectedTool === 'brush'
+							? 'border-blue-500 bg-blue-50'
+							: 'border-gray-200 bg-white'
+					}`}
+				>
+					<Octicons
+						name="pencil"
+						size={20}
+						color={selectedTool === 'brush' ? '#3B82F6' : '#6B7280'}
+					/>
+					<ThemedText
+						variant="body"
+						className={`ml-2 ${selectedTool === 'brush' ? 'text-blue-600' : 'text-gray-700'}`}
+						bold={selectedTool === 'brush'}
+					>
+						Draw
+					</ThemedText>
+				</TouchableOpacity>
+			</View>
+
+			{/* Selected Color Preview (optional, from your original) */}
+			{selectedColor && (
+				<View className="bg-blue-50 rounded-xl p-4 mb-4 flex-row items-center">
+					<View
+						className="w-12 h-12 rounded-lg border-2 border-gray-300"
+						style={{ backgroundColor: selectedColorHex }}
+					/>
+					<View className="ml-3 flex-1">
+						<ThemedText variant="body" className="text-gray-900" bold>
+							Painting with: {selectedColor.name}
+						</ThemedText>
+						<ThemedText variant="body" className="text-gray-600">
+							{selectedColorHex}
+						</ThemedText>
+					</View>
+				</View>
+			)}
+
+			{/* Brush Size Selector */}
+			{selectedTool === 'brush' && (
+				<View className="flex-row items-center mb-3">
+					<ThemedText variant="body" className="text-gray-700 mr-3">
+						Size:
+					</ThemedText>
+					<View className="flex-row gap-2 flex-1">
+						{BRUSH_SIZES.map((size) => (
+							<TouchableOpacity
+								key={size}
+								onPress={() => setBrushSize(size)}
+								className={`w-10 h-10 rounded-full border-2 items-center justify-center ${
+									brushSize === size
+										? 'border-blue-500 bg-blue-50'
+										: 'border-gray-300 bg-white'
+								}`}
+							>
+								<View
+									className="rounded-full bg-gray-900"
+									style={{
+										width: size / 3,
+										height: size / 3,
+									}}
+								/>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+			)}
+
+			{/* Auto-Select Tolerance Selection */}
+			{selectedTool === 'auto' && (
+				<View className="mb-3">
+					<ThemedText variant="body" className="text-gray-700 mb-2">
+						Tolerance: {tolerance}
+					</ThemedText>
+					<View className="flex-row gap-2">
+						{[
+							{ label: 'Low', value: 15 },
+							{ label: 'Med', value: 28 },
+							{ label: 'High', value: 45 },
+						].map(({ label, value }) => (
+							<TouchableOpacity
+								key={label}
+								onPress={() => setTolerance(value)}
+								className={`flex-1 py-3 rounded-xl border-2 ${
+									tolerance === value
+										? 'border-blue-500 bg-blue-50'
+										: 'border-gray-200 bg-white'
+								}`}
+							>
+								<ThemedText
+									variant="body"
+									className={`text-center ${tolerance === value ? 'text-blue-600' : 'text-gray-700'}`}
+									bold={tolerance === value}
+								>
+									{label}
+								</ThemedText>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+			)}
+
+			{/* Image & Mask Canvas */}
+			<View
+				className="mb-4 relative rounded-2xl overflow-hidden bg-gray-100"
+				style={{ height: containerSize.height }}
+			>
+				<Canvas ref={useCanvasRef()} style={{ width: '100%', height: '100%' }}>
+					{/* Draw the base image to fit inside the square container (contain) */}
+					{skImage && (
+						<SkiaImage
+							image={skImage}
+							x={0}
+							y={0}
+							width={containerSize.width}
+							height={containerSize.height}
+							fit="contain"
+						/>
+					)}
+
+					{/* Red overlay where mask is WHITE (use the mask snapshot in luminance mode) */}
+					{maskSnapshot && (
+						<SkiaMask
+							mode="luminance"
+							mask={
+								<SkiaImage
+									image={maskSnapshot}
+									x={0}
+									y={0}
+									width={containerSize.width}
+									height={containerSize.height}
+									fit="contain"
+								/>
+							}
+						>
+							<Rect
+								x={0}
+								y={0}
+								width={containerSize.width}
+								height={containerSize.height}
+								color="rgba(255,0,0,0.35)"
+							/>
+						</SkiaMask>
+					)}
+
+					{/* Live stroke preview (view coords) */}
+					{liveStrokePath && selectedTool === 'brush' && (
+						<SkiaPathComponent
+							path={liveStrokePath}
+							strokeWidth={brushSize}
+							color="rgba(255,255,255,0.85)"
+							style="stroke"
+						/>
+					)}
+				</Canvas>
+
+				{/* Gesture layers */}
+				{selectedTool === 'auto' ? (
+					<TouchableOpacity
+						className="absolute inset-0"
+						activeOpacity={1}
+						onPress={handleAutoSelectTap}
+					/>
+				) : (
+					<View className="absolute inset-0" {...panResponder.panHandlers} />
+				)}
+
+				{/* Instructions Overlay */}
+				{!hasMaskContent &&
+					(!skImage ||
+						(selectedTool === 'auto' && !autoSelecting) ||
+						(selectedTool === 'brush' && !isDrawing)) && (
+						<View
+							pointerEvents="none"
+							className="absolute inset-0 items-center justify-center"
+						>
+							<View className="bg-black/60 rounded-xl px-4 py-3 max-w-xs">
+								<ThemedText variant="body" className="text-white text-center">
+									{selectedTool === 'auto'
+										? 'Tap to auto-select similar area'
+										: 'Draw to mark the area to edit'}
+								</ThemedText>
+							</View>
+						</View>
+					)}
+			</View>
+
+			{/* Actions */}
+			<View className="flex-row gap-3 mt-2">
+				<View className="flex-1">
+					<CustomButton
+						title="Clear"
+						onPress={handleClearMask}
+						variant="ghost"
+						size="md"
+						icon="trash"
+					/>
+				</View>
+				<View className="flex-1">
+					<CustomButton
+						title="Next"
+						onPress={handleComplete}
+						variant="primary"
+						size="md"
+						icon="check"
+						iconPosition="right"
+					/>
+				</View>
+			</View>
+		</View>
+	);
+}
