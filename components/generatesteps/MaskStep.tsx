@@ -23,6 +23,7 @@ import {
 	AlphaType,
 	ColorType,
 	Path as SkiaPathComponent,
+	StrokeCap,
 } from '@shopify/react-native-skia';
 import { ThemedText } from '../ThemedText';
 import { CustomButton } from '../CustomButton';
@@ -78,6 +79,9 @@ export function MaskStep({
 
 	// Track if mask has content (to hide helper overlay)
 	const [hasMaskContent, setHasMaskContent] = useState(false);
+
+	// Counter to throttle mask updates during drawing
+	const segmentCounterRef = useRef(0);
 
 	// Layout
 	const screenWidth = Dimensions.get('window').width;
@@ -148,7 +152,7 @@ export function MaskStep({
 		paint.setStyle(PaintStyle.Stroke);
 		paint.setStrokeWidth(Math.max(1, brushImagePx));
 		paint.setAntiAlias(true);
-		paint.setStrokeCap('round' as any);
+		paint.setStrokeCap(StrokeCap.Round);
 
 		// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
 		if (Math.hypot(p2.x - p1.x, p2.y - p1.y) < 0.001) {
@@ -164,10 +168,9 @@ export function MaskStep({
 			canvas.drawPath(path, paint);
 		}
 
-		// Flush and update snapshot for live feedback
+		// Flush is needed to commit changes to the surface
+		// We don't create a snapshot here to avoid blocking; snapshot is done periodically
 		surface.flush();
-		const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
-		if (snap) setMaskSnapshot(snap);
 	};
 
 	const refreshMaskSnapshot = () => {
@@ -181,62 +184,80 @@ export function MaskStep({
 	// PanResponder for brush
 	const lastImgPointRef = useRef<{ x: number; y: number } | null>(null);
 
-	const panResponder = useRef(
-		PanResponder.create({
-			onStartShouldSetPanResponder: () => selectedTool === 'brush',
-			onMoveShouldSetPanResponder: () => selectedTool === 'brush',
-			onPanResponderGrant: (evt) => {
-				if (selectedTool !== 'brush' || !skImage) return;
-				const { locationX, locationY } = evt.nativeEvent;
-				const { ix, iy, scale } = mapViewToImage(locationX, locationY);
-				const brushPx = brushSize / (scale ?? 1);
+	const panResponder = PanResponder.create({
+		onStartShouldSetPanResponder: () => {
+			console.log('🟢 onStartShouldSetPanResponder', selectedTool);
+			return selectedTool === 'brush';
+		},
+		onMoveShouldSetPanResponder: () => {
+			console.log('🟢 onMoveShouldSetPanResponder', selectedTool);
+			return selectedTool === 'brush';
+		},
+		onPanResponderGrant: (evt) => {
+			console.log(
+				'🔥 PanResponder Grant fired',
+				selectedTool,
+				!!skImage,
+				!!maskSurfaceRef.current
+			);
+			if (selectedTool !== 'brush' || !skImage) return;
+			const { locationX, locationY } = evt.nativeEvent;
+			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
+			const brushPx = brushSize / (scale ?? 1);
 
-				lastImgPointRef.current = { x: ix, y: iy };
-				setIsDrawing(true);
+			lastImgPointRef.current = { x: ix, y: iy };
+			setIsDrawing(true);
 
-				// Live stroke preview path in view coords
-				const p = Skia.Path.Make();
-				p.moveTo(locationX, locationY);
-				setLiveStrokePath(p);
+			// Live stroke preview path in view coords
+			const p = Skia.Path.Make();
+			p.moveTo(locationX, locationY);
+			setLiveStrokePath(p);
 
-				drawStrokeSegmentOnMask({ x: ix, y: iy }, { x: ix, y: iy }, brushPx);
-				Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-			},
-			onPanResponderMove: (evt) => {
-				if (selectedTool !== 'brush' || !skImage) return;
-				const { locationX, locationY } = evt.nativeEvent;
-				const { ix, iy, scale } = mapViewToImage(locationX, locationY);
-				const prev = lastImgPointRef.current;
-				if (!prev) return;
+			drawStrokeSegmentOnMask({ x: ix, y: iy }, { x: ix, y: iy }, brushPx);
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+		},
+		onPanResponderMove: (evt) => {
+			if (selectedTool !== 'brush' || !skImage) return;
+			const { locationX, locationY } = evt.nativeEvent;
+			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
+			const prev = lastImgPointRef.current;
+			if (!prev) return;
 
-				// Update live preview path
-				setLiveStrokePath((old) => {
-					if (!old) return null;
-					old.lineTo(locationX, locationY);
-					return old.copy(); // triggers rerender
-				});
+			// Update live preview path
+			setLiveStrokePath((old) => {
+				if (!old) return null;
+				old.lineTo(locationX, locationY);
+				return old.copy(); // triggers rerender
+			});
 
-				const brushPx = brushSize / (scale ?? 1);
-				drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx);
-				lastImgPointRef.current = { x: ix, y: iy };
-			},
-			onPanResponderRelease: () => {
-				setIsDrawing(false);
-				lastImgPointRef.current = null;
-				setLiveStrokePath(null);
-				// snapshot after each stroke
+			const brushPx = brushSize / (scale ?? 1);
+			drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx);
+			lastImgPointRef.current = { x: ix, y: iy };
+
+			// Update mask snapshot every 5 segments for smooth feedback without lag
+			segmentCounterRef.current++;
+			if (segmentCounterRef.current % 5 === 0) {
 				refreshMaskSnapshot();
-				setHasMaskContent(true);
-			},
-			onPanResponderTerminate: () => {
-				setIsDrawing(false);
-				lastImgPointRef.current = null;
-				setLiveStrokePath(null);
-				refreshMaskSnapshot();
-				setHasMaskContent(true);
-			},
-		})
-	).current;
+			}
+		},
+		onPanResponderRelease: () => {
+			setIsDrawing(false);
+			lastImgPointRef.current = null;
+			setLiveStrokePath(null);
+			// snapshot after each stroke
+			segmentCounterRef.current = 0;
+			refreshMaskSnapshot();
+			setHasMaskContent(true);
+		},
+		onPanResponderTerminate: () => {
+			setIsDrawing(false);
+			lastImgPointRef.current = null;
+			setLiveStrokePath(null);
+			segmentCounterRef.current = 0;
+			refreshMaskSnapshot();
+			setHasMaskContent(true);
+		},
+	});
 
 	// Auto-select (magic wand) flood fill on image pixels
 	const floodFillRegion = (
@@ -589,19 +610,9 @@ export function MaskStep({
 								y={0}
 								width={containerSize.width}
 								height={containerSize.height}
-								color="rgba(255,0,0,0.35)"
+								color="rgba(255,0,0,0.8)"
 							/>
 						</SkiaMask>
-					)}
-
-					{/* Live stroke preview (view coords) */}
-					{liveStrokePath && selectedTool === 'brush' && (
-						<SkiaPathComponent
-							path={liveStrokePath}
-							strokeWidth={brushSize}
-							color="rgba(255,255,255,0.85)"
-							style="stroke"
-						/>
 					)}
 				</Canvas>
 
@@ -616,10 +627,10 @@ export function MaskStep({
 					<View className="absolute inset-0" {...panResponder.panHandlers} />
 				)}
 
-				{/* Instructions Overlay */}
+				{/* Instructions Overlay - only show before drawing starts */}
 				{!hasMaskContent &&
-					(!skImage ||
-						(selectedTool === 'auto' && !autoSelecting) ||
+					skImage !== null &&
+					((selectedTool === 'auto' && !autoSelecting) ||
 						(selectedTool === 'brush' && !isDrawing)) && (
 						<View
 							pointerEvents="none"
