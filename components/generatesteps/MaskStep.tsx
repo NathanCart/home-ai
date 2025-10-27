@@ -84,6 +84,11 @@ export function MaskStep({
 	// Track if mask has content (to hide helper overlay)
 	const [hasMaskContent, setHasMaskContent] = useState(false);
 
+	// Track if each tool has been used at least once
+	const [hasUsedBrush, setHasUsedBrush] = useState(false);
+	const [hasUsedAuto, setHasUsedAuto] = useState(false);
+	const [hasUsedEraser, setHasUsedEraser] = useState(false);
+
 	// Notify parent when mask content changes
 	useEffect(() => {
 		onHasMaskContentChange?.(hasMaskContent);
@@ -294,6 +299,10 @@ export function MaskStep({
 			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
 			const brushPx = brushSize / (scale ?? 1);
 
+			// Track tool usage
+			if (selectedTool === 'brush') setHasUsedBrush(true);
+			if (selectedTool === 'eraser') setHasUsedEraser(true);
+
 			lastImgPointRef.current = { x: ix, y: iy };
 			setIsDrawing(true);
 
@@ -449,6 +458,7 @@ export function MaskStep({
 	const handleAutoSelectTap = async (event: GestureResponderEvent) => {
 		if (!skImage || autoSelecting) return;
 		setAutoSelecting(true);
+		setHasUsedAuto(true); // Track auto-select usage
 		try {
 			const { locationX, locationY } = event.nativeEvent;
 			const { ix, iy } = mapViewToImage(locationX, locationY);
@@ -560,7 +570,7 @@ export function MaskStep({
 				{/* Clear button in top right */}
 				<TouchableOpacity
 					onPress={handleClearMask}
-					className="absolute w-10 h-10 flex items-center justify-center top-2  right-2 z-10 bg-gray-900/80 rounded-full p-2"
+					className="absolute w-10 h-10 flex items-center justify-center top-4  right-4 z-10 bg-gray-900/80 rounded-full p-2"
 					style={{ opacity: hasMaskContent ? 1 : 0.3 }}
 					disabled={!hasMaskContent}
 				>
@@ -668,17 +678,22 @@ export function MaskStep({
 					<View className="absolute inset-0" {...panResponder.panHandlers} />
 				)}
 
-				{/* Instructions Overlay - only show before drawing starts */}
-				{!hasMaskContent &&
-					skImage !== null &&
-					((selectedTool === 'auto' && !autoSelecting) ||
-						(selectedTool === 'brush' && !isDrawing)) && (
-						<View pointerEvents="none" className="absolute inset-0 top-4 left-4">
+				{/* Instructions Overlay - show until tool is used */}
+				{skImage !== null &&
+					((selectedTool === 'auto' && !hasUsedAuto && !autoSelecting) ||
+						(selectedTool === 'brush' && !hasUsedBrush && !isDrawing) ||
+						(selectedTool === 'eraser' && !hasUsedEraser && !isDrawing)) && (
+						<View
+							pointerEvents="none"
+							className="absolute flex items-center justify-center inset-0 "
+						>
 							<View className="bg-black/60 rounded-xl px-4 py-3 max-w-xs">
 								<ThemedText variant="body" className="text-white text-center">
 									{selectedTool === 'auto'
 										? 'Tap to auto-select similar area'
-										: 'Draw to mark the area to edit'}
+										: selectedTool === 'brush'
+											? 'Drag to mark the area to edit'
+											: 'Drag to erase the area'}
 								</ThemedText>
 							</View>
 						</View>
