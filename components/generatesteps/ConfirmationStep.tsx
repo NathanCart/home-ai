@@ -525,7 +525,7 @@ export function ConfirmationStep({
 				<View className="flex-row gap-3">
 					<View className="flex-1">
 						<CustomButton
-							title="Retry"
+							title="Restyle"
 							onPress={handleOpenModal}
 							icon="sync"
 							variant="secondary"

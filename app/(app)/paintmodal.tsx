@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
 import { MaskStep } from 'components/generatesteps/MaskStep';
-import { ColorStep } from 'components/generatesteps/ColorStep';
+import { TextInputStep } from 'components/generatesteps/TextInputStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
+import { MaskStepRef } from 'components/generatesteps/MaskStep';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -15,13 +16,14 @@ import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation'
 
 export default function PaintModal() {
 	const insets = useSafeAreaInsets();
+	const maskStepRef = useRef<MaskStepRef>(null);
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(3); // Photo, Mask, Color
+	const [totalSteps] = useState(3); // Photo, Mask, Text Input
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [maskImageUri, setMaskImageUri] = useState<string | null>(null);
 	const [hasMaskContent, setHasMaskContent] = useState(false);
-	const [selectedPalette, setSelectedPalette] = useState<any>(null);
+	const [replacementText, setReplacementText] = useState<string>('');
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -45,8 +47,17 @@ export default function PaintModal() {
 		router.back();
 	};
 
-	const handleNextStep = () => {
+	const handleNextStep = async () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+		// If we're on the mask step, save the mask before advancing
+		if (currentStep === 2 && hasMaskContent) {
+			const maskDataUri = await maskStepRef.current?.exportMask();
+			if (maskDataUri) {
+				setMaskImageUri(maskDataUri);
+			}
+		}
+
 		handleNextStepAnimation();
 	};
 
@@ -70,9 +81,8 @@ export default function PaintModal() {
 		handleNextStep();
 	};
 
-	const handleColorSelect = (color: any | null) => {
-		setSelectedPalette(color);
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+	const handleTextSubmit = (text: string) => {
+		setReplacementText(text);
 	};
 
 	const handleGenerationComplete = (imageUrl: string) => {
@@ -225,19 +235,30 @@ export default function PaintModal() {
 			case 2:
 				return selectedImageUri ? (
 					<MaskStep
+						ref={maskStepRef}
 						onMaskComplete={handleMaskComplete}
 						config={config}
 						imageUri={selectedImageUri}
-						selectedColor={selectedPalette}
 						onHasMaskContentChange={setHasMaskContent}
+						initialMaskUri={maskImageUri || undefined}
 					/>
 				) : null;
 			case 3:
 				return (
-					<ColorStep
-						onColorSelect={handleColorSelect}
+					<TextInputStep
+						onTextSubmit={handleTextSubmit}
 						config={config}
-						selectedColor={selectedPalette}
+						initialText={replacementText}
+					examples={[
+						'a tall oak bookshelf filled with books',
+						'a large monstera plant in a terracotta pot',
+						'a minimalist abstract painting in a black frame',
+						'a floor-to-ceiling window with natural light',
+						'a white fireplace mantel with decorative accents',
+						'a vintage leather armchair',
+						'a modern glass coffee table',
+						'a cozy reading nook with cushions',
+					]}
 					/>
 				);
 			case 4:
@@ -247,8 +268,9 @@ export default function PaintModal() {
 						onGenerationComplete={handleGenerationComplete}
 						room={null}
 						style={null}
-						palette={selectedPalette}
 						imageUri={selectedImageUri}
+						maskImageUri={maskImageUri}
+						customPrompt={replacementText}
 					/>
 				);
 			case 5:
@@ -257,7 +279,6 @@ export default function PaintModal() {
 						imageUrl={generatedImageUrl}
 						room={null}
 						style={null}
-						palette={selectedPalette}
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}
@@ -299,7 +320,7 @@ export default function PaintModal() {
 				{currentStep !== 2 ? (
 					<ScrollView
 						className=""
-						contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
+						contentContainerClassName={` ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
 						contentContainerStyle={{ paddingBottom: 24 }}
 						showsVerticalScrollIndicator={false}
 					>
@@ -323,7 +344,7 @@ export default function PaintModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 3 ? 'Generate' : 'Continue'}
+								title={currentStep === 3 ? 'Replace' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -333,7 +354,7 @@ export default function PaintModal() {
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
 									(currentStep === 2 && !hasMaskContent) ||
-									(currentStep === 3 && !selectedPalette)
+									(currentStep === 3 && !replacementText.trim())
 								}
 							/>
 						</View>

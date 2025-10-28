@@ -13,16 +13,19 @@ interface GeneratingStepProps {
 	style?: any;
 	palette?: any;
 	imageUri?: string | null;
+	maskImageUri?: string | null;
+	type?: string;
+	customPrompt?: string;
 	compact?: boolean;
 	shouldStart?: boolean;
 }
 
 const loadingMessages = [
-	'Analyzing your space...',
-	'Applying design principles...',
-	'Generating color schemes...',
-	'Crafting perfect aesthetics...',
-	'Adding finishing touches...',
+	'Analyzing the selected area...',
+	'Understanding the replacement...',
+	'Generating the replacement...',
+	'Blending with the scene...',
+	'Adding final details...',
 	'Almost there...',
 ];
 
@@ -33,6 +36,9 @@ export function GeneratingStep({
 	style,
 	palette,
 	imageUri,
+	maskImageUri,
+	type,
+	customPrompt,
 	compact = false,
 	shouldStart = true, // Default to true for backward compatibility
 }: GeneratingStepProps) {
@@ -41,7 +47,8 @@ export function GeneratingStep({
 	const insets = useSafeAreaInsets();
 
 	// Runware AI hook
-	const { generateImage, isGenerating, error, generatedImageUrl } = useRunwareAI();
+	const { generateImage, generateInpainting, isGenerating, error, generatedImageUrl } =
+		useRunwareAI();
 
 	// Animation values - use useRef to persist across renders
 	const spinValue = useRef(new Animated.Value(0)).current;
@@ -56,28 +63,54 @@ export function GeneratingStep({
 
 		const startGeneration = async () => {
 			console.log('🎨 Starting image generation...');
-			console.log('📋 Input data:', { room, style, palette });
+			console.log('📋 Input data:', { room, style, palette, type });
 
 			// Start progress at 0
 			setProgress(0);
 
-			// Get room and style names
-			const roomName = room?.name || room?.label || '';
-			const styleName = style?.name || style?.label || '';
+			let result;
 
-			const result = await generateImage(
-				{
-					room: roomName,
-					style: styleName,
-					palette,
-					imageUri: imageUri || undefined,
-					styleImageUri: style?.imageUrl || undefined,
-				},
-				(progress) => {
-					// Update progress from the API callback
-					setProgress(progress);
+			// Handle inpainting (replacement) with mask
+			if (maskImageUri && imageUri) {
+				// Use custom prompt if provided, otherwise use painting prompt or fallback
+				let prompt = customPrompt;
+
+				if (!prompt && type === 'painting') {
+					prompt = buildPaintingPrompt(palette);
 				}
-			);
+
+				if (!prompt) {
+					prompt = 'replaced with matching surface';
+				}
+
+				result = await generateInpainting(
+					{
+						maskImageUri,
+						seedImageUri: imageUri,
+						prompt: prompt,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else {
+				// Standard image-to-image generation
+				const roomName = room?.name || room?.label || '';
+				const styleName = style?.name || style?.label || '';
+
+				result = await generateImage(
+					{
+						room: roomName,
+						style: styleName,
+						palette,
+						imageUri: imageUri || undefined,
+						styleImageUri: style?.imageUrl || undefined,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			}
 
 			if (result.success && result.imageUrl) {
 				console.log('✅ Image generated successfully');
@@ -352,4 +385,76 @@ export function GeneratingStep({
 			</View>
 		</View>
 	);
+}
+
+function buildPaintingPrompt(palette: any): string {
+	if (!palette) return 'a wall painted with realistic texture and shading';
+
+	// Extract the hex color
+	let hexColor = '';
+	if (palette.hex) {
+		hexColor = palette.hex.toUpperCase();
+	} else if (palette.colors && Array.isArray(palette.colors) && palette.colors.length > 0) {
+		// Get the main color (usually the darkest or middle one)
+		hexColor = palette.colors[Math.floor(palette.colors.length / 2)];
+	}
+
+	// Extract name for context
+	const colorName = palette.name || palette.title || 'color';
+
+	// Convert hex to a descriptive color description
+	const colorDescription = getColorDescriptionFromHex(hexColor, colorName);
+
+	// Build very direct prompt for inpainting - focus only on what to paint
+	const parts = [
+		`painted wall in ${colorDescription} color`,
+		`solid ${colorDescription} painted surface`,
+	];
+
+	return parts.join(', ');
+}
+
+function getColorDescriptionFromHex(hex: string, fallbackName: string): string {
+	if (!hex) return fallbackName;
+
+	// Remove # if present
+	const hexColor = hex.replace('#', '');
+	const r = parseInt(hexColor.substring(0, 2), 16);
+	const g = parseInt(hexColor.substring(2, 4), 16);
+	const b = parseInt(hexColor.substring(4, 6), 16);
+
+	// Return descriptive color based on RGB values
+	if (r > 200 && g > 200 && b > 200) return 'bright white or very light';
+	if (r + g + b < 100) return 'very dark or black';
+
+	// Color dominant analysis
+	const max = Math.max(r, g, b);
+	const min = Math.min(r, g, b);
+
+	if (r > g && r > b) {
+		if (r > 200) return 'red or coral';
+		if (r > 150) return 'bright red or crimson';
+		return 'burgundy or dark red';
+	}
+
+	if (g > r && g > b) {
+		if (g > 200) return 'bright green or lime';
+		if (g > 150) return 'green or emerald';
+		return 'dark green or forest green';
+	}
+
+	if (b > r && b > g) {
+		if (b > 200) return 'bright blue or sky blue';
+		if (b > 150) return 'blue or navy blue';
+		return 'dark blue or navy';
+	}
+
+	// Gray scale
+	if (max - min < 30) {
+		if (r > 200) return 'light gray or silver';
+		if (r > 100) return 'medium gray';
+		return 'dark gray or charcoal';
+	}
+
+	return fallbackName;
 }

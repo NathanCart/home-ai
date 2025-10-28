@@ -195,7 +195,7 @@ export function ColorStep({
 	return (
 		<View className="flex-1 px-6">
 			<View className="items-start mb-4">
-				<ThemedText variant="title-md" className="text-gray-900 mb-2 text-center" extraBold>
+				<ThemedText variant="title-md" className="text-gray-900  text-center" extraBold>
 					{config.title}
 				</ThemedText>
 

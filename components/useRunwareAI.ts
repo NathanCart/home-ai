@@ -15,6 +15,12 @@ interface GenerateImageParams {
 	styleImageUri?: string;
 }
 
+interface InpaintingParams {
+	maskImageUri: string;
+	seedImageUri: string;
+	prompt: string;
+}
+
 interface RunwareResponse {
 	success: boolean;
 	imageUrl?: string;
@@ -297,8 +303,200 @@ export function useRunwareAI() {
 		setIsGenerating(false);
 	};
 
+	const generateInpainting = async (
+		params: InpaintingParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Inpainting attempt ${attempt}/${MAX_RETRIES}`);
+
+				// Reset progress for retry attempts
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptInpainting(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError =
+				'Unable to reach Runware API after 3 attempts. Please check your internet connection and try again.';
+		}
+
+		console.error(`❌ All ${MAX_RETRIES} attempts failed. Final error:`, userFriendlyError);
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptInpainting = async (
+		params: InpaintingParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			console.log('🎨 Generating inpainting with Runware API...');
+			console.log('📝 Prompt:', params.prompt);
+
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error(
+					'API key not configured. Please set EXPO_PUBLIC_RUNWARE_API_KEY in your .env file'
+				);
+			}
+
+			const taskUUID = generateUUID();
+
+			const requestBody = [
+				{
+					taskType: 'imageInference',
+					taskUUID,
+					positivePrompt: params.prompt,
+					seedImage: params.seedImageUri,
+					maskImage: params.maskImageUri,
+					model: 'runware:102@1', // Standard inpainting model from docs
+					width: 1024,
+					height: 1024,
+					steps: 30,
+					CFGScale: 50,
+					numberResults: 1,
+				},
+			];
+
+			console.log('📤 Inpainting request body:', JSON.stringify(requestBody, null, 2));
+
+			const startTime = Date.now();
+
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 50;
+				} else if (elapsed < 45000) {
+					estimatedProgress = 80 + ((elapsed - 15000) / 30000) * 15;
+				} else {
+					estimatedProgress = Math.min(95 + ((elapsed - 45000) / 60000) * 3, 98);
+				}
+
+				estimatedProgress = Math.floor(estimatedProgress);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200);
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+			let response;
+			try {
+				response = await fetch(RUNWARE_API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${RUNWARE_API_KEY}`,
+					},
+					body: JSON.stringify(requestBody),
+					signal: controller.signal,
+				});
+			} catch (fetchError: any) {
+				clearTimeout(timeoutId);
+				if (fetchError.name === 'AbortError') {
+					throw new Error(
+						'Request timed out. The image generation is taking longer than expected. Please try again.'
+					);
+				}
+				throw new Error(`Network error: ${fetchError.message || 'Connection failed'}`);
+			}
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API Error Response:', errorText);
+				let errorData;
+				try {
+					errorData = JSON.parse(errorText);
+				} catch {
+					errorData = { message: errorText };
+				}
+				throw new Error(
+					errorData.message || errorData.error || `API error: ${response.status}`
+				);
+			}
+
+			const data = await response.json();
+			console.log('✅ Inpainting API Response:', JSON.stringify(data, null, 2));
+
+			clearInterval(progressInterval);
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response. Full response:', data);
+				throw new Error('No image URL in response. Response format may have changed.');
+			}
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Inpainting completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in inpainting attempt:', errorMessage);
+			throw err;
+		}
+	};
+
 	return {
 		generateImage,
+		generateInpainting,
 		isGenerating,
 		error,
 		generatedImageUrl,
