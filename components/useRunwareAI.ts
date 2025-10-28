@@ -388,7 +388,7 @@ export function useRunwareAI() {
 					model: 'runware:102@1', // Standard inpainting model from docs
 					width: 1024,
 					height: 1024,
-					steps: 30,
+					steps: 40,
 					CFGScale: 50,
 					numberResults: 1,
 				},

@@ -101,7 +101,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		coral and seashell decorations, light linens, wicker furniture, 
 		relaxed beach house vibe, soft sandy neutrals, ocean-inspired palette`,
 
-	japandi: `Japanese minimalism meets Scandinavian functionality, 
+	japanese: `Japanese minimalism meets Scandinavian functionality, 
 		natural wood in light and medium tones, clean lines, 
 		neutral color palette with warm undertones, wabi-sabi aesthetic, 
 		low-profile furniture, rice paper screens or shoji-inspired elements, 
@@ -372,7 +372,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		tropical paradise aesthetic suggesting exotic vacation destinations, 
 		lush plantings creating privacy and sense of being immersed in tropical environment`,
 
-	'garden-japandi': `japanese-inspired garden with scandinavian simplicity creating zen harmony, 
+	'garden-japanese': `japanese-inspired garden with scandinavian simplicity creating zen harmony, 
 		serene zen atmosphere with emphasis on tranquility and peaceful contemplation, 
 		carefully placed rocks suggesting natural landscapes and providing focal points, 
 		pruned trees and bonsai creating miniature landscapes with mature character, 
