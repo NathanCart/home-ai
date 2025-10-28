@@ -381,12 +381,10 @@ export function StyleStep({
 	// Compact horizontal layout
 	if (compact) {
 		return (
-			<View className="mt-auto flex-1 items-end justify-center">
+			<View className="flex-1 items-center justify-center">
 				<ScrollView
 					horizontal
 					showsHorizontalScrollIndicator={false}
-					className="mt-auto mb-auto"
-					contentContainerClassName="mt-auto mb-auto"
 					contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
 				>
 					{allStyles.map((style) => {

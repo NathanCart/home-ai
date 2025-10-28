@@ -211,6 +211,7 @@ export default function GenerateModal() {
 						room={selectedRoom}
 						style={selectedStyle}
 						palette={null}
+						mode={mode as string}
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}

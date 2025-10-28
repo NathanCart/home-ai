@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from 'components/GenerateHalfModal';
+import { GenerateGardenHalfModal } from 'components/GenerateGardenHalfModal';
 
 interface AlternativeGeneration {
 	imageUrl: string;
@@ -34,6 +35,7 @@ interface Project {
 	originalImage?: string;
 	createdAt: string;
 	type: string;
+	mode?: string;
 	alternativeGenerations?: AlternativeGeneration[];
 }
 
@@ -555,14 +557,24 @@ export default function ProjectDetailPage() {
 			</View>
 
 			{/* Generate Half Modal */}
-			<GenerateHalfModal
-				visible={showModal}
-				onClose={() => setShowModal(false)}
-				onGenerationComplete={handleGenerationComplete}
-				initialImageUri={project?.originalImage}
-				initialRoom={project?.room}
-				initialStyle={project?.style}
-			/>
+			{project?.mode === 'garden' ? (
+				<GenerateGardenHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={project?.originalImage}
+					initialStyle={project?.style}
+				/>
+			) : (
+				<GenerateHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={project?.originalImage}
+					initialRoom={project?.room}
+					initialStyle={project?.style}
+				/>
+			)}
 		</View>
 	);
 }

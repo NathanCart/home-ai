@@ -230,9 +230,10 @@ export default function GardenGenerateModal() {
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
-						room={selectedRoom}
+						room={null}
 						style={selectedStyle}
 						palette={null}
+						mode="garden"
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}
@@ -247,7 +248,7 @@ export default function GardenGenerateModal() {
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
 			{/* Header - Hide on confirmation step */}
-			{currentStep !== 4 && (
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -273,7 +274,7 @@ export default function GardenGenerateModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
+					contentContainerClassName={`mt-4 ${currentStep >= 3 ? 'flex-1' : ''}`}
 					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
@@ -282,7 +283,7 @@ export default function GardenGenerateModal() {
 			</Animated.View>
 
 			{/* Footer - Hide on confirmation step */}
-			{currentStep !== 4 && (
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],

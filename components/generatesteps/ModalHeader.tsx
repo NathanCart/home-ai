@@ -57,12 +57,12 @@ export function ModalHeader({
 
 			{/* Progress Steps */}
 			<View className="flex-row items-center justify-between w-full">
-				{[1, 2, 3].map((step) => (
+				{Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
 					<Animated.View
 						key={step}
 						className="h-1 rounded-full flex-1"
 						style={{
-							marginHorizontal: step === 1 || step === 3 ? 0 : 8,
+							marginRight: step < totalSteps ? 8 : 0,
 							backgroundColor: progressAnimation.interpolate({
 								inputRange: [step - 1, step],
 								outputRange: ['rgba(17, 24, 39, 0.3)', 'rgba(17, 24, 39, 1)'],

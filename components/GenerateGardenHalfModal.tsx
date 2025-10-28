@@ -6,29 +6,26 @@ import { ThemedText } from './ThemedText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { PhotoStep } from './generatesteps/PhotoStep';
-import { RoomStep } from './generatesteps/RoomStep';
 import { StyleStep } from './generatesteps/StyleStep';
 import { GeneratingStep } from './generatesteps/GeneratingStep';
 import { CustomButton } from './CustomButton';
 import { getStepConfig } from 'config/stepConfig';
 
-interface GenerateHalfModalProps {
+interface GenerateGardenHalfModalProps {
 	visible: boolean;
 	onClose: () => void;
 	onGenerationComplete: (imageUrl: string, style?: any, room?: any) => void;
 	initialImageUri?: string | null;
-	initialRoom?: any;
 	initialStyle?: any;
 }
 
-export function GenerateHalfModal({
+export function GenerateGardenHalfModal({
 	visible,
 	onClose,
 	onGenerationComplete,
 	initialImageUri,
-	initialRoom,
 	initialStyle,
-}: GenerateHalfModalProps) {
+}: GenerateGardenHalfModalProps) {
 	const insets = useSafeAreaInsets();
 	const translateY = useRef(new Animated.Value(1000)).current;
 	const backgroundOpacity = useRef(new Animated.Value(0)).current;
@@ -40,11 +37,10 @@ export function GenerateHalfModal({
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
 		initialImageUri || null
 	);
-	const [selectedRoom, setSelectedRoom] = useState<any>(initialRoom);
 	const [selectedStyle, setSelectedStyle] = useState<any>(initialStyle);
 
 	const scrollViewRef = useRef<ScrollView>(null);
-	const config = getStepConfig('interior-design', 1); // Pass mode and step
+	const config = getStepConfig('garden', 1); // Pass garden mode and step
 
 	// Slide up animation when modal opens
 	useEffect(() => {
@@ -107,7 +103,7 @@ export function GenerateHalfModal({
 	};
 
 	const handleNext = () => {
-		if (currentStep < 2) {
+		if (currentStep < 1) {
 			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 			const nextStep = currentStep + 1;
 			setCurrentStep(nextStep);
@@ -130,28 +126,24 @@ export function GenerateHalfModal({
 		}
 	};
 
-	const handleRoomSelect = (room: any) => {
-		setSelectedRoom(room);
-	};
-
 	const handleStyleSelect = (style: any) => {
 		setSelectedStyle(style);
 	};
 
 	const handleGenerate = () => {
-		if (!selectedImageUri || !selectedRoom || !selectedStyle) {
+		if (!selectedImageUri || !selectedStyle) {
 			return;
 		}
 
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 		setIsGenerating(true);
-		setCurrentStep(3); // Move to generating step
-		scrollViewRef.current?.scrollTo({ x: 3 * screenWidth, animated: true });
+		setCurrentStep(2); // Move to generating step
+		scrollViewRef.current?.scrollTo({ x: 2 * screenWidth, animated: true });
 	};
 
 	const handleGenerationComplete = (imageUrl: string) => {
 		setIsGenerating(false);
-		onGenerationComplete(imageUrl, selectedStyle, selectedRoom);
+		onGenerationComplete(imageUrl, selectedStyle, null); // room is null for garden
 
 		// Reset state for next time
 		setTimeout(() => {
@@ -160,7 +152,7 @@ export function GenerateHalfModal({
 		}, 300);
 	};
 
-	const canGenerate = selectedImageUri && selectedRoom && selectedStyle;
+	const canGenerate = selectedImageUri && selectedStyle;
 
 	return (
 		<Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
@@ -197,11 +189,7 @@ export function GenerateHalfModal({
 						{!isGenerating && (
 							<View className="flex-row items-center justify-between px-6">
 								<ThemedText variant="title-lg" className="text-gray-900" extraBold>
-									{currentStep === 0
-										? 'Set a Photo'
-										: currentStep === 1
-											? 'Select a Room'
-											: 'Select a Style'}
+									{currentStep === 0 ? 'Set a Photo' : 'Select a Style'}
 								</ThemedText>
 								<TouchableOpacity onPress={handleClose}>
 									<Ionicons name="close" size={28} color="#111827" />
@@ -233,21 +221,6 @@ export function GenerateHalfModal({
 								/>
 							</View>
 
-							{/* Room Step */}
-							<View
-								className="flex-1"
-								style={{
-									width: screenWidth,
-								}}
-							>
-								<RoomStep
-									onRoomSelect={handleRoomSelect}
-									config={config}
-									selectedRoom={selectedRoom}
-									compact
-								/>
-							</View>
-
 							{/* Style Step */}
 							<View
 								className="flex-1"
@@ -273,10 +246,11 @@ export function GenerateHalfModal({
 								<GeneratingStep
 									onComplete={onClose}
 									onGenerationComplete={handleGenerationComplete}
-									room={selectedRoom}
+									room={null}
 									style={selectedStyle}
 									palette={null}
 									imageUri={selectedImageUri}
+									mode="garden"
 									compact
 									shouldStart={isGenerating}
 								/>
@@ -299,7 +273,7 @@ export function GenerateHalfModal({
 										</View>
 									)}
 									<View className={currentStep > 0 ? 'flex-1' : 'flex-1 ml-auto'}>
-										{currentStep < 2 ? (
+										{currentStep < 1 ? (
 											<CustomButton
 												title="Continue"
 												onPress={handleNext}

@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from '../GenerateHalfModal';
+import { GenerateGardenHalfModal } from '../GenerateGardenHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
 
 interface AlternativeGeneration {
@@ -31,6 +32,7 @@ interface ConfirmationStepProps {
 	room?: any;
 	style?: any;
 	palette?: any;
+	mode?: string; // 'garden' | 'interior-design' | etc.
 	onComplete: () => void;
 	onRegenerate?: () => void;
 	imageUri?: string | null;
@@ -42,6 +44,7 @@ export function ConfirmationStep({
 	room,
 	style,
 	palette,
+	mode,
 	onComplete,
 	onRegenerate,
 	imageUri,
@@ -145,7 +148,8 @@ export function ConfirmationStep({
 				palette,
 				originalImage: imageUri,
 				createdAt: new Date().toISOString(),
-				type: 'ai-generated',
+				type: mode || 'ai-generated',
+				mode: mode || 'interior-design',
 				alternativeGenerations:
 					alternativesWithoutCurrent.length > 0 ? alternativesWithoutCurrent : undefined,
 			};
@@ -559,14 +563,24 @@ export function ConfirmationStep({
 			</View>
 
 			{/* Generate Half Modal */}
-			<GenerateHalfModal
-				visible={showModal}
-				onClose={() => setShowModal(false)}
-				onGenerationComplete={handleGenerationComplete}
-				initialImageUri={imageUri}
-				initialRoom={room}
-				initialStyle={style}
-			/>
+			{mode === 'garden' ? (
+				<GenerateGardenHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={imageUri}
+					initialStyle={style}
+				/>
+			) : (
+				<GenerateHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={imageUri}
+					initialRoom={room}
+					initialStyle={style}
+				/>
+			)}
 		</View>
 	);
 }
