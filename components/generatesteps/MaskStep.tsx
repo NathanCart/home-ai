@@ -6,6 +6,7 @@ import {
 	Dimensions,
 	PanResponder,
 	GestureResponderEvent,
+	ScrollView,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Slider from '@react-native-community/slider';
@@ -80,6 +81,8 @@ export function MaskStep({
 	const [liveStrokePath, setLiveStrokePath] = useState<ReturnType<typeof Skia.Path.Make> | null>(
 		null
 	);
+	// Store the current scale for the live preview brush size
+	const currentScaleRef = useRef<number>(1);
 
 	// Track if mask has content (to hide helper overlay)
 	const [hasMaskContent, setHasMaskContent] = useState(false);
@@ -94,8 +97,20 @@ export function MaskStep({
 		onHasMaskContentChange?.(hasMaskContent);
 	}, [hasMaskContent, onHasMaskContentChange]);
 
+	// Cleanup intervals on unmount
+	useEffect(() => {
+		return () => {
+			if (fadeIntervalRef.current !== null) {
+				clearInterval(fadeIntervalRef.current);
+			}
+		};
+	}, []);
+
 	// Counter to throttle mask updates during drawing
 	const segmentCounterRef = useRef(0);
+
+	// Track last view coordinate for live path interpolation
+	const lastViewPointRef = useRef<{ x: number; y: number } | null>(null);
 
 	// Controls overlay state
 	const [showBrushControls, setShowBrushControls] = useState(false);
@@ -173,7 +188,7 @@ export function MaskStep({
 		}
 	}, [skImage, imageUri]);
 
-	// Draw helpers (write to full-res mask)
+	// Draw helpers (write to full-res mask) with smooth interpolation
 	const drawStrokeSegmentOnMask = (
 		p1: { x: number; y: number },
 		p2: { x: number; y: number },
@@ -198,8 +213,10 @@ export function MaskStep({
 		paint.setAntiAlias(true);
 		paint.setStrokeCap(StrokeCap.Round);
 
+		const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+
 		// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
-		if (Math.hypot(p2.x - p1.x, p2.y - p1.y) < 0.001) {
+		if (distance < 0.001) {
 			const dotPaint = Skia.Paint();
 			if (isErasing) {
 				dotPaint.setColor(Skia.Color('black'));
@@ -210,11 +227,30 @@ export function MaskStep({
 			dotPaint.setStyle(PaintStyle.Fill);
 			canvas.drawCircle(p1.x, p1.y, brushImagePx * 0.5, dotPaint);
 		} else {
-			// draw line
-			const path = Skia.Path.Make();
-			path.moveTo(p1.x, p1.y);
-			path.lineTo(p2.x, p2.y);
-			canvas.drawPath(path, paint);
+			// If points are far apart, interpolate to avoid sharp edges
+			// Interpolate every ~1 pixel of distance for smooth curves
+			const stepSize = 1; // pixel step for interpolation
+			const numSteps = Math.ceil(distance / stepSize);
+
+			if (numSteps > 1) {
+				// Draw multiple small segments for smooth curves
+				const path = Skia.Path.Make();
+				path.moveTo(p1.x, p1.y);
+
+				for (let i = 1; i <= numSteps; i++) {
+					const t = i / numSteps;
+					const x = p1.x + (p2.x - p1.x) * t;
+					const y = p1.y + (p2.y - p1.y) * t;
+					path.lineTo(x, y);
+				}
+				canvas.drawPath(path, paint);
+			} else {
+				// Draw single segment for short distances
+				const path = Skia.Path.Make();
+				path.moveTo(p1.x, p1.y);
+				path.lineTo(p2.x, p2.y);
+				canvas.drawPath(path, paint);
+			}
 		}
 
 		// Flush is needed to commit changes to the surface
@@ -225,6 +261,7 @@ export function MaskStep({
 	const refreshMaskSnapshot = (saveToHistory: boolean = false) => {
 		const surface = maskSurfaceRef.current;
 		if (!surface) return;
+
 		surface.flush();
 		const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
 		if (snap) {
@@ -306,7 +343,11 @@ export function MaskStep({
 			lastImgPointRef.current = { x: ix, y: iy };
 			setIsDrawing(true);
 
+			// Store the current scale for brush size calculation
+			currentScaleRef.current = scale ?? 1;
+
 			// Live stroke preview path in view coords
+			lastViewPointRef.current = { x: locationX, y: locationY };
 			const p = Skia.Path.Make();
 			p.moveTo(locationX, locationY);
 			setLiveStrokePath(p);
@@ -320,29 +361,46 @@ export function MaskStep({
 			const { locationX, locationY } = evt.nativeEvent;
 			const { ix, iy, scale } = mapViewToImage(locationX, locationY);
 			const prev = lastImgPointRef.current;
+			const prevView = lastViewPointRef.current;
 			if (!prev) return;
 
-			// Update live preview path
+			// Update live preview path with interpolation for smooth curves
 			setLiveStrokePath((old) => {
-				if (!old) return null;
-				old.lineTo(locationX, locationY);
+				if (!old || !prevView) return null;
+
+				const distance = Math.hypot(locationX - prevView.x, locationY - prevView.y);
+				const minStepSize = 3; // minimum pixels between interpolated points
+
+				if (distance > minStepSize) {
+					// Interpolate between points for smooth curves
+					const numSteps = Math.ceil(distance / minStepSize);
+					for (let i = 1; i <= numSteps; i++) {
+						const t = i / numSteps;
+						const x = prevView.x + (locationX - prevView.x) * t;
+						const y = prevView.y + (locationY - prevView.y) * t;
+						old.lineTo(x, y);
+					}
+				} else {
+					// Small movement, just add the point
+					old.lineTo(locationX, locationY);
+				}
+
+				lastViewPointRef.current = { x: locationX, y: locationY };
 				return old.copy(); // triggers rerender
 			});
 
+			// Draw to the offscreen mask surface (fast, no state updates)
 			const brushPx = brushSize / (scale ?? 1);
 			const isErasing = selectedTool === 'eraser';
 			drawStrokeSegmentOnMask(prev, { x: ix, y: iy }, brushPx, isErasing);
 			lastImgPointRef.current = { x: ix, y: iy };
 
-			// Update mask snapshot every 5 segments for smooth feedback without lag (don't save to history)
-			segmentCounterRef.current++;
-			if (segmentCounterRef.current % 5 === 0) {
-				refreshMaskSnapshot(false);
-			}
+			// DON'T update maskSnapshot during drawing - wait until release for smooth performance
 		},
 		onPanResponderRelease: () => {
 			setIsDrawing(false);
 			lastImgPointRef.current = null;
+			lastViewPointRef.current = null;
 			setLiveStrokePath(null);
 			// snapshot after each stroke and save to history
 			segmentCounterRef.current = 0;
@@ -352,6 +410,7 @@ export function MaskStep({
 		onPanResponderTerminate: () => {
 			setIsDrawing(false);
 			lastImgPointRef.current = null;
+			lastViewPointRef.current = null;
 			setLiveStrokePath(null);
 			segmentCounterRef.current = 0;
 			refreshMaskSnapshot(true);
@@ -615,6 +674,21 @@ export function MaskStep({
 						</SkiaMask>
 					)}
 
+					{/* Live stroke preview during drawing (optimized, no re-renders of full mask) */}
+					{liveStrokePath && (selectedTool === 'brush' || selectedTool === 'eraser') && (
+						<SkiaPathComponent
+							path={liveStrokePath}
+							color={
+								selectedTool === 'eraser'
+									? 'rgba(0, 0, 0, 0.5)'
+									: 'rgba(255, 0, 0, 0.6)'
+							}
+							style="stroke"
+							strokeWidth={brushSize}
+							strokeCap="round"
+						/>
+					)}
+
 					{/* Size preview circle when dragging slider */}
 					{(selectedTool === 'brush' || selectedTool === 'eraser') &&
 						isDraggingSlider &&
@@ -700,146 +774,152 @@ export function MaskStep({
 					)}
 			</View>
 
-			{/* Tool Selection Below Image - Small Icon Buttons */}
-			<View className="flex-row gap-3 items-center mb-6">
-				<View className="flex-row border-r pr-3 border-gray-300">
+			<ScrollView>
+				{/* Tool Selection Below Image - Small Icon Buttons */}
+				<View className="flex-row gap-3 items-center mb-6">
+					<View className="flex-row border-r pr-3 border-gray-300">
+						<TouchableOpacity
+							onPress={() => setSelectedTool('brush')}
+							className={`w-12 h-12 rounded-full  items-center justify-center ${
+								selectedTool === 'brush'
+									? 'bg-gray-900 text-gray-50'
+									: 'text-gray-900 bg-transparent border-0'
+							}`}
+						>
+							<Octicons
+								name="pencil"
+								size={22}
+								color={selectedTool === 'brush' ? '#f9fafb' : '#9CA3AF'}
+							/>
+						</TouchableOpacity>
+					</View>
 					<TouchableOpacity
-						onPress={() => setSelectedTool('brush')}
-						className={`w-12 h-12 rounded-full  items-center justify-center ${
-							selectedTool === 'brush'
+						onPress={() => setSelectedTool('auto')}
+						className={`w-12 h-12 rounded-full items-center justify-center ${
+							selectedTool === 'auto'
 								? 'bg-gray-900 text-gray-50'
 								: 'text-gray-900 bg-transparent border-0'
 						}`}
 					>
 						<Octicons
-							name="pencil"
+							name="paintbrush"
 							size={22}
-							color={selectedTool === 'brush' ? '#f9fafb' : '#9CA3AF'}
+							color={selectedTool === 'auto' ? '#f9fafb' : '#9CA3AF'}
 						/>
 					</TouchableOpacity>
-				</View>
-				<TouchableOpacity
-					onPress={() => setSelectedTool('auto')}
-					className={`w-12 h-12 rounded-full items-center justify-center ${
-						selectedTool === 'auto'
-							? 'bg-gray-900 text-gray-50'
-							: 'text-gray-900 bg-transparent border-0'
-					}`}
-				>
-					<Octicons
-						name="paintbrush"
-						size={22}
-						color={selectedTool === 'auto' ? '#f9fafb' : '#9CA3AF'}
-					/>
-				</TouchableOpacity>
 
-				<TouchableOpacity
-					onPress={() => setSelectedTool('eraser')}
-					className={`w-12 h-12 rounded-full items-center justify-center ${
-						selectedTool === 'eraser'
-							? 'bg-gray-900 text-gray-50'
-							: 'text-gray-900 bg-transparent border-0'
-					}`}
-				>
-					<FontAwesome6
-						name="eraser"
-						size={22}
-						color={selectedTool === 'eraser' ? '#f9fafb' : '#9CA3AF'}
-					/>
-				</TouchableOpacity>
-
-				{/* Undo/Redo buttons */}
-				<View className="flex-row ml-auto">
 					<TouchableOpacity
-						onPress={handleUndo}
-						disabled={historyIndex <= 0}
+						onPress={() => setSelectedTool('eraser')}
 						className={`w-12 h-12 rounded-full items-center justify-center ${
-							historyIndex <= 0 ? 'opacity-30' : 'opacity-100'
+							selectedTool === 'eraser'
+								? 'bg-gray-900 text-gray-50'
+								: 'text-gray-900 bg-transparent border-0'
 						}`}
 					>
-						<FontAwesome5
-							name="undo"
+						<FontAwesome6
+							name="eraser"
 							size={22}
-							color={historyIndex <= 0 ? '#9CA3AF' : '#111827'}
+							color={selectedTool === 'eraser' ? '#f9fafb' : '#9CA3AF'}
 						/>
 					</TouchableOpacity>
-					<TouchableOpacity
-						onPress={handleRedo}
-						disabled={historyIndex >= maskHistory.length - 1}
-						className={`w-12 h-12 rounded-full items-center justify-center ${
-							historyIndex >= maskHistory.length - 1 ? 'opacity-30' : 'opacity-100'
-						}`}
-					>
-						<FontAwesome5
-							name="redo"
-							size={22}
-							color={historyIndex >= maskHistory.length - 1 ? '#9CA3AF' : '#111827'}
-						/>
-					</TouchableOpacity>
-				</View>
-			</View>
 
-			{/* Unified Slider for All Tools */}
-			<View className="mb-4 bg-gray-50 rounded-xl">
-				<ThemedText variant="body" className="text-gray-700 mb-3">
-					{selectedTool === 'brush' && `Brush Size: ${brushSize}px`}
-					{selectedTool === 'auto' && `Tolerance: ${tolerance}`}
-					{selectedTool === 'eraser' && `Eraser Size: ${brushSize}px`}
-				</ThemedText>
-				<Slider
-					minimumValue={selectedTool === 'auto' ? 15 : 10}
-					maximumValue={selectedTool === 'auto' ? 45 : 100}
-					step={selectedTool === 'auto' ? 1 : 5}
-					value={selectedTool === 'auto' ? tolerance : brushSize}
-					onValueChange={(value: number) => {
-						if (selectedTool === 'auto') {
-							setTolerance(value);
-						} else {
-							setBrushSize(value);
-						}
-					}}
-					onSlidingStart={() => {
-						// Clear any existing fade interval
-						if (fadeIntervalRef.current) {
-							clearInterval(fadeIntervalRef.current);
-						}
-						setIsDraggingSlider(true);
-						// Fade in
-						let opacity = 0;
-						const interval = setInterval(() => {
-							opacity += 0.1;
-							setSliderOpacity(opacity);
-							if (opacity >= 1) {
-								clearInterval(interval);
-								fadeIntervalRef.current = null;
+					{/* Undo/Redo buttons */}
+					<View className="flex-row ml-auto">
+						<TouchableOpacity
+							onPress={handleUndo}
+							disabled={historyIndex <= 0}
+							className={`w-12 h-12 rounded-full items-center justify-center ${
+								historyIndex <= 0 ? 'opacity-30' : 'opacity-100'
+							}`}
+						>
+							<FontAwesome5
+								name="undo"
+								size={22}
+								color={historyIndex <= 0 ? '#9CA3AF' : '#111827'}
+							/>
+						</TouchableOpacity>
+						<TouchableOpacity
+							onPress={handleRedo}
+							disabled={historyIndex >= maskHistory.length - 1}
+							className={`w-12 h-12 rounded-full items-center justify-center ${
+								historyIndex >= maskHistory.length - 1
+									? 'opacity-30'
+									: 'opacity-100'
+							}`}
+						>
+							<FontAwesome5
+								name="redo"
+								size={22}
+								color={
+									historyIndex >= maskHistory.length - 1 ? '#9CA3AF' : '#111827'
+								}
+							/>
+						</TouchableOpacity>
+					</View>
+				</View>
+
+				{/* Unified Slider for All Tools */}
+				<View className="mb-4 bg-gray-50 rounded-xl">
+					<ThemedText variant="body" className="text-gray-700 mb-3">
+						{selectedTool === 'brush' && `Brush Size: ${brushSize}px`}
+						{selectedTool === 'auto' && `Tolerance: ${tolerance}`}
+						{selectedTool === 'eraser' && `Eraser Size: ${brushSize}px`}
+					</ThemedText>
+					<Slider
+						minimumValue={selectedTool === 'auto' ? 15 : 10}
+						maximumValue={selectedTool === 'auto' ? 45 : 100}
+						step={selectedTool === 'auto' ? 1 : 5}
+						value={selectedTool === 'auto' ? tolerance : brushSize}
+						onValueChange={(value: number) => {
+							if (selectedTool === 'auto') {
+								setTolerance(value);
+							} else {
+								setBrushSize(value);
 							}
-						}, 16); // ~60fps
-						fadeIntervalRef.current = interval;
-					}}
-					onSlidingComplete={() => {
-						// Clear any existing fade interval
-						if (fadeIntervalRef.current) {
-							clearInterval(fadeIntervalRef.current);
-						}
-						// Fade out - keep isDraggingSlider true during fade
-						let opacity = 1;
-						const interval = setInterval(() => {
-							opacity -= 0.05;
-							setSliderOpacity(Math.max(0, opacity));
-							if (opacity <= 0) {
-								clearInterval(interval);
-								fadeIntervalRef.current = null;
-								// Only set isDraggingSlider to false after fade completes
-								setIsDraggingSlider(false);
+						}}
+						onSlidingStart={() => {
+							// Clear any existing fade interval
+							if (fadeIntervalRef.current) {
+								clearInterval(fadeIntervalRef.current);
 							}
-						}, 16); // ~60fps
-						fadeIntervalRef.current = interval;
-					}}
-					minimumTrackTintColor="#111827"
-					maximumTrackTintColor="#D1D5DB"
-					thumbTintColor="#111827"
-				/>
-			</View>
+							setIsDraggingSlider(true);
+							// Fade in
+							let opacity = 0;
+							const interval = setInterval(() => {
+								opacity += 0.1;
+								setSliderOpacity(opacity);
+								if (opacity >= 1) {
+									clearInterval(interval);
+									fadeIntervalRef.current = null;
+								}
+							}, 16); // ~60fps
+							fadeIntervalRef.current = interval;
+						}}
+						onSlidingComplete={() => {
+							// Clear any existing fade interval
+							if (fadeIntervalRef.current) {
+								clearInterval(fadeIntervalRef.current);
+							}
+							// Fade out - keep isDraggingSlider true during fade
+							let opacity = 1;
+							const interval = setInterval(() => {
+								opacity -= 0.05;
+								setSliderOpacity(Math.max(0, opacity));
+								if (opacity <= 0) {
+									clearInterval(interval);
+									fadeIntervalRef.current = null;
+									// Only set isDraggingSlider to false after fade completes
+									setIsDraggingSlider(false);
+								}
+							}, 16); // ~60fps
+							fadeIntervalRef.current = interval;
+						}}
+						minimumTrackTintColor="#111827"
+						maximumTrackTintColor="#D1D5DB"
+						thumbTintColor="#111827"
+					/>
+				</View>
+			</ScrollView>
 		</View>
 	);
 }
