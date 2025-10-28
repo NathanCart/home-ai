@@ -13,6 +13,7 @@ interface GenerateImageParams {
 	palette?: string | ColorPalette;
 	imageUri?: string;
 	styleImageUri?: string;
+	mode?: string; // 'interior-design' | 'garden' | etc.
 }
 
 interface InpaintingParams {
@@ -507,35 +508,90 @@ export function useRunwareAI() {
 
 function buildPrompt(params: GenerateImageParams): string {
 	const parts: string[] = [];
+	const isGardenMode = params.mode === 'garden';
 
-	// Prompt anchoring: Explicitly describe all major elements to preserve
-	const roomType = params.room ? params.room.toLowerCase() : 'room';
-	parts.push(`A ${roomType} interior`);
+	// Different prompt structure for garden vs interior
+	if (isGardenMode) {
+		// Garden mode - outdoor space
+		parts.push('A beautiful outdoor garden space');
+		parts.push('exterior garden design, outdoor landscaping, natural outdoor environment');
 
-	// Add room-specific requirements (essential elements for the room type)
-	if (params.room) {
-		const roomId = roomType.replace(/\s+/g, '-');
-		if (hasRoomPrompt(roomId)) {
-			const roomDetails = getRoomPrompt(roomId);
-			parts.push(roomDetails);
+		// Add garden-specific elements
+		parts.push('plants, flowers, trees, and natural garden elements');
+		parts.push('outdoor garden space with landscaping');
+	} else {
+		// Interior mode - room design
+		const roomType = params.room ? params.room.toLowerCase() : 'room';
+		parts.push(`A ${roomType} interior`);
+
+		// Add room-specific requirements (essential elements for the room type)
+		if (params.room) {
+			const roomId = roomType.replace(/\s+/g, '-');
+			if (hasRoomPrompt(roomId)) {
+				const roomDetails = getRoomPrompt(roomId);
+				parts.push(roomDetails);
+			}
 		}
 	}
 
 	// Style emphasis with detailed descriptions
 	if (params.style) {
 		const styleName = params.style.toLowerCase();
-		const styleId = styleName.replace(/\s+/g, '-');
+		let styleId = styleName.replace(/\s+/g, '-');
+
+		console.log('🌱 Style processing:', { styleName, styleId, isGardenMode });
+
+		// For garden mode, prepend 'garden-' prefix to get garden-specific prompts
+		if (isGardenMode && !styleId.startsWith('garden-')) {
+			const gardenStyleId = 'garden-' + styleId;
+			console.log('🌱 Checking garden prompt:', gardenStyleId, hasStylePrompt(gardenStyleId));
+			if (hasStylePrompt(gardenStyleId)) {
+				styleId = gardenStyleId;
+				console.log('🌱 Using garden prompt:', styleId);
+			}
+		}
 
 		// Add style name first for anchoring
 		parts.push(`${styleName} style`);
 
 		// Add detailed style-specific elements if available
+		// For garden mode, only use prompts that are explicitly garden-themed
+		console.log('🌱 Final lookup:', {
+			styleId,
+			hasPrompt: hasStylePrompt(styleId),
+			isGardenMode,
+			startsWithGarden: styleId.startsWith('garden-'),
+		});
+
 		if (hasStylePrompt(styleId)) {
 			const styleDetails = getStylePrompt(styleId);
-			parts.push(styleDetails);
+			console.log('🌱 Got style details, length:', styleDetails.length);
+			// In garden mode, only use this if it's a garden-specific prompt or we're in interior mode
+			if (!isGardenMode || styleId.startsWith('garden-')) {
+				console.log('🌱 Using detailed garden prompt');
+				parts.push(styleDetails);
+			} else {
+				console.log('🌱 Interior prompt in garden mode - using fallback');
+				// We have an interior prompt but we're in garden mode - use garden fallback instead
+				if (isGardenMode) {
+					parts.push(
+						`${styleName} garden aesthetic, ${styleName} inspired landscaping, diverse plants and flowers`
+					);
+				} else {
+					parts.push(styleDetails);
+				}
+			}
 		} else {
+			console.log('🌱 No detailed prompt found - using fallback');
 			// Fallback for custom or unknown styles
-			parts.push(`${styleName} aesthetic, ${styleName} design elements`);
+			if (isGardenMode) {
+				// Generic garden fallback for unmapped styles
+				parts.push(
+					`${styleName} garden aesthetic, ${styleName} inspired landscaping, diverse plants and flowers`
+				);
+			} else {
+				parts.push(`${styleName} aesthetic, ${styleName} design elements`);
+			}
 		}
 	}
 
@@ -555,17 +611,28 @@ function buildPrompt(params: GenerateImageParams): string {
 		if (colorDescription) {
 			// Emphasize colors multiple times for stronger adherence
 			parts.push(`${colorDescription} color scheme`);
-			parts.push(`walls and surfaces in ${colorDescription} tones`);
-			parts.push(`furniture and decor featuring ${colorDescription} colors`);
+			if (isGardenMode) {
+				parts.push(`flowers and plants in ${colorDescription} tones`);
+				parts.push(`garden features with ${colorDescription} colors`);
+			} else {
+				parts.push(`walls and surfaces in ${colorDescription} tones`);
+				parts.push(`furniture and decor featuring ${colorDescription} colors`);
+			}
 			parts.push(`dominant ${colorDescription} palette throughout`);
 		}
 	}
 
 	// Quality and preservation descriptors
-	parts.push('professional interior photography, high quality, realistic lighting');
-	parts.push('preserve room structure, maintain layout and perspective');
-	parts.push('Windows must remain windows and not be replaced with any other object');
-	parts.push('Doors must remain doors and not be replaced with any other object');
+	if (isGardenMode) {
+		parts.push('professional outdoor photography, high quality, realistic natural lighting');
+		parts.push('preserve garden layout, maintain outdoor space structure and perspective');
+		parts.push('realistic outdoor garden environment with natural elements');
+	} else {
+		parts.push('professional interior photography, high quality, realistic lighting');
+		parts.push('preserve room structure, maintain layout and perspective');
+		parts.push('Windows must remain windows and not be replaced with any other object');
+		parts.push('Doors must remain doors and not be replaced with any other object');
+	}
 
 	return parts.join(', ');
 }

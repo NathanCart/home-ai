@@ -201,6 +201,7 @@ export default function GenerateModal() {
 						style={selectedStyle}
 						palette={null}
 						imageUri={selectedImageUri}
+						mode={mode as string}
 					/>
 				);
 			case 5:

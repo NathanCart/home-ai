@@ -1,29 +1,25 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
-import { MaskStep } from 'components/generatesteps/MaskStep';
-import { TextInputStep } from 'components/generatesteps/TextInputStep';
+import { StyleStep } from 'components/generatesteps/StyleStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
-import { MaskStepRef } from 'components/generatesteps/MaskStep';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
 
-export default function PaintModal() {
+export default function GardenGenerateModal() {
 	const insets = useSafeAreaInsets();
-	const maskStepRef = useRef<MaskStepRef>(null);
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(3); // Photo, Mask, Text Input
+	const [totalSteps] = useState(2); // Photo, Style (no room type step)
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-	const [maskImageUri, setMaskImageUri] = useState<string | null>(null);
-	const [hasMaskContent, setHasMaskContent] = useState(false);
-	const [replacementText, setReplacementText] = useState<string>('');
+	const [selectedRoom, setSelectedRoom] = useState<any>(null); // Keep for compatibility but won't be used
+	const [selectedStyle, setSelectedStyle] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -47,17 +43,8 @@ export default function PaintModal() {
 		router.back();
 	};
 
-	const handleNextStep = async () => {
+	const handleNextStep = () => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-		// If we're on the mask step, save the mask before advancing
-		if (currentStep === 2 && hasMaskContent) {
-			const maskDataUri = await maskStepRef.current?.exportMask();
-			if (maskDataUri) {
-				setMaskImageUri(maskDataUri);
-			}
-		}
-
 		handleNextStepAnimation();
 	};
 
@@ -75,14 +62,9 @@ export default function PaintModal() {
 		console.log('Image select pressed');
 	};
 
-	const handleMaskComplete = (maskDataUri: string) => {
-		setMaskImageUri(maskDataUri);
-		// Auto-advance to next step
-		handleNextStep();
-	};
-
-	const handleTextSubmit = (text: string) => {
-		setReplacementText(text);
+	const handleStyleSelect = (style: any) => {
+		setSelectedStyle(style);
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 	};
 
 	const handleGenerationComplete = (imageUrl: string) => {
@@ -103,8 +85,8 @@ export default function PaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate to confirmation step (step 5)
-			setCurrentStep(5);
+			// Navigate to confirmation step (step 4)
+			setCurrentStep(4);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(1);
@@ -151,8 +133,8 @@ export default function PaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate back to generating step (step 4)
-			setCurrentStep(4);
+			// Navigate back to generating step (step 3)
+			setCurrentStep(3);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(-1);
@@ -176,7 +158,7 @@ export default function PaintModal() {
 	};
 
 	const renderStepContent = () => {
-		const config = getStepConfig('paint', currentStep);
+		const config = getStepConfig('garden', currentStep);
 
 		switch (currentStep) {
 			case 1:
@@ -187,98 +169,70 @@ export default function PaintModal() {
 						selectedImageUri={selectedImageUri}
 						customExampleImages={[
 							{
-								id: 'living-room-1',
+								id: 'garden-1',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1759722668385-90006d9c7aa7?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1354',
+									uri: 'https://images.unsplash.com/photo-1594498653385-d5172c532c00?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Z2FyZGVufGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=900',
 								},
-								name: 'Modern Living',
-							},
-
-							{
-								id: 'living-room-2',
-								source: {
-									uri: 'https://plus.unsplash.com/premium_photo-1661699082515-24e99b178ff7?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8c29mYSUyMGRlc2lnbnxlbnwwfHwwfHx8MA%3D%3D&auto=format&fit=crop&q=60&w=800',
-								},
-								name: 'Modern Living',
+								name: 'Modern Garden',
 							},
 							{
-								id: 'living-room-3',
+								id: 'garden-2',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1558',
+									uri: 'https://images.unsplash.com/photo-1696846911635-83b97e53fb65?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fGhvbWUlMjBnYXJkZW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
-								name: 'Modern Living',
+								name: 'Botanical',
 							},
 							{
-								id: 'living-room-4',
+								id: 'garden-3',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1618220179428-22790b461013?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=927',
+									uri: 'https://images.unsplash.com/photo-1715934514075-06f0dbda1c09?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTV8fGhvbWUlMjBnYXJkZW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
-								name: 'Modern Living',
+								name: 'Lush Garden',
 							},
 							{
-								id: 'living-room-5',
+								id: 'garden-4',
 								source: {
-									uri: 'https://plus.unsplash.com/premium_photo-1661765778256-169bf5e561a6?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8aW50ZXJpb3IlMjBkZXNpZ258ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=800',
+									uri: 'https://images.unsplash.com/photo-1576897955702-24ad19680db3?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjB8fGhvbWUlMjBnYXJkZW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
-								name: 'Modern Living',
+								name: 'Zen Garden',
 							},
 							{
-								id: 'living-room-6',
+								id: 'garden-5',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1583847268964-b28dc8f51f92?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=987',
+									uri: 'https://images.unsplash.com/photo-1715934514077-4684c381f05a?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MjZ8fGhvbWUlMjBnYXJkZW58ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
-								name: 'Modern Living',
+								name: 'Country Garden',
 							},
 						]}
 					/>
 				);
 			case 2:
-				return selectedImageUri ? (
-					<MaskStep
-						ref={maskStepRef}
-						onMaskComplete={handleMaskComplete}
-						config={config}
-						imageUri={selectedImageUri}
-						onHasMaskContentChange={setHasMaskContent}
-						initialMaskUri={maskImageUri || undefined}
-					/>
-				) : null;
-			case 3:
 				return (
-					<TextInputStep
-						onTextSubmit={handleTextSubmit}
+					<StyleStep
+						onStyleSelect={handleStyleSelect}
 						config={config}
-						initialText={replacementText}
-						examples={[
-							'a tall oak bookshelf filled with books',
-							'a large monstera plant in a terracotta pot',
-							'a minimalist abstract painting in a black frame',
-							'a floor-to-ceiling window with natural light',
-							'a white fireplace mantel with decorative accents',
-							'a vintage leather armchair',
-							'a modern glass coffee table',
-							'a cozy reading nook with cushions',
-						]}
+						selectedStyle={selectedStyle}
 					/>
 				);
-			case 4:
+			case 3:
 				return (
 					<GeneratingStep
 						onComplete={() => router.back()}
 						onGenerationComplete={handleGenerationComplete}
-						room={null}
-						style={null}
+						room={selectedRoom}
+						style={selectedStyle}
+						palette={null}
 						imageUri={selectedImageUri}
-						maskImageUri={maskImageUri}
-						customPrompt={replacementText}
+						mode="garden"
 					/>
 				);
-			case 5:
+			case 4:
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
-						room={null}
-						style={null}
+						room={selectedRoom}
+						style={selectedStyle}
+						palette={null}
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}
@@ -293,7 +247,7 @@ export default function PaintModal() {
 	return (
 		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
 			{/* Header - Hide on confirmation step */}
-			{currentStep !== 5 && (
+			{currentStep !== 4 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -317,22 +271,18 @@ export default function PaintModal() {
 					opacity: opacityAnimation,
 				}}
 			>
-				{currentStep !== 2 ? (
-					<ScrollView
-						className=""
-						contentContainerClassName={` ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
-						contentContainerStyle={{ paddingBottom: 24 }}
-						showsVerticalScrollIndicator={false}
-					>
-						{renderStepContent()}
-					</ScrollView>
-				) : (
-					<View className="flex-1">{renderStepContent()}</View>
-				)}
+				<ScrollView
+					className=""
+					contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
+					contentContainerStyle={{ paddingBottom: 24 }}
+					showsVerticalScrollIndicator={false}
+				>
+					{renderStepContent()}
+				</ScrollView>
 			</Animated.View>
 
 			{/* Footer - Hide on confirmation step */}
-			{currentStep !== 5 && (
+			{currentStep !== 4 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -344,7 +294,7 @@ export default function PaintModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 3 ? 'Replace' : 'Continue'}
+								title={currentStep === 2 ? 'Generate' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -353,8 +303,7 @@ export default function PaintModal() {
 								className="flex-1"
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
-									(currentStep === 2 && !hasMaskContent) ||
-									(currentStep === 3 && !replacementText.trim())
+									(currentStep === 2 && !selectedStyle)
 								}
 							/>
 						</View>

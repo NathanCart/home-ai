@@ -129,6 +129,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your personalized content is ready!',
 		},
 	},
+	garden: {
+		step1: {
+			title: 'Upload a photo of your garden',
+			subtitle: 'Take a photo or upload an existing image of your outdoor space',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step2: {
+			title: 'Choose a garden style',
+			subtitle: 'Select your preferred garden design style',
+			icon: 'palette',
+			description: 'Pick a style that matches your vision and personality',
+		},
+		step3: {
+			title: 'Generate garden design',
+			subtitle: 'AI will create your personalized garden design',
+			icon: 'sparkle',
+			description: 'Review your preferences and generate your AI-powered garden design',
+		},
+		step4: {
+			title: 'Garden design complete',
+			subtitle: 'Your garden design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized garden design is ready!',
+		},
+		step5: {
+			title: 'Garden design complete',
+			subtitle: 'Your garden design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized garden design is ready!',
+		},
+		step6: {
+			title: 'Garden design complete',
+			subtitle: 'Your garden design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized garden design is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {

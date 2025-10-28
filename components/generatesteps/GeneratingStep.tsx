@@ -16,6 +16,7 @@ interface GeneratingStepProps {
 	maskImageUri?: string | null;
 	type?: string;
 	customPrompt?: string;
+	mode?: string;
 	compact?: boolean;
 	shouldStart?: boolean;
 }
@@ -39,6 +40,7 @@ export function GeneratingStep({
 	maskImageUri,
 	type,
 	customPrompt,
+	mode,
 	compact = false,
 	shouldStart = true, // Default to true for backward compatibility
 }: GeneratingStepProps) {
@@ -105,6 +107,7 @@ export function GeneratingStep({
 						palette,
 						imageUri: imageUri || undefined,
 						styleImageUri: style?.imageUrl || undefined,
+						mode: mode || undefined,
 					},
 					(progress) => {
 						setProgress(progress);
