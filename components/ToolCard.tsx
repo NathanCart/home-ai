@@ -247,19 +247,6 @@ export function ToolCard({
 								className="absolute inset-0"
 							/>
 
-							{/* Badge */}
-							{badge && (
-								<View className="absolute top-5 right-5 bg-white rounded-full px-4 py-2">
-									<ThemedText
-										extraBold
-										variant="body"
-										className="text-gray-900 !text-sm "
-									>
-										{badge}
-									</ThemedText>
-								</View>
-							)}
-
 							{/* Title Overlay */}
 							<View className="absolute bottom-6 left-6 right-6">
 								<ThemedText
