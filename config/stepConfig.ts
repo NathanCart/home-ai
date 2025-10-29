@@ -167,6 +167,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your personalized garden design is ready!',
 		},
 	},
+	'exterior-design': {
+		step1: {
+			title: 'Upload a photo of your building',
+			subtitle: 'Take a photo or upload an existing image of your building exterior',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and shows the building facade',
+		},
+		step2: {
+			title: 'Choose house type',
+			subtitle: 'Select the type of building you want to design',
+			icon: 'home',
+			description: 'Choose the building type to get the best design results',
+		},
+		step3: {
+			title: 'Choose exterior style',
+			subtitle: 'Select your preferred exterior design style',
+			icon: 'palette',
+			description: 'Pick a style that matches your vision and personality',
+		},
+		step4: {
+			title: 'Generate exterior design',
+			subtitle: 'AI will create your personalized exterior design',
+			icon: 'sparkle',
+			description: 'Review your preferences and generate your AI-powered exterior design',
+		},
+		step5: {
+			title: 'Exterior design complete',
+			subtitle: 'Your exterior design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized exterior design is ready!',
+		},
+		step6: {
+			title: 'Exterior design complete',
+			subtitle: 'Your exterior design has been generated successfully',
+			icon: 'check-circle',
+			description: 'Your personalized exterior design is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {

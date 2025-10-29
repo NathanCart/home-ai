@@ -21,7 +21,7 @@ interface StyleStepProps {
 	config: StepConfig;
 	selectedStyle?: Style | null;
 	compact?: boolean;
-	mode?: 'garden' | 'interior-design';
+	mode?: 'garden' | 'interior-design' | 'exterior-design';
 }
 
 interface Style {
@@ -165,14 +165,22 @@ export function StyleStep({
 	mode = 'interior-design',
 }: StyleStepProps) {
 	// Determine mode from config if not explicitly provided
-	// Check if config description suggests garden (fragile, but works)
-	const detectedMode: 'garden' | 'interior-design' =
+	// Check if config description suggests garden or exterior (fragile, but works)
+	const detectedMode: 'garden' | 'interior-design' | 'exterior-design' =
 		config.description?.toLowerCase().includes('garden') ||
 		config.title?.toLowerCase().includes('garden')
 			? 'garden'
-			: mode || 'interior-design';
+			: config.description?.toLowerCase().includes('exterior') ||
+				  config.title?.toLowerCase().includes('exterior')
+				? 'exterior-design'
+				: mode || 'interior-design';
 
-	const storageKey = detectedMode === 'garden' ? 'customGardenStyles' : 'customInteriorStyles';
+	const storageKey =
+		detectedMode === 'garden'
+			? 'customGardenStyles'
+			: detectedMode === 'exterior-design'
+				? 'customExteriorStyles'
+				: 'customInteriorStyles';
 
 	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
 		selectedStyle?.id || null
@@ -612,7 +620,9 @@ export function StyleStep({
 							placeholder={
 								detectedMode === 'garden'
 									? 'e.g., lush green foliage, colorful flower beds, winding stone pathways, decorative garden ornaments, peaceful water features, organic shapes and natural textures'
-									: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
+									: detectedMode === 'exterior-design'
+										? 'e.g., sleek contemporary architecture with clean geometric lines, flat roofs, large windows, neutral color palette, smooth exterior materials like stucco or metal panels'
+										: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
 							}
 							multiline
 							numberOfLines={4}
@@ -735,7 +745,9 @@ export function StyleStep({
 							placeholder={
 								detectedMode === 'garden'
 									? 'e.g., lush green foliage, colorful flower beds, winding stone pathways, decorative garden ornaments, peaceful water features, organic shapes and natural textures'
-									: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
+									: detectedMode === 'exterior-design'
+										? 'e.g., sleek contemporary architecture with clean geometric lines, flat roofs, large windows, neutral color palette, smooth exterior materials like stucco or metal panels'
+										: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
 							}
 							multiline
 							numberOfLines={4}

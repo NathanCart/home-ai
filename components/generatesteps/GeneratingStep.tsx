@@ -49,8 +49,14 @@ export function GeneratingStep({
 	const insets = useSafeAreaInsets();
 
 	// Runware AI hook
-	const { generateImage, generateInpainting, isGenerating, error, generatedImageUrl } =
-		useRunwareAI();
+	const {
+		generateImage,
+		generateInpainting,
+		generateExterior,
+		isGenerating,
+		error,
+		generatedImageUrl,
+	} = useRunwareAI();
 
 	// Animation values - use useRef to persist across renders
 	const spinValue = useRef(new Animated.Value(0)).current;
@@ -90,6 +96,23 @@ export function GeneratingStep({
 						maskImageUri,
 						seedImageUri: imageUri,
 						prompt: prompt,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else if (mode === 'exterior-design') {
+				// Exterior design generation
+				const houseTypeName = room?.name || room?.label || '';
+				const styleName = style?.name || style?.label || '';
+
+				result = await generateExterior(
+					{
+						houseType: houseTypeName,
+						style: styleName,
+						stylePrompt: style?.prompt || undefined,
+						imageUri: imageUri || undefined,
+						styleImageUri: style?.imageUrl || undefined,
 					},
 					(progress) => {
 						setProgress(progress);

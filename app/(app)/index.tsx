@@ -109,6 +109,17 @@ export default function HomePage() {
 						}}
 					/>
 					<ToolCard
+						title="Exterior design"
+						description="Transform your building's exterior with AI-powered design!"
+						materialIcon="office-building"
+						image="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+						showButton={true}
+						buttonText="Design Exterior"
+						onPress={() => {
+							router.push('/exteriorgeneratemodal');
+						}}
+					/>
+					<ToolCard
 						title="Replace objects"
 						description="Replace objects in your photo with AI-generated ones!"
 						icon="paintbrush"

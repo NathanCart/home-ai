@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { getStylePrompt, hasStylePrompt } from '../utils/stylePrompts';
 import { getRoomPrompt, hasRoomPrompt } from '../utils/roomPrompts';
+import { getHouseTypePrompt, hasHouseTypePrompt } from '../utils/houseTypePrompts';
+import { getExteriorStylePrompt, hasExteriorStylePrompt } from '../utils/exteriorStylePrompts';
 
 interface ColorPalette {
 	colors?: string[] | string;
@@ -15,6 +17,14 @@ interface GenerateImageParams {
 	imageUri?: string;
 	styleImageUri?: string;
 	mode?: string; // 'interior-design' | 'garden' | etc.
+}
+
+interface GenerateExteriorParams {
+	houseType?: string; // apartment, house, office-building
+	style?: string;
+	stylePrompt?: string; // Custom prompt for custom styles
+	imageUri?: string;
+	styleImageUri?: string;
 }
 
 interface InpaintingParams {
@@ -496,9 +506,281 @@ export function useRunwareAI() {
 		}
 	};
 
+	const generateExterior = async (
+		params: GenerateExteriorParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Exterior generation attempt ${attempt}/${MAX_RETRIES}`);
+
+				// Reset progress for retry attempts
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptExteriorGeneration(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError =
+				'Unable to reach Runware API after 3 attempts. Please check your internet connection and try again.';
+		}
+
+		console.error(`❌ All ${MAX_RETRIES} attempts failed. Final error:`, userFriendlyError);
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptExteriorGeneration = async (
+		params: GenerateExteriorParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			// Build prompt from the form inputs
+			const prompt = buildExteriorPrompt(params);
+
+			console.log('🏛️ Generating exterior with Runware API...');
+			console.log('📝 Prompt:', prompt);
+			console.log('🔑 API Key exists:', !!RUNWARE_API_KEY);
+
+			// Check if API key is set
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error(
+					'API key not configured. Please set EXPO_PUBLIC_RUNWARE_API_KEY in your .env file'
+				);
+			}
+
+			const taskUUID = generateUUID();
+
+			const requestBody: any = [
+				{
+					taskType: 'imageInference',
+					taskUUID,
+					model: 'runware:104@1',
+					positivePrompt: prompt,
+					width: 1024,
+					height: 1024,
+					strength: 0.7,
+					CFGScale: 9,
+					steps: 40,
+					numberResults: 1,
+					seedImage: params.imageUri,
+				},
+			];
+
+			console.log('📤 Request body:', JSON.stringify(requestBody, null, 2));
+
+			const startTime = Date.now();
+
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 50;
+				} else if (elapsed < 45000) {
+					estimatedProgress = 80 + ((elapsed - 15000) / 30000) * 15;
+				} else {
+					estimatedProgress = Math.min(95 + ((elapsed - 45000) / 60000) * 3, 98);
+				}
+
+				estimatedProgress = Math.floor(estimatedProgress);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200);
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+			let response;
+			try {
+				response = await fetch(RUNWARE_API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${RUNWARE_API_KEY}`,
+					},
+					body: JSON.stringify(requestBody),
+					signal: controller.signal,
+				});
+			} catch (fetchError: any) {
+				clearTimeout(timeoutId);
+				if (fetchError.name === 'AbortError') {
+					throw new Error(
+						'Request timed out. The image generation is taking longer than expected. Please try again.'
+					);
+				}
+				throw new Error(`Network error: ${fetchError.message || 'Connection failed'}`);
+			}
+
+			clearTimeout(timeoutId);
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API Error Response:', errorText);
+				let errorData;
+				try {
+					errorData = JSON.parse(errorText);
+				} catch {
+					errorData = { message: errorText };
+				}
+				throw new Error(
+					errorData.message || errorData.error || `API error: ${response.status}`
+				);
+			}
+
+			const data = await response.json();
+			console.log('✅ Exterior API Response:', JSON.stringify(data, null, 2));
+
+			clearInterval(progressInterval);
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response. Full response:', data);
+				throw new Error('No image URL in response. Response format may have changed.');
+			}
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Exterior generation completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in exterior generation attempt:', errorMessage);
+			throw err;
+		}
+	};
+
+	function buildExteriorPrompt(params: GenerateExteriorParams): string {
+		const parts: string[] = [];
+
+		// Start with building exterior context
+		parts.push('A beautiful building exterior');
+
+		// Add house type details
+		if (params.houseType) {
+			const houseTypeName = params.houseType.toLowerCase();
+			const houseTypeId = houseTypeName.replace(/\s+/g, '-');
+
+			parts.push(`${houseTypeName} building facade`);
+
+			// Add detailed house type-specific requirements if available
+			if (hasHouseTypePrompt(houseTypeId)) {
+				const houseTypeDetails = getHouseTypePrompt(houseTypeId);
+				parts.push(houseTypeDetails);
+			}
+		}
+
+		// Style emphasis with detailed descriptions
+		if (params.style) {
+			const styleName = params.style.toLowerCase();
+			let styleId = styleName.replace(/\s+/g, '-');
+
+			// Handle common misspellings/variations
+			// Map the correctly spelled name to the file's misspelled ID
+			if (styleId === 'dark-bohemian') {
+				styleId = 'dark-behemian'; // Match the file's ID spelling
+			}
+
+			console.log('🏛️ Exterior style processing:', {
+				styleName,
+				styleId,
+				hasCustomPrompt: !!params.stylePrompt,
+			});
+
+			// Use custom prompt if provided (for custom styles)
+			if (params.stylePrompt) {
+				console.log('🏛️ Using custom exterior style prompt');
+				parts.push(`${styleName} exterior style`);
+				parts.push(params.stylePrompt);
+			} else {
+				// Try to get exterior-specific style prompt
+				const exteriorStyleId = styleId;
+				console.log(
+					'🏛️ Looking up exterior style:',
+					exteriorStyleId,
+					hasExteriorStylePrompt(exteriorStyleId)
+				);
+
+				if (hasExteriorStylePrompt(exteriorStyleId)) {
+					const styleDetails = getExteriorStylePrompt(exteriorStyleId);
+					console.log(
+						'🏛️ Using detailed exterior style prompt, length:',
+						styleDetails.length
+					);
+					parts.push(`${styleName} exterior style`);
+					parts.push(styleDetails);
+				} else {
+					console.log('🏛️ No exterior style prompt found, using fallback');
+					// Fallback for unmapped styles
+					parts.push(`${styleName} exterior aesthetic, ${styleName} architectural style`);
+				}
+			}
+		}
+
+		// Add professional photography context
+		parts.push(
+			'professional architectural photography, exterior building facade, sharp detail, high quality'
+		);
+
+		return parts.join(', ');
+	}
+
 	return {
 		generateImage,
 		generateInpainting,
+		generateExterior,
 		isGenerating,
 		error,
 		generatedImageUrl,
