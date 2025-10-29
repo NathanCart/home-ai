@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from '../GenerateHalfModal';
 import { GenerateGardenHalfModal } from '../GenerateGardenHalfModal';
+import { GenerateExteriorHalfModal } from '../GenerateExteriorHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
 
 interface AlternativeGeneration {
@@ -136,9 +137,10 @@ export function ConfirmationStep({
 
 	const handleSaveToProjects = async () => {
 		try {
-			// Remove the current imageUrl from alternatives since it's already the main image
-			const alternativesWithoutCurrent = alternativeGenerations.filter(
-				(alt) => alt.imageUrl !== imageUrl
+			// Build the complete array of all variants, excluding the currently displayed one
+			// This includes the original image (initialImageUrl) plus all alternatives
+			const allVariantsForSave = allVariants.filter(
+				(variant) => variant.imageUrl !== imageUrl
 			);
 
 			const projectData = {
@@ -151,7 +153,7 @@ export function ConfirmationStep({
 				type: mode || 'ai-generated',
 				mode: mode || 'interior-design',
 				alternativeGenerations:
-					alternativesWithoutCurrent.length > 0 ? alternativesWithoutCurrent : undefined,
+					allVariantsForSave.length > 0 ? allVariantsForSave : undefined,
 			};
 
 			// Get existing projects
@@ -569,6 +571,15 @@ export function ConfirmationStep({
 					onClose={() => setShowModal(false)}
 					onGenerationComplete={handleGenerationComplete}
 					initialImageUri={imageUri}
+					initialStyle={style}
+				/>
+			) : mode === 'exterior-design' ? (
+				<GenerateExteriorHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={imageUri}
+					initialHouseType={room}
 					initialStyle={style}
 				/>
 			) : (

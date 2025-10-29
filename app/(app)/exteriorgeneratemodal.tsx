@@ -198,14 +198,14 @@ export default function ExteriorGenerateModal() {
 							{
 								id: 'apartment-1',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?ixlib=rb-4.0.3&auto=format&fit=crop&w=2074&q=80',
+									uri: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aG91c2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
 								name: 'Modern Apartment',
 							},
 							{
 								id: 'office-1',
 								source: {
-									uri: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80',
+									uri: 'https://images.unsplash.com/photo-1572120360610-d971b9d7767c?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8aG91c2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=900',
 								},
 								name: 'Office Building',
 							},
