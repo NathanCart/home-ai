@@ -260,6 +260,7 @@ export function GenerateHalfModal({
 									config={config}
 									selectedStyle={selectedStyle}
 									compact
+									mode="interior-design"
 								/>
 							</View>
 

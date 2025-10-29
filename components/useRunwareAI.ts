@@ -10,6 +10,7 @@ interface ColorPalette {
 interface GenerateImageParams {
 	room?: string;
 	style?: string;
+	stylePrompt?: string; // Custom prompt for custom styles
 	palette?: string | ColorPalette;
 	imageUri?: string;
 	styleImageUri?: string;
@@ -539,58 +540,74 @@ function buildPrompt(params: GenerateImageParams): string {
 		const styleName = params.style.toLowerCase();
 		let styleId = styleName.replace(/\s+/g, '-');
 
-		console.log('🌱 Style processing:', { styleName, styleId, isGardenMode });
-
-		// For garden mode, prepend 'garden-' prefix to get garden-specific prompts
-		if (isGardenMode && !styleId.startsWith('garden-')) {
-			const gardenStyleId = 'garden-' + styleId;
-			console.log('🌱 Checking garden prompt:', gardenStyleId, hasStylePrompt(gardenStyleId));
-			if (hasStylePrompt(gardenStyleId)) {
-				styleId = gardenStyleId;
-				console.log('🌱 Using garden prompt:', styleId);
-			}
-		}
-
-		// Add style name first for anchoring
-		parts.push(`${styleName} style`);
-
-		// Add detailed style-specific elements if available
-		// For garden mode, only use prompts that are explicitly garden-themed
-		console.log('🌱 Final lookup:', {
+		console.log('🌱 Style processing:', {
+			styleName,
 			styleId,
-			hasPrompt: hasStylePrompt(styleId),
 			isGardenMode,
-			startsWithGarden: styleId.startsWith('garden-'),
+			hasCustomPrompt: !!params.stylePrompt,
 		});
 
-		if (hasStylePrompt(styleId)) {
-			const styleDetails = getStylePrompt(styleId);
-			console.log('🌱 Got style details, length:', styleDetails.length);
-			// In garden mode, only use this if it's a garden-specific prompt or we're in interior mode
-			if (!isGardenMode || styleId.startsWith('garden-')) {
-				console.log('🌱 Using detailed garden prompt');
-				parts.push(styleDetails);
+		// Use custom prompt if provided (for custom styles)
+		if (params.stylePrompt) {
+			console.log('🌱 Using custom style prompt');
+			parts.push(`${styleName} style`);
+			parts.push(params.stylePrompt);
+		} else {
+			// For garden mode, prepend 'garden-' prefix to get garden-specific prompts
+			if (isGardenMode && !styleId.startsWith('garden-')) {
+				const gardenStyleId = 'garden-' + styleId;
+				console.log(
+					'🌱 Checking garden prompt:',
+					gardenStyleId,
+					hasStylePrompt(gardenStyleId)
+				);
+				if (hasStylePrompt(gardenStyleId)) {
+					styleId = gardenStyleId;
+					console.log('🌱 Using garden prompt:', styleId);
+				}
+			}
+
+			// Add style name first for anchoring
+			parts.push(`${styleName} style`);
+
+			// Add detailed style-specific elements if available
+			// For garden mode, only use prompts that are explicitly garden-themed
+			console.log('🌱 Final lookup:', {
+				styleId,
+				hasPrompt: hasStylePrompt(styleId),
+				isGardenMode,
+				startsWithGarden: styleId.startsWith('garden-'),
+			});
+
+			if (hasStylePrompt(styleId)) {
+				const styleDetails = getStylePrompt(styleId);
+				console.log('🌱 Got style details, length:', styleDetails.length);
+				// In garden mode, only use this if it's a garden-specific prompt or we're in interior mode
+				if (!isGardenMode || styleId.startsWith('garden-')) {
+					console.log('🌱 Using detailed garden prompt');
+					parts.push(styleDetails);
+				} else {
+					console.log('🌱 Interior prompt in garden mode - using fallback');
+					// We have an interior prompt but we're in garden mode - use garden fallback instead
+					if (isGardenMode) {
+						parts.push(
+							`${styleName} garden aesthetic, ${styleName} inspired landscaping, diverse plants and flowers`
+						);
+					} else {
+						parts.push(styleDetails);
+					}
+				}
 			} else {
-				console.log('🌱 Interior prompt in garden mode - using fallback');
-				// We have an interior prompt but we're in garden mode - use garden fallback instead
+				console.log('🌱 No detailed prompt found - using fallback');
+				// Fallback for custom or unknown styles
 				if (isGardenMode) {
+					// Generic garden fallback for unmapped styles
 					parts.push(
 						`${styleName} garden aesthetic, ${styleName} inspired landscaping, diverse plants and flowers`
 					);
 				} else {
-					parts.push(styleDetails);
+					parts.push(`${styleName} aesthetic, ${styleName} design elements`);
 				}
-			}
-		} else {
-			console.log('🌱 No detailed prompt found - using fallback');
-			// Fallback for custom or unknown styles
-			if (isGardenMode) {
-				// Generic garden fallback for unmapped styles
-				parts.push(
-					`${styleName} garden aesthetic, ${styleName} inspired landscaping, diverse plants and flowers`
-				);
-			} else {
-				parts.push(`${styleName} aesthetic, ${styleName} design elements`);
 			}
 		}
 	}

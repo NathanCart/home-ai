@@ -104,6 +104,7 @@ export function GeneratingStep({
 					{
 						room: roomName,
 						style: styleName,
+						stylePrompt: style?.prompt || undefined,
 						palette,
 						imageUri: imageUri || undefined,
 						styleImageUri: style?.imageUrl || undefined,

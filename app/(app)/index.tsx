@@ -100,7 +100,7 @@ export default function HomePage() {
 					<ToolCard
 						title="Garden design"
 						description="Transform your outdoor space with AI-powered garden design!"
-						icon="home"
+						materialIcon="flower-tulip-outline"
 						image="https://images.unsplash.com/photo-1594498653385-d5172c532c00?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Z2FyZGVufGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=900"
 						showButton={true}
 						buttonText="Design Garden"

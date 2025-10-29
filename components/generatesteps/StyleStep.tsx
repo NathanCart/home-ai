@@ -21,6 +21,7 @@ interface StyleStepProps {
 	config: StepConfig;
 	selectedStyle?: Style | null;
 	compact?: boolean;
+	mode?: 'garden' | 'interior-design';
 }
 
 interface Style {
@@ -28,6 +29,7 @@ interface Style {
 	name: string;
 	description: string;
 	imageUrl: string;
+	prompt?: string;
 	isCustom?: boolean;
 }
 
@@ -160,17 +162,30 @@ export function StyleStep({
 	config,
 	selectedStyle,
 	compact = false,
+	mode = 'interior-design',
 }: StyleStepProps) {
+	// Determine mode from config if not explicitly provided
+	// Check if config description suggests garden (fragile, but works)
+	const detectedMode: 'garden' | 'interior-design' =
+		config.description?.toLowerCase().includes('garden') ||
+		config.title?.toLowerCase().includes('garden')
+			? 'garden'
+			: mode || 'interior-design';
+
+	const storageKey = detectedMode === 'garden' ? 'customGardenStyles' : 'customInteriorStyles';
+
 	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
 		selectedStyle?.id || null
 	);
 	const [customStyles, setCustomStyles] = useState<Style[]>([]);
 	const [showAddModal, setShowAddModal] = useState<boolean>(false);
 	const [newStyleName, setNewStyleName] = useState<string>('');
+	const [newStylePrompt, setNewStylePrompt] = useState<string>('');
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
 	const [showEditModal, setShowEditModal] = useState<boolean>(false);
 	const [editingStyle, setEditingStyle] = useState<Style | null>(null);
 	const [editStyleName, setEditStyleName] = useState<string>('');
+	const [editStylePrompt, setEditStylePrompt] = useState<string>('');
 	const [editImageUri, setEditImageUri] = useState<string | null>(null);
 	const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
 	const [isLoadingEditImage, setIsLoadingEditImage] = useState<boolean>(false);
@@ -179,7 +194,8 @@ export function StyleStep({
 	// Load custom styles from AsyncStorage on component mount
 	useEffect(() => {
 		loadCustomStyles();
-	}, []);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [detectedMode]);
 
 	// Update allStyles when customStyles change - custom styles first
 	useEffect(() => {
@@ -188,7 +204,7 @@ export function StyleStep({
 
 	const loadCustomStyles = async () => {
 		try {
-			const stored = await AsyncStorage.getItem('customStyles');
+			const stored = await AsyncStorage.getItem(storageKey);
 			if (stored) {
 				const parsedStyles = JSON.parse(stored);
 				setCustomStyles(parsedStyles);
@@ -200,7 +216,7 @@ export function StyleStep({
 
 	const saveCustomStyles = async (styles: Style[]) => {
 		try {
-			await AsyncStorage.setItem('customStyles', JSON.stringify(styles));
+			await AsyncStorage.setItem(storageKey, JSON.stringify(styles));
 		} catch (error) {
 			console.error('Error saving custom styles:', error);
 		}
@@ -252,6 +268,7 @@ export function StyleStep({
 				imageUrl:
 					selectedImageUri ||
 					'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400&h=300&fit=crop&crop=center', // Use selected image or default
+				prompt: newStylePrompt.trim() || undefined,
 				isCustom: true,
 			};
 
@@ -264,12 +281,15 @@ export function StyleStep({
 			onStyleSelect?.(newStyle);
 
 			setNewStyleName('');
+			setNewStylePrompt('');
+			setSelectedImageUri(null);
 			setShowAddModal(false);
 		}
 	};
 
 	const handleCancelAdd = () => {
 		setNewStyleName('');
+		setNewStylePrompt('');
 		setSelectedImageUri(null);
 		setIsLoadingImage(false);
 		setShowAddModal(false);
@@ -279,6 +299,7 @@ export function StyleStep({
 		if (style.isCustom) {
 			setEditingStyle(style);
 			setEditStyleName(style.name);
+			setEditStylePrompt(style.prompt || '');
 			setEditImageUri(style.imageUrl);
 			setShowEditModal(true);
 		}
@@ -325,6 +346,7 @@ export function StyleStep({
 							name: editStyleName.trim(),
 							description: '', // Empty description
 							imageUrl: editImageUri || style.imageUrl,
+							prompt: editStylePrompt.trim() || undefined,
 						}
 					: style
 			);
@@ -338,11 +360,13 @@ export function StyleStep({
 					name: editStyleName.trim(),
 					description: '', // Empty description
 					imageUrl: editImageUri || editingStyle.imageUrl,
+					prompt: editStylePrompt.trim() || undefined,
 				};
 				onStyleSelect?.(updatedStyle);
 			}
 
 			setEditStyleName('');
+			setEditStylePrompt('');
 			setEditImageUri(null);
 			setEditingStyle(null);
 			setShowEditModal(false);
@@ -372,6 +396,7 @@ export function StyleStep({
 
 	const handleCancelEdit = () => {
 		setEditStyleName('');
+		setEditStylePrompt('');
 		setEditImageUri(null);
 		setIsLoadingEditImage(false);
 		setEditingStyle(null);
@@ -445,6 +470,7 @@ export function StyleStep({
 						onPress={() => {
 							setShowAddModal(true);
 							setNewStyleName('');
+							setNewStylePrompt('');
 							setSelectedImageUri(null);
 							setIsLoadingImage(false);
 						}}
@@ -580,6 +606,23 @@ export function StyleStep({
 							autoFocus
 						/>
 
+						<TextInput
+							value={newStylePrompt}
+							onChangeText={setNewStylePrompt}
+							placeholder={
+								detectedMode === 'garden'
+									? 'e.g., lush green foliage, colorful flower beds, winding stone pathways, decorative garden ornaments, peaceful water features, organic shapes and natural textures'
+									: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
+							}
+							multiline
+							numberOfLines={4}
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							textAlignVertical="top"
+						/>
+						<ThemedText variant="body" className="text-gray-600 text-sm mb-4 -mt-2">
+							This prompt will be used when generating images with this style
+						</ThemedText>
 						<View className="flex-row gap-2 mb-8">
 							<CustomButton
 								title="Cancel"
@@ -685,6 +728,24 @@ export function StyleStep({
 							placeholderTextColor="#9CA3AF"
 							autoFocus
 						/>
+
+						<TextInput
+							value={editStylePrompt}
+							onChangeText={setEditStylePrompt}
+							placeholder={
+								detectedMode === 'garden'
+									? 'e.g., lush green foliage, colorful flower beds, winding stone pathways, decorative garden ornaments, peaceful water features, organic shapes and natural textures'
+									: 'e.g., clean lines, minimalist furniture, neutral color palette with white and grey, sleek surfaces, geometric shapes, open floor plan'
+							}
+							multiline
+							numberOfLines={4}
+							className="bg-gray-50 border border-gray-200 rounded-xl px-6 py-4 mb-4 text-gray-900"
+							placeholderTextColor="#9CA3AF"
+							textAlignVertical="top"
+						/>
+						<ThemedText variant="body" className="text-gray-600 text-sm mb-4 -mt-2">
+							This prompt will be used when generating images with this style
+						</ThemedText>
 
 						<View className="flex-row gap-2 mb-8">
 							<CustomButton

@@ -190,6 +190,7 @@ export default function GenerateModal() {
 						onStyleSelect={handleStyleSelect}
 						config={config}
 						selectedStyle={selectedStyle}
+						mode="interior-design"
 					/>
 				);
 			case 4:

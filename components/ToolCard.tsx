@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { View, TouchableOpacity, Animated, Pressable, Image } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ThemedText } from './ThemedText';
 import { CustomButton } from './CustomButton';
 import * as Haptics from 'expo-haptics';
@@ -9,7 +10,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface ToolCardProps {
 	title: string;
 	description: string;
-	icon: keyof typeof Octicons.glyphMap;
+	icon?: keyof typeof Octicons.glyphMap;
+	materialIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
 	onPress: () => void;
 	image?: string;
 	gradient?: string;
@@ -26,6 +28,7 @@ export function ToolCard({
 	title,
 	description,
 	icon,
+	materialIcon,
 	onPress,
 	image,
 	gradient = 'from-blue-500 to-purple-600',
@@ -37,6 +40,9 @@ export function ToolCard({
 	showButton = true,
 	buttonText = 'Try it!',
 }: ToolCardProps) {
+	// Determine which icon to use
+	const IconComponent = materialIcon ? MaterialCommunityIcons : Octicons;
+	const iconName = materialIcon || icon;
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
 
 	const handlePressIn = () => {
@@ -96,7 +102,7 @@ export function ToolCard({
 				>
 					{/* Image Header */}
 					{image && (
-						<View className="relative h-72">
+						<View className="relative h-60">
 							<Image
 								source={{ uri: image }}
 								className="w-full h-full"
@@ -141,24 +147,26 @@ export function ToolCard({
 							</View>
 
 							{/* Icon Overlay */}
-							<View
-								className="absolute top-5 left-5 w-14 h-14 rounded-2xl items-center justify-center"
-								style={{
-									backgroundColor: 'rgba(255, 255, 255, 0.15)',
-									borderWidth: 1,
-									borderColor: 'rgba(255, 255, 255, 0.25)',
-									shadowColor: '#000',
-									shadowOffset: {
-										width: 0,
-										height: 4,
-									},
-									shadowOpacity: 0.25,
-									shadowRadius: 8,
-									elevation: 8,
-								}}
-							>
-								<Octicons name={icon} size={28} color="white" />
-							</View>
+							{iconName && (
+								<View
+									className="absolute top-5 left-5 w-14 h-14 rounded-2xl items-center justify-center"
+									style={{
+										backgroundColor: 'rgba(255, 255, 255, 0.15)',
+										borderWidth: 1,
+										borderColor: 'rgba(255, 255, 255, 0.25)',
+										shadowColor: '#000',
+										shadowOffset: {
+											width: 0,
+											height: 4,
+										},
+										shadowOpacity: 0.25,
+										shadowRadius: 8,
+										elevation: 8,
+									}}
+								>
+									<IconComponent name={iconName as any} size={28} color="white" />
+								</View>
+							)}
 						</View>
 					)}
 
@@ -166,9 +174,15 @@ export function ToolCard({
 					{!image && (
 						<View className="p-8">
 							<View className="flex-row items-center mb-4">
-								<View className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center mr-4">
-									<Octicons name={icon} size={32} color="white" />
-								</View>
+								{iconName && (
+									<View className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl items-center justify-center mr-4">
+										<IconComponent
+											name={iconName as any}
+											size={32}
+											color="white"
+										/>
+									</View>
+								)}
 								<View className="flex-1">
 									<ThemedText
 										variant="title-lg"

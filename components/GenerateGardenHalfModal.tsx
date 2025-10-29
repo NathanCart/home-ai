@@ -233,6 +233,7 @@ export function GenerateGardenHalfModal({
 									config={config}
 									selectedStyle={selectedStyle}
 									compact
+									mode="garden"
 								/>
 							</View>
 

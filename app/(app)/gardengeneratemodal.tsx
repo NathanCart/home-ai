@@ -212,6 +212,7 @@ export default function GardenGenerateModal() {
 						onStyleSelect={handleStyleSelect}
 						config={config}
 						selectedStyle={selectedStyle}
+						mode="garden"
 					/>
 				);
 			case 3:
