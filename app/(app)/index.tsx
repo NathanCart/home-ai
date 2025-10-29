@@ -1,10 +1,10 @@
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Animated } from 'react-native';
 import { router } from 'expo-router';
 import { Octicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from 'components/ThemedText';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { LoadingScreen } from 'components/LoadingScreen';
 import { useOnboarding } from 'components/useOnboarding';
 import { useSubscriptionStatus } from 'components/useRevenueCat';
@@ -23,6 +23,12 @@ export default function HomePage() {
 		shouldShowReviewPrompt,
 		isLoading: reviewPromptLoading,
 	} = useReviewPrompt();
+	const sharedAnimation = useRef(new Animated.Value(1)).current; // Shared animation for all cards
+	const animationRef = useRef<Animated.CompositeAnimation | null>(null);
+
+	// Before and after images
+	const beforeImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-bad.png';
+	const afterImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.png';
 
 	useEffect(() => {
 		if (hasCompletedOnboarding === false) {
@@ -55,6 +61,35 @@ export default function HomePage() {
 			setShowBanner(false);
 		}
 	}, [isSubscribed]);
+
+	// Start the shared animation loop once when component mounts
+	useEffect(() => {
+		const animation = Animated.loop(
+			Animated.sequence([
+				Animated.delay(500),
+				Animated.timing(sharedAnimation, {
+					toValue: 0,
+					duration: 1500,
+					useNativeDriver: false,
+				}),
+				Animated.delay(500),
+				Animated.timing(sharedAnimation, {
+					toValue: 1,
+					duration: 1500,
+					useNativeDriver: false,
+				}),
+			])
+		);
+
+		animationRef.current = animation;
+		animation.start();
+
+		return () => {
+			if (animationRef.current) {
+				animationRef.current.stop();
+			}
+		};
+	}, []);
 
 	// Show loading screen while checking onboarding status
 	if (onboardingLoading || hasCompletedOnboarding === null) {
@@ -89,7 +124,11 @@ export default function HomePage() {
 						title="Interior design"
 						description="Upload a photo of your space and let AI design it for you!"
 						icon="home"
-						image="https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.png'}
+						originalImage={
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.png'
+						}
+						sharedAnimation={sharedAnimation}
 						badge="Popular"
 						showButton={true}
 						buttonText="Start Designing"
@@ -101,7 +140,9 @@ export default function HomePage() {
 						title="Garden design"
 						description="Transform your outdoor space with AI-powered garden design!"
 						materialIcon="flower-tulip-outline"
-						image="https://images.unsplash.com/photo-1594498653385-d5172c532c00?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Z2FyZGVufGVufDB8fDB8fHww&auto=format&fit=crop&q=60&w=900"
+						image={afterImage}
+						originalImage={beforeImage}
+						sharedAnimation={sharedAnimation}
 						showButton={true}
 						buttonText="Design Garden"
 						onPress={() => {
@@ -112,7 +153,11 @@ export default function HomePage() {
 						title="Exterior design"
 						description="Transform your building's exterior with AI-powered design!"
 						materialIcon="office-building"
-						image="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-good.png'}
+						originalImage={
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-bad.png'
+						}
+						sharedAnimation={sharedAnimation}
 						showButton={true}
 						buttonText="Design Exterior"
 						onPress={() => {
@@ -123,7 +168,11 @@ export default function HomePage() {
 						title="Replace objects"
 						description="Replace objects in your photo with AI-generated ones!"
 						icon="paintbrush"
-						image="https://images.unsplash.com/photo-1759722668385-90006d9c7aa7?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=1354"
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-after.png'}
+						originalImage={
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-before.png'
+						}
+						sharedAnimation={sharedAnimation}
 						showButton={true}
 						buttonText="Start Painting"
 						onPress={() => {

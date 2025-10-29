@@ -1,5 +1,12 @@
 import React, { useRef } from 'react';
-import { View, TouchableOpacity, Animated, Pressable, Image } from 'react-native';
+import {
+	View,
+	TouchableOpacity,
+	Animated,
+	Pressable,
+	Image,
+	useWindowDimensions,
+} from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { ThemedText } from './ThemedText';
@@ -14,6 +21,8 @@ interface ToolCardProps {
 	materialIcon?: keyof typeof MaterialCommunityIcons.glyphMap;
 	onPress: () => void;
 	image?: string;
+	originalImage?: string; // Before image for animation
+	sharedAnimation?: Animated.Value; // Shared animation for before/after reveal
 	gradient?: string;
 	iconColor?: string;
 	badge?: string;
@@ -31,6 +40,8 @@ export function ToolCard({
 	materialIcon,
 	onPress,
 	image,
+	originalImage,
+	sharedAnimation,
 	gradient = 'from-blue-500 to-purple-600',
 	iconColor = '#ffffff',
 	badge,
@@ -44,6 +55,31 @@ export function ToolCard({
 	const IconComponent = materialIcon ? MaterialCommunityIcons : Octicons;
 	const iconName = materialIcon || icon;
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
+	const { width: screenWidth } = useWindowDimensions();
+	const cardWidth = screenWidth - 48; // Account for px-6 padding (24px each side)
+
+	// Before/After animation interpolations
+	const hasBeforeAfterAnimation = originalImage && image && sharedAnimation;
+	const revealPosition = hasBeforeAfterAnimation
+		? sharedAnimation.interpolate({
+				inputRange: [0, 1],
+				outputRange: [0, cardWidth],
+			})
+		: undefined;
+
+	const beforeLabelOpacity = hasBeforeAfterAnimation
+		? sharedAnimation.interpolate({
+				inputRange: [0, 0.25, 0.95],
+				outputRange: [1, 0, 0],
+			})
+		: undefined;
+
+	const afterLabelOpacity = hasBeforeAfterAnimation
+		? sharedAnimation.interpolate({
+				inputRange: [0, 0.5, 0.95],
+				outputRange: [0, 0, 1],
+			})
+		: undefined;
 
 	const handlePressIn = () => {
 		Animated.spring(scaleAnimation, {
@@ -103,15 +139,110 @@ export function ToolCard({
 					{/* Image Header */}
 					{image && (
 						<View className="relative h-60">
-							<Image
-								source={{ uri: image }}
-								className="w-full h-full"
-								resizeMode="cover"
-							/>
+							{hasBeforeAfterAnimation &&
+							revealPosition &&
+							beforeLabelOpacity &&
+							afterLabelOpacity ? (
+								<>
+									{/* Before Image (Full Width - Base Layer) */}
+									<Image
+										source={{ uri: originalImage! }}
+										style={{
+											width: '100%',
+											height: '100%',
+										}}
+										resizeMode="cover"
+									/>
+
+									{/* After Image (Clipped by Width - Top Layer) */}
+									<Animated.View
+										style={{
+											position: 'absolute',
+											top: 0,
+											left: 0,
+											bottom: 0,
+											width: revealPosition,
+											overflow: 'hidden',
+										}}
+									>
+										<Image
+											source={{ uri: image }}
+											style={{
+												width: cardWidth,
+												height: '100%',
+											}}
+											resizeMode="cover"
+										/>
+									</Animated.View>
+
+									{/* Animated Divider Line */}
+									<Animated.View
+										style={{
+											position: 'absolute',
+											top: 0,
+											bottom: 0,
+											left: revealPosition,
+											width: 2,
+											backgroundColor: '#fff',
+											shadowColor: '#000',
+											shadowOffset: { width: 0, height: 0 },
+											shadowOpacity: 0.3,
+											shadowRadius: 4,
+											elevation: 5,
+										}}
+									/>
+
+									{/* Before Label */}
+									<Animated.View
+										style={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											opacity: beforeLabelOpacity,
+										}}
+									>
+										<View className="bg-gray-50 px-2 py-1 rounded-full">
+											<ThemedText
+												variant="body"
+												className="text-gray-900 text-xs"
+												bold
+											>
+												Before
+											</ThemedText>
+										</View>
+									</Animated.View>
+
+									{/* After Label */}
+									<Animated.View
+										style={{
+											position: 'absolute',
+											top: 8,
+											right: 8,
+											opacity: afterLabelOpacity,
+										}}
+									>
+										<View className="bg-gray-50 px-2 py-1 rounded-full">
+											<ThemedText
+												variant="body"
+												className="text-gray-900 text-xs"
+												bold
+											>
+												After
+											</ThemedText>
+										</View>
+									</Animated.View>
+								</>
+							) : (
+								<Image
+									source={{ uri: image }}
+									className="w-full h-full"
+									resizeMode="cover"
+								/>
+							)}
 							{/* Dark Overlay */}
-							<View className="absolute inset-0 bg-black/60" />
+							<View className="absolute inset-0 bg-black/25" />
 							<LinearGradient
-								colors={['transparent', 'rgba(0,0,0,0.7)']}
+								colors={['transparent', 'rgba(0,0,0,0.1)']}
 								locations={[0, 1]}
 								className="absolute inset-0"
 							/>
