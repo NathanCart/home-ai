@@ -21,6 +21,7 @@ import { GenerateHalfModal } from '../GenerateHalfModal';
 import { GenerateGardenHalfModal } from '../GenerateGardenHalfModal';
 import { GenerateExteriorHalfModal } from '../GenerateExteriorHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
+import { ThumbsUpDown } from '../ThumbsUpDown';
 
 interface AlternativeGeneration {
 	imageUrl: string;
@@ -361,6 +362,8 @@ export function ConfirmationStep({
 										}}
 										resizeMode="cover"
 									/>
+									{/* Rating Icons Overlay */}
+									<ThumbsUpDown imageUrl={imageUrl} />
 								</Animated.View>
 
 								{/* Sliding Reveal Overlay (visual effect only) */}
@@ -461,12 +464,14 @@ export function ConfirmationStep({
 								</Animated.View>
 							</View>
 						) : (
-							<View className="flex-1 rounded-2xl overflow-hidden bg-white">
+							<View className="flex-1 rounded-2xl overflow-hidden bg-white relative">
 								<Image
 									source={{ uri: imageUrl }}
 									className="w-full h-full"
 									resizeMode="cover"
 								/>
+								{/* Rating Icons Overlay */}
+								<ThumbsUpDown imageUrl={imageUrl} />
 							</View>
 						)}
 					</View>

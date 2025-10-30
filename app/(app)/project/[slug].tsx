@@ -20,6 +20,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from 'components/GenerateHalfModal';
 import { GenerateGardenHalfModal } from 'components/GenerateGardenHalfModal';
+import { ThumbsUpDown } from 'components/ThumbsUpDown';
 
 interface AlternativeGeneration {
 	imageUrl: string;
@@ -369,6 +370,8 @@ export default function ProjectDetailPage() {
 										}}
 										resizeMode="cover"
 									/>
+									{/* Rating Icons Overlay */}
+									<ThumbsUpDown imageUrl={imageUrl} />
 								</Animated.View>
 
 								{/* Divider Line */}
@@ -455,12 +458,14 @@ export default function ProjectDetailPage() {
 								</Animated.View>
 							</View>
 						) : (
-							<View className="flex-1 rounded-2xl overflow-hidden bg-white">
+							<View className="flex-1 rounded-2xl overflow-hidden bg-white relative">
 								<Image
 									source={{ uri: imageUrl }}
 									className="w-full h-full"
 									resizeMode="cover"
 								/>
+								{/* Rating Icons Overlay */}
+								<ThumbsUpDown imageUrl={imageUrl} />
 							</View>
 						)}
 					</View>
