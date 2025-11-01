@@ -22,6 +22,7 @@ import { GenerateGardenHalfModal } from '../GenerateGardenHalfModal';
 import { GenerateExteriorHalfModal } from '../GenerateExteriorHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
 import { ThumbsUpDown } from '../ThumbsUpDown';
+import { router } from 'expo-router';
 
 interface AlternativeGeneration {
 	imageUrl: string;
@@ -62,6 +63,8 @@ export function ConfirmationStep({
 		[]
 	);
 	const [showModal, setShowModal] = useState(false);
+	const [projectSlug, setProjectSlug] = useState<string | null>(null);
+	const [hasAutoSaved, setHasAutoSaved] = useState(false);
 
 	// Create variants array that includes the original image + alternatives
 	const allVariants: Array<{ imageUrl: string; style?: any; room?: any }> = [
@@ -110,25 +113,16 @@ export function ConfirmationStep({
 	});
 
 	const handleSaveToGallery = async () => {
-		try {
-			// Request permissions
-			const { status } = await MediaLibrary.requestPermissionsAsync();
+		if (!imageUrl) return;
 
+		try {
+			const { status } = await MediaLibrary.requestPermissionsAsync();
 			if (status !== 'granted') {
-				Alert.alert(
-					'Permission Required',
-					'Please grant photo library access to save the image.'
-				);
+				Alert.alert('Permission Denied', 'Please grant gallery access to save images.');
 				return;
 			}
 
-			// Download and save the image
-			const downloadResult = await fetch(imageUrl);
-			const blob = await downloadResult.blob();
-			const uri = URL.createObjectURL(blob);
-
-			await MediaLibrary.saveToLibraryAsync(uri);
-
+			await MediaLibrary.saveToLibraryAsync(imageUrl);
 			Alert.alert('Success', 'Image saved to gallery!');
 		} catch (error) {
 			console.error('Error saving image:', error);
@@ -136,52 +130,91 @@ export function ConfirmationStep({
 		}
 	};
 
-	const handleSaveToProjects = async () => {
-		try {
-			// Build the complete array of all variants, excluding the currently displayed one
-			// This includes the original image (initialImageUrl) plus all alternatives
-			const allVariantsForSave = allVariants.filter(
-				(variant) => variant.imageUrl !== imageUrl
-			);
+	// Auto-save project on mount
+	useEffect(() => {
+		const autoSaveProject = async () => {
+			if (hasAutoSaved) return; // Only save once
 
-			const projectData = {
-				imageUrl,
-				room,
-				style,
-				palette,
-				originalImage: imageUri,
-				createdAt: new Date().toISOString(),
-				type: mode || 'ai-generated',
-				mode: mode || 'interior-design',
-				alternativeGenerations:
-					allVariantsForSave.length > 0 ? allVariantsForSave : undefined,
-			};
+			try {
+				const projectData = {
+					imageUrl: initialImageUrl,
+					room,
+					style,
+					palette,
+					originalImage: imageUri,
+					createdAt: new Date().toISOString(),
+					type: mode || 'ai-generated',
+					mode: mode || 'interior-design',
+					alternativeGenerations: undefined, // Will be populated as variants are added
+				};
 
-			// Get existing projects
-			const existingProjects = await AsyncStorage.getItem('projects');
-			const projects = existingProjects ? JSON.parse(existingProjects) : [];
+				// Get existing projects
+				const existingProjects = await AsyncStorage.getItem('projects');
+				const projects = existingProjects ? JSON.parse(existingProjects) : [];
 
-			// Add new project to the beginning
-			projects.unshift(projectData);
+				// Add new project to the beginning
+				projects.unshift(projectData);
 
-			// Keep only the last 100 projects
-			const trimmedProjects = projects.slice(0, 100);
+				// Keep only the last 100 projects
+				const trimmedProjects = projects.slice(0, 100);
 
-			await AsyncStorage.setItem('projects', JSON.stringify(trimmedProjects));
+				await AsyncStorage.setItem('projects', JSON.stringify(trimmedProjects));
 
-			// Navigate to projects page after saving
-			if (onSaveComplete) {
-				onSaveComplete();
+				// Generate slug from imageUrl (filename without extension and query params)
+				const slug = initialImageUrl.substring(
+					initialImageUrl.lastIndexOf('/') + 1,
+					initialImageUrl.indexOf('?') > 0
+						? initialImageUrl.indexOf('?')
+						: initialImageUrl.length
+				);
+				setProjectSlug(slug);
+				setHasAutoSaved(true);
+				console.log('✅ Project auto-saved with slug:', slug);
+			} catch (error) {
+				console.error('Error auto-saving project:', error);
 			}
-		} catch (error) {
-			console.error('Error saving to projects:', error);
-			Alert.alert('Error', 'Failed to save project.');
-		}
-	};
+		};
+
+		autoSaveProject();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []); // Only run once on mount
+
+	// Auto-save alternative generations to the project when they change
+	useEffect(() => {
+		if (!hasAutoSaved || !projectSlug || alternativeGenerations.length === 0) return;
+
+		const saveAlternativeGenerations = async () => {
+			try {
+				const storedProjects = await AsyncStorage.getItem('projects');
+				if (storedProjects) {
+					const projects = JSON.parse(storedProjects);
+					const projectIndex = projects.findIndex((p: any) =>
+						p.imageUrl.includes(projectSlug)
+					);
+
+					if (projectIndex !== -1) {
+						// Update the project with new alternative generations
+						projects[projectIndex] = {
+							...projects[projectIndex],
+							alternativeGenerations: alternativeGenerations,
+						};
+
+						await AsyncStorage.setItem('projects', JSON.stringify(projects));
+						console.log('✅ Alternative generations saved to project');
+					}
+				}
+			} catch (error) {
+				console.error('Error saving alternative generations:', error);
+			}
+		};
+
+		saveAlternativeGenerations();
+	}, [alternativeGenerations, projectSlug, hasAutoSaved]);
 
 	const handleGenerationComplete = (newImageUrl: string, newStyle?: any, newRoom?: any) => {
 		setShowModal(false);
 		// Add to alternative generations with style and room info
+		// This will trigger the useEffect to auto-save to the project
 		setAlternativeGenerations((prev) => [
 			...prev,
 			{ imageUrl: newImageUrl, style: newStyle, room: newRoom },
@@ -195,6 +228,8 @@ export function ConfirmationStep({
 	};
 
 	const handleShare = async () => {
+		if (!imageUrl) return;
+
 		try {
 			const result = await Share.share({
 				message: 'Check out my AI-generated design!',
@@ -544,7 +579,6 @@ export function ConfirmationStep({
 							vertical
 						/>
 					</View>
-
 					<View className="flex-1">
 						<CustomButton
 							title="Share"
@@ -555,12 +589,11 @@ export function ConfirmationStep({
 							vertical
 						/>
 					</View>
-
 					<View className="flex-1">
 						<CustomButton
 							title="Save"
-							onPress={handleSaveToProjects}
-							icon="download"
+							onPress={handleSaveToGallery}
+							icon="fold-down"
 							variant="secondary"
 							size="lg"
 							vertical
