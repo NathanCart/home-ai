@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
@@ -9,23 +9,37 @@ import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
 import { MaskStepRef } from 'components/generatesteps/MaskStep';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function PaintModal() {
 	const insets = useSafeAreaInsets();
+	const params = useLocalSearchParams();
+	const initialImageUri = params.initialImageUri as string | undefined;
+	const projectSlug = params.projectSlug as string | undefined;
 	const maskStepRef = useRef<MaskStepRef>(null);
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(3); // Photo, Mask, Text Input
 	const [hasImageSelected, setHasImageSelected] = useState(false);
-	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
+		initialImageUri || null
+	);
 	const [maskImageUri, setMaskImageUri] = useState<string | null>(null);
 	const [hasMaskContent, setHasMaskContent] = useState(false);
 	const [replacementText, setReplacementText] = useState<string>('');
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
+
+	// If initialImageUri is provided, mark image as selected
+	useEffect(() => {
+		if (initialImageUri) {
+			setHasImageSelected(true);
+			setSelectedImageUri(initialImageUri);
+		}
+	}, [initialImageUri]);
 
 	const {
 		slideAnimation,
@@ -85,10 +99,47 @@ export default function PaintModal() {
 		setReplacementText(text);
 	};
 
-	const handleGenerationComplete = (imageUrl: string) => {
-		setGeneratedImageUrl(imageUrl);
+	const handleGenerationComplete = async (imageUrl: string) => {
+		// If we came from project page, save to project and go back immediately
+		// Don't set state that would trigger confirmation step render
+		if (initialImageUri && projectSlug) {
+			try {
+				const storedProjects = await AsyncStorage.getItem('projects');
+				if (storedProjects) {
+					const projects = JSON.parse(storedProjects);
+					// Find project by slug (matching imageUrl with slug)
+					const projectIndex = projects.findIndex((p: any) =>
+						p.imageUrl.includes(projectSlug)
+					);
 
-		// Trigger the animation to transition to the next step
+					if (projectIndex !== -1) {
+						// Add to alternative generations
+						if (!projects[projectIndex].alternativeGenerations) {
+							projects[projectIndex].alternativeGenerations = [];
+						}
+						const alternatives = projects[projectIndex].alternativeGenerations.map(
+							(alt: any) => (typeof alt === 'string' ? { imageUrl: alt } : alt)
+						);
+						alternatives.push({ imageUrl });
+						projects[projectIndex].alternativeGenerations = alternatives;
+						await AsyncStorage.setItem('projects', JSON.stringify(projects));
+					}
+				}
+
+				// Store the new variant URL in AsyncStorage with a timestamp so project page can detect it
+				await AsyncStorage.setItem(`newVariant_${projectSlug}`, imageUrl);
+				
+				// Navigate back to project page immediately - don't set state first
+				router.back();
+				return; // Exit early, don't proceed to confirmation step
+			} catch (error) {
+				console.error('Error saving to project:', error);
+				// Fall through to normal confirmation flow
+			}
+		}
+
+		// Normal flow: go to confirmation step
+		setGeneratedImageUrl(imageUrl);
 		setIsTransitioning(true);
 
 		Animated.parallel([
@@ -274,6 +325,10 @@ export default function PaintModal() {
 					/>
 				);
 			case 5:
+				// Don't render confirmation step if we're in "from project" mode
+				if (projectSlug) {
+					return null;
+				}
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}

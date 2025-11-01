@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
 	View,
 	Image,
@@ -13,10 +13,11 @@ import {
 import { ThemedText } from 'components/ThemedText';
 import * as MediaLibrary from 'expo-media-library';
 import { CustomButton } from 'components/CustomButton';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Octicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from 'components/GenerateHalfModal';
 import { GenerateGardenHalfModal } from 'components/GenerateGardenHalfModal';
@@ -41,7 +42,7 @@ interface Project {
 }
 
 export default function ProjectDetailPage() {
-	const { slug } = useLocalSearchParams();
+	const { slug, newVariant } = useLocalSearchParams();
 	const insets = useSafeAreaInsets();
 	const [project, setProject] = useState<Project | null>(null);
 	const [imageUrl, setImageUrl] = useState<string>('');
@@ -62,8 +63,8 @@ export default function ProjectDetailPage() {
 		: [];
 
 	// Load project data
-	useEffect(() => {
-		const loadProject = async () => {
+	const loadProject = useCallback(
+		async (selectVariant?: string) => {
 			try {
 				const storedProjects = await AsyncStorage.getItem('projects');
 				if (storedProjects) {
@@ -73,7 +74,6 @@ export default function ProjectDetailPage() {
 					);
 					if (foundProject) {
 						setProject(foundProject);
-						setImageUrl(foundProject.imageUrl);
 						// Load alternative generations if they exist
 						if (foundProject.alternativeGenerations) {
 							// Handle backward compatibility: convert string[] to AlternativeGeneration[]
@@ -81,16 +81,58 @@ export default function ProjectDetailPage() {
 								(alt: any) => (typeof alt === 'string' ? { imageUrl: alt } : alt)
 							);
 							setAlternativeGenerations(alternatives);
+
+							// Select the new variant if provided, otherwise default to project imageUrl
+							if (selectVariant) {
+								setImageUrl(selectVariant);
+							} else {
+								setImageUrl(foundProject.imageUrl);
+							}
+						} else {
+							// Select the new variant if provided, otherwise default to project imageUrl
+							if (selectVariant) {
+								setImageUrl(selectVariant);
+							} else {
+								setImageUrl(foundProject.imageUrl);
+							}
 						}
 					}
 				}
 			} catch (error) {
 				console.error('Error loading project:', error);
 			}
-		};
+		},
+		[slug]
+	);
 
+	useEffect(() => {
 		loadProject();
-	}, [slug]);
+	}, [loadProject]);
+
+	// Reload project when screen comes into focus (e.g., returning from paint modal)
+	useFocusEffect(
+		useCallback(() => {
+			const checkForNewVariant = async () => {
+				// Check if there's a new variant saved from paint modal
+				const newVariantKey = `newVariant_${slug}`;
+				const savedNewVariant = await AsyncStorage.getItem(newVariantKey);
+
+				if (savedNewVariant) {
+					// Clear the flag
+					await AsyncStorage.removeItem(newVariantKey);
+					// Reload and select the new variant
+					loadProject(savedNewVariant);
+				} else if (newVariant && typeof newVariant === 'string') {
+					// Fallback to param-based approach
+					loadProject(newVariant);
+				} else {
+					loadProject();
+				}
+			};
+
+			checkForNewVariant();
+		}, [loadProject, slug, newVariant])
+	);
 
 	// Auto-save project when alternative generations change
 	useEffect(() => {
@@ -469,13 +511,33 @@ export default function ProjectDetailPage() {
 							</View>
 						)}
 					</View>
-
+					<View className="flex-row items-center justify-between mt-4">
+						<View className="flex-col items-center gap-2">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/paintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: slug as string,
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3"
+							>
+								<Octicons name="paintbrush" size={24} color="#111827" />
+							</TouchableOpacity>
+						</View>
+					</View>
 					{/* Variants Section */}
 					{allVariants.length > 1 && (
 						<View className="mt-6 mb-6 -mx-6">
-							<ThemedText variant="title-md" className="text-gray-900 mb-3 px-6" bold>
-								Variants
-							</ThemedText>
+							<View className="flex-row items-center justify-between mb-3 px-6">
+								<ThemedText variant="title-md" className="text-gray-900" bold>
+									Variants
+								</ThemedText>
+							</View>
 							<FlatList
 								horizontal
 								data={allVariants}
