@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
 	View,
 	Image,
@@ -13,7 +13,8 @@ import {
 import { ThemedText } from '../ThemedText';
 import * as MediaLibrary from 'expo-media-library';
 import { CustomButton } from '../CustomButton';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Octicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -24,6 +25,7 @@ import { RestyleSelectionHalfModal } from '../RestyleSelectionHalfModal';
 import { useRunwareAI } from '../useRunwareAI';
 import { ThumbsUpDown } from '../ThumbsUpDown';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface AlternativeGeneration {
 	imageUrl: string;
@@ -182,6 +184,30 @@ export function ConfirmationStep({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, []); // Only run once on mount
 
+	// Reload variants when screen comes into focus (e.g., returning from paint/repaint modal)
+	useFocusEffect(
+		useCallback(() => {
+			const checkForNewVariant = async () => {
+				if (!projectSlug) return;
+
+				// Check if there's a new variant saved from paint/repaint modal
+				const newVariantKey = `newVariant_${projectSlug}`;
+				const savedNewVariant = await AsyncStorage.getItem(newVariantKey);
+
+				if (savedNewVariant) {
+					// Clear the flag
+					await AsyncStorage.removeItem(newVariantKey);
+					// Add to alternative generations
+					setAlternativeGenerations((prev) => [...prev, { imageUrl: savedNewVariant }]);
+					// Auto-select the new image
+					setImageUrl(savedNewVariant);
+				}
+			};
+
+			checkForNewVariant();
+		}, [projectSlug])
+	);
+
 	// Auto-save alternative generations to the project when they change
 	useEffect(() => {
 		if (!hasAutoSaved || !projectSlug || alternativeGenerations.length === 0) return;
@@ -232,7 +258,7 @@ export function ConfirmationStep({
 
 	const handleRestyleModeSelect = (restyleMode: string) => {
 		setSelectedRestyleMode(restyleMode);
-		
+
 		if (restyleMode === 'repaint') {
 			// Navigate to repaint modal
 			router.push({
@@ -530,6 +556,46 @@ export function ConfirmationStep({
 								<ThumbsUpDown imageUrl={imageUrl} />
 							</View>
 						)}
+					</View>
+					<View className="flex-row items-center justify-between mt-4 gap-3">
+						<View className="flex-col items-center gap-2">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/paintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: projectSlug || '',
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3"
+							>
+								<Octicons name="paintbrush" size={24} color="#111827" />
+							</TouchableOpacity>
+						</View>
+						<View className="flex-col items-center gap-2">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/repaintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: projectSlug || '',
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3"
+							>
+								<MaterialCommunityIcons
+									name="format-paint"
+									size={24}
+									color="#111827"
+								/>
+							</TouchableOpacity>
+						</View>
 					</View>
 
 					{/* Variants Section */}

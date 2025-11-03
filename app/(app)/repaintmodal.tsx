@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Color {
 	id: string;
@@ -93,7 +94,46 @@ export default function RepaintModal() {
 		setCustomPrompt(text);
 	};
 
-	const handleGenerationComplete = (imageUrl: string) => {
+	const handleGenerationComplete = async (imageUrl: string) => {
+		// If we came from project page, save to project and go back immediately
+		// Don't set state that would trigger confirmation step render
+		if (initialImageUri && projectSlug) {
+			try {
+				const storedProjects = await AsyncStorage.getItem('projects');
+				if (storedProjects) {
+					const projects = JSON.parse(storedProjects);
+					// Find project by slug (matching imageUrl with slug)
+					const projectIndex = projects.findIndex((p: any) =>
+						p.imageUrl.includes(projectSlug)
+					);
+
+					if (projectIndex !== -1) {
+						// Add to alternative generations
+						if (!projects[projectIndex].alternativeGenerations) {
+							projects[projectIndex].alternativeGenerations = [];
+						}
+						const alternatives = projects[projectIndex].alternativeGenerations.map(
+							(alt: any) => (typeof alt === 'string' ? { imageUrl: alt } : alt)
+						);
+						alternatives.push({ imageUrl });
+						projects[projectIndex].alternativeGenerations = alternatives;
+						await AsyncStorage.setItem('projects', JSON.stringify(projects));
+					}
+				}
+
+				// Store the new variant URL in AsyncStorage with a timestamp so project page can detect it
+				await AsyncStorage.setItem(`newVariant_${projectSlug}`, imageUrl);
+				
+				// Navigate back to project page immediately - don't set state first
+				router.back();
+				return; // Exit early, don't proceed to confirmation step
+			} catch (error) {
+				console.error('Error saving to project:', error);
+				// Fall through to normal confirmation flow
+			}
+		}
+
+		// Normal flow: go to confirmation step
 		setGeneratedImageUrl(imageUrl);
 
 		// Trigger the animation to transition to the next step

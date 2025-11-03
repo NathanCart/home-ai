@@ -14,6 +14,7 @@ import { ThemedText } from 'components/ThemedText';
 import * as MediaLibrary from 'expo-media-library';
 import { CustomButton } from 'components/CustomButton';
 import { Ionicons, Octicons } from '@expo/vector-icons';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -548,7 +549,7 @@ export default function ProjectDetailPage() {
 							</View>
 						)}
 					</View>
-					<View className="flex-row items-center justify-between mt-4">
+					<View className="flex-row items-center justify-between mt-4 gap-3">
 						<View className="flex-col items-center gap-2">
 							<TouchableOpacity
 								onPress={() => {
@@ -564,6 +565,23 @@ export default function ProjectDetailPage() {
 								className="bg-gray-200 w-fit rounded-2xl p-3"
 							>
 								<Octicons name="paintbrush" size={24} color="#111827" />
+							</TouchableOpacity>
+						</View>
+						<View className="flex-col items-center gap-2">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/repaintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: slug as string,
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3"
+							>
+								<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
 							</TouchableOpacity>
 						</View>
 					</View>
