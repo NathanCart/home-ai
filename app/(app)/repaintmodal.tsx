@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
@@ -8,7 +8,7 @@ import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
@@ -21,15 +21,29 @@ interface Color {
 }
 
 export default function RepaintModal() {
+	const { initialImageUri, projectSlug } = useLocalSearchParams<{
+		initialImageUri?: string;
+		projectSlug?: string;
+	}>();
 	const insets = useSafeAreaInsets();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(3); // Photo, Color, Text Input
 	const [hasImageSelected, setHasImageSelected] = useState(false);
-	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
+		initialImageUri || null
+	);
 	const [selectedColor, setSelectedColor] = useState<Color | null>(null);
 	const [customPrompt, setCustomPrompt] = useState<string>('');
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
+
+	// Set initial image if provided
+	useEffect(() => {
+		if (initialImageUri) {
+			setSelectedImageUri(initialImageUri);
+			setHasImageSelected(true);
+		}
+	}, [initialImageUri]);
 
 	const {
 		slideAnimation,

@@ -55,7 +55,7 @@ export const stepConfigs: Record<string, ModeConfig> = {
 	},
 	paint: {
 		step1: {
-			title: 'Upload a photo',
+			title: 'Upload a photo to replace objects',
 			subtitle: 'Select or take a photo to start replacing objects with AI',
 			icon: 'device-camera',
 			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
@@ -207,7 +207,7 @@ export const stepConfigs: Record<string, ModeConfig> = {
 	},
 	repaint: {
 		step1: {
-			title: 'Upload a photo',
+			title: 'Upload a photo to paint',
 			subtitle: 'Take a photo or upload an existing image to repaint',
 			icon: 'device-camera',
 			description: '💡 Tip: Make sure your image is clear and well-lit for best results',

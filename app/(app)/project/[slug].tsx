@@ -22,6 +22,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from 'components/GenerateHalfModal';
 import { GenerateGardenHalfModal } from 'components/GenerateGardenHalfModal';
 import { GenerateExteriorHalfModal } from 'components/GenerateExteriorHalfModal';
+import { RestyleSelectionHalfModal } from 'components/RestyleSelectionHalfModal';
 import { ThumbsUpDown } from 'components/ThumbsUpDown';
 
 interface AlternativeGeneration {
@@ -50,7 +51,9 @@ export default function ProjectDetailPage() {
 	const [alternativeGenerations, setAlternativeGenerations] = useState<AlternativeGeneration[]>(
 		[]
 	);
+	const [showRestyleSelection, setShowRestyleSelection] = useState(false);
 	const [showModal, setShowModal] = useState(false);
+	const [selectedRestyleMode, setSelectedRestyleMode] = useState<string | null>(null);
 	const screenWidth = Dimensions.get('window').width - 48;
 	const slideAnim = useRef(new Animated.Value(1)).current; // 0 = before (left), 1 = after (right)
 	const dividerAnim = useRef(new Animated.Value(1)).current;
@@ -179,8 +182,26 @@ export default function ProjectDetailPage() {
 		setImageUrl(newImageUrl);
 	};
 
-	const handleOpenModal = () => {
-		setShowModal(true);
+	const handleOpenRestyleSelection = () => {
+		setShowRestyleSelection(true);
+	};
+
+	const handleRestyleModeSelect = (restyleMode: string) => {
+		setSelectedRestyleMode(restyleMode);
+		
+		if (restyleMode === 'repaint') {
+			// Navigate to repaint modal
+			router.push({
+				pathname: '/repaintmodal',
+				params: {
+					initialImageUri: project?.originalImage || imageUrl || '',
+					projectSlug: slug as string,
+				},
+			});
+		} else {
+			// Open the appropriate half-modal
+			setShowModal(true);
+		}
 	};
 
 	const toggleView = (targetValue: number) => {
@@ -609,7 +630,7 @@ export default function ProjectDetailPage() {
 					<View className="flex-1">
 						<CustomButton
 							title="Restyle"
-							onPress={handleOpenModal}
+							onPress={handleOpenRestyleSelection}
 							icon="sync"
 							variant="secondary"
 							size="lg"
@@ -639,34 +660,51 @@ export default function ProjectDetailPage() {
 				</View>
 			</View>
 
+			{/* Restyle Selection Modal */}
+			<RestyleSelectionHalfModal
+				visible={showRestyleSelection}
+				onClose={() => setShowRestyleSelection(false)}
+				onSelect={handleRestyleModeSelect}
+				initialImageUri={project?.originalImage || imageUrl}
+			/>
+
 			{/* Generate Half Modal */}
-			{project?.mode === 'garden' ? (
+			{selectedRestyleMode === 'garden' ? (
 				<GenerateGardenHalfModal
 					visible={showModal}
-					onClose={() => setShowModal(false)}
+					onClose={() => {
+						setShowModal(false);
+						setSelectedRestyleMode(null);
+					}}
 					onGenerationComplete={handleGenerationComplete}
 					initialImageUri={project?.originalImage}
 					initialStyle={project?.style}
 				/>
-			) : project?.mode === 'exterior-design' ? (
+			) : selectedRestyleMode === 'exterior-design' ? (
 				<GenerateExteriorHalfModal
 					visible={showModal}
-					onClose={() => setShowModal(false)}
+					onClose={() => {
+						setShowModal(false);
+						setSelectedRestyleMode(null);
+					}}
 					onGenerationComplete={handleGenerationComplete}
 					initialImageUri={project?.originalImage}
 					initialHouseType={project?.room}
 					initialStyle={project?.style}
 				/>
-			) : (
+			) : selectedRestyleMode === 'interior-design' ? (
 				<GenerateHalfModal
 					visible={showModal}
-					onClose={() => setShowModal(false)}
+					onClose={() => {
+						setShowModal(false);
+						setSelectedRestyleMode(null);
+					}}
 					onGenerationComplete={handleGenerationComplete}
 					initialImageUri={project?.originalImage}
 					initialRoom={project?.room}
 					initialStyle={project?.style}
 				/>
-			)}
+			) : null}
 		</View>
 	);
 }
