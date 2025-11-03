@@ -1,7 +1,19 @@
-import React, { useState } from 'react';
-import { View, TouchableOpacity, ScrollView, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+	View,
+	TouchableOpacity,
+	ScrollView,
+	FlatList,
+	Modal,
+	KeyboardAvoidingView,
+	Platform,
+} from 'react-native';
 import { ThemedText } from '../ThemedText';
+import { CustomButton } from '../CustomButton';
 import { StepConfig } from '../../config/stepConfig';
+import ColorPicker, { Panel1, HueSlider } from 'reanimated-color-picker';
+import { Octicons } from '@expo/vector-icons';
+import { runOnJS } from 'react-native-reanimated';
 
 interface ColorStepProps {
 	onColorSelect?: (color: Color | null) => void;
@@ -21,71 +33,353 @@ interface Color {
 // Curated colors for interior painting - walls, floors, ceilings
 const paintColors: Color[] = [
 	// Neutrals & Whites
-	{ id: 'white', name: 'Pure White', hex: '#FFFFFF', category: 'neutrals', description: 'Crisp, clean white with bright, reflective finish' },
-	{ id: 'off-white', name: 'Off White', hex: '#F8F8F8', category: 'neutrals', description: 'Soft white with subtle warmth, less stark than pure white' },
-	{ id: 'warm-white', name: 'Warm White', hex: '#FFF8F0', category: 'neutrals', description: 'Creamy white with gentle yellow undertones, cozy and inviting' },
-	{ id: 'cool-white', name: 'Cool White', hex: '#F0F8FF', category: 'neutrals', description: 'Fresh white with blue undertones, crisp and modern' },
-	{ id: 'ivory', name: 'Ivory', hex: '#FFFFF0', category: 'neutrals', description: 'Classic off-white with subtle yellow warmth, elegant and timeless' },
-	{ id: 'cream', name: 'Cream', hex: '#FFFDD0', category: 'neutrals', description: 'Rich, warm neutral with butter-like quality, soft and luxurious' },
+	{
+		id: 'white',
+		name: 'Pure White',
+		hex: '#FFFFFF',
+		category: 'neutrals',
+		description: 'Crisp, clean white with bright, reflective finish',
+	},
+	{
+		id: 'off-white',
+		name: 'Off White',
+		hex: '#F8F8F8',
+		category: 'neutrals',
+		description: 'Soft white with subtle warmth, less stark than pure white',
+	},
+	{
+		id: 'warm-white',
+		name: 'Warm White',
+		hex: '#FFF8F0',
+		category: 'neutrals',
+		description: 'Creamy white with gentle yellow undertones, cozy and inviting',
+	},
+	{
+		id: 'cool-white',
+		name: 'Cool White',
+		hex: '#F0F8FF',
+		category: 'neutrals',
+		description: 'Fresh white with blue undertones, crisp and modern',
+	},
+	{
+		id: 'ivory',
+		name: 'Ivory',
+		hex: '#FFFFF0',
+		category: 'neutrals',
+		description: 'Classic off-white with subtle yellow warmth, elegant and timeless',
+	},
+	{
+		id: 'cream',
+		name: 'Cream',
+		hex: '#FFFDD0',
+		category: 'neutrals',
+		description: 'Rich, warm neutral with butter-like quality, soft and luxurious',
+	},
 
 	// Grays
-	{ id: 'light-gray', name: 'Light Gray', hex: '#E0E0E0', category: 'grays', description: 'Soft, pale gray with clean appearance, versatile neutral' },
-	{ id: 'medium-gray', name: 'Medium Gray', hex: '#9E9E9E', category: 'grays', description: 'Balanced mid-tone gray, sophisticated and contemporary' },
-	{ id: 'charcoal', name: 'Charcoal', hex: '#424242', category: 'grays', description: 'Deep, dark gray with rich depth, dramatic yet refined' },
-	{ id: 'slate', name: 'Slate', hex: '#616161', category: 'grays', description: 'Cool stone-like gray with blue undertones, strong and stable' },
-	{ id: 'greige', name: 'Greige', hex: '#808080', category: 'grays', description: 'Perfect blend of gray and beige, warm neutral with sophistication' },
-	{ id: 'taupe', name: 'Taupe', hex: '#A9A9A9', category: 'grays', description: 'Warm gray-brown hybrid, earthy and versatile' },
+	{
+		id: 'light-gray',
+		name: 'Light Gray',
+		hex: '#E0E0E0',
+		category: 'grays',
+		description: 'Soft, pale gray with clean appearance, versatile neutral',
+	},
+	{
+		id: 'medium-gray',
+		name: 'Medium Gray',
+		hex: '#9E9E9E',
+		category: 'grays',
+		description: 'Balanced mid-tone gray, sophisticated and contemporary',
+	},
+	{
+		id: 'charcoal',
+		name: 'Charcoal',
+		hex: '#424242',
+		category: 'grays',
+		description: 'Deep, dark gray with rich depth, dramatic yet refined',
+	},
+	{
+		id: 'slate',
+		name: 'Slate',
+		hex: '#616161',
+		category: 'grays',
+		description: 'Cool stone-like gray with blue undertones, strong and stable',
+	},
+	{
+		id: 'greige',
+		name: 'Greige',
+		hex: '#808080',
+		category: 'grays',
+		description: 'Perfect blend of gray and beige, warm neutral with sophistication',
+	},
+	{
+		id: 'taupe',
+		name: 'Taupe',
+		hex: '#A9A9A9',
+		category: 'grays',
+		description: 'Warm gray-brown hybrid, earthy and versatile',
+	},
 
 	// Beiges & Tans
-	{ id: 'beige', name: 'Beige', hex: '#F5E6D3', category: 'beiges', description: 'Soft, warm neutral with sandy undertones, natural and calming' },
-	{ id: 'sand', name: 'Sand', hex: '#E6D7C3', category: 'beiges', description: 'Light tan with desert-inspired warmth, airy and peaceful' },
-	{ id: 'tan', name: 'Tan', hex: '#D4C4B0', category: 'beiges', description: 'Medium brown-beige, grounded and earthy with gentle warmth' },
-	{ id: 'camel', name: 'Camel', hex: '#C19A6B', category: 'beiges', description: 'Rich tan with golden brown depth, luxurious and warm' },
+	{
+		id: 'beige',
+		name: 'Beige',
+		hex: '#F5E6D3',
+		category: 'beiges',
+		description: 'Soft, warm neutral with sandy undertones, natural and calming',
+	},
+	{
+		id: 'sand',
+		name: 'Sand',
+		hex: '#E6D7C3',
+		category: 'beiges',
+		description: 'Light tan with desert-inspired warmth, airy and peaceful',
+	},
+	{
+		id: 'tan',
+		name: 'Tan',
+		hex: '#D4C4B0',
+		category: 'beiges',
+		description: 'Medium brown-beige, grounded and earthy with gentle warmth',
+	},
+	{
+		id: 'camel',
+		name: 'Camel',
+		hex: '#C19A6B',
+		category: 'beiges',
+		description: 'Rich tan with golden brown depth, luxurious and warm',
+	},
 
 	// Blues
-	{ id: 'sky-blue', name: 'Sky Blue', hex: '#87CEEB', category: 'blues', description: 'Bright, cheerful blue like a clear summer sky, uplifting and fresh' },
-	{ id: 'powder-blue', name: 'Powder Blue', hex: '#B0E0E6', category: 'blues', description: 'Soft, pale blue with gentle appearance, serene and calming' },
-	{ id: 'navy', name: 'Navy', hex: '#000080', category: 'blues', description: 'Deep, rich blue with sophisticated depth, classic and bold' },
-	{ id: 'steel-blue', name: 'Steel Blue', hex: '#4682B4', category: 'blues', description: 'Cool medium blue with gray undertones, modern and strong' },
-	{ id: 'cerulean', name: 'Cerulean', hex: '#2E86AB', category: 'blues', description: 'Vibrant teal-blue with clarity and depth, energizing yet calm' },
-	{ id: 'peacock', name: 'Peacock', hex: '#004958', category: 'blues', description: 'Dark teal-blue with jewel-like richness, dramatic and luxurious' },
+	{
+		id: 'sky-blue',
+		name: 'Sky Blue',
+		hex: '#87CEEB',
+		category: 'blues',
+		description: 'Bright, cheerful blue like a clear summer sky, uplifting and fresh',
+	},
+	{
+		id: 'powder-blue',
+		name: 'Powder Blue',
+		hex: '#B0E0E6',
+		category: 'blues',
+		description: 'Soft, pale blue with gentle appearance, serene and calming',
+	},
+	{
+		id: 'navy',
+		name: 'Navy',
+		hex: '#000080',
+		category: 'blues',
+		description: 'Deep, rich blue with sophisticated depth, classic and bold',
+	},
+	{
+		id: 'steel-blue',
+		name: 'Steel Blue',
+		hex: '#4682B4',
+		category: 'blues',
+		description: 'Cool medium blue with gray undertones, modern and strong',
+	},
+	{
+		id: 'cerulean',
+		name: 'Cerulean',
+		hex: '#2E86AB',
+		category: 'blues',
+		description: 'Vibrant teal-blue with clarity and depth, energizing yet calm',
+	},
+	{
+		id: 'peacock',
+		name: 'Peacock',
+		hex: '#004958',
+		category: 'blues',
+		description: 'Dark teal-blue with jewel-like richness, dramatic and luxurious',
+	},
 
 	// Greens
-	{ id: 'sage', name: 'Sage', hex: '#9CCC65', category: 'greens', description: 'Muted green with gray undertones, natural and soothing' },
-	{ id: 'mint', name: 'Mint', hex: '#98FB98', category: 'greens', description: 'Fresh, light green with cool clarity, refreshing and airy' },
-	{ id: 'forest', name: 'Forest', hex: '#228B22', category: 'greens', description: 'Deep, rich green like woodland foliage, grounding and organic' },
-	{ id: 'sage-dark', name: 'Dark Sage', hex: '#689F38', category: 'greens', description: 'Muted olive-green with depth, sophisticated and earthy' },
-	{ id: 'olive', name: 'Olive', hex: '#808000', category: 'greens', description: 'Warm yellow-green with natural depth, rustic and organic' },
-	{ id: 'emerald', name: 'Emerald', hex: '#50C878', category: 'greens', description: 'Bright jewel-toned green with vibrancy, luxurious and bold' },
+	{
+		id: 'sage',
+		name: 'Sage',
+		hex: '#9CCC65',
+		category: 'greens',
+		description: 'Muted green with gray undertones, natural and soothing',
+	},
+	{
+		id: 'mint',
+		name: 'Mint',
+		hex: '#98FB98',
+		category: 'greens',
+		description: 'Fresh, light green with cool clarity, refreshing and airy',
+	},
+	{
+		id: 'forest',
+		name: 'Forest',
+		hex: '#228B22',
+		category: 'greens',
+		description: 'Deep, rich green like woodland foliage, grounding and organic',
+	},
+	{
+		id: 'sage-dark',
+		name: 'Dark Sage',
+		hex: '#689F38',
+		category: 'greens',
+		description: 'Muted olive-green with depth, sophisticated and earthy',
+	},
+	{
+		id: 'olive',
+		name: 'Olive',
+		hex: '#808000',
+		category: 'greens',
+		description: 'Warm yellow-green with natural depth, rustic and organic',
+	},
+	{
+		id: 'emerald',
+		name: 'Emerald',
+		hex: '#50C878',
+		category: 'greens',
+		description: 'Bright jewel-toned green with vibrancy, luxurious and bold',
+	},
 
 	// Earth Tones
-	{ id: 'terracotta', name: 'Terracotta', hex: '#E07B5F', category: 'earth', description: 'Warm clay-orange with Mediterranean charm, earthy and inviting' },
-	{ id: 'rust', name: 'Rust', hex: '#B7410E', category: 'earth', description: 'Deep reddish-brown with aged patina, rich and organic' },
-	{ id: 'cocoa', name: 'Cocoa', hex: '#8D6E63', category: 'earth', description: 'Warm chocolate brown, cozy and grounding with natural depth' },
-	{ id: 'espresso', name: 'Espresso', hex: '#3E2723', category: 'earth', description: 'Dark, rich brown like coffee beans, sophisticated and bold' },
-	{ id: 'burnt-orange', name: 'Burnt Orange', hex: '#CC5500', category: 'earth', description: 'Deep orange with warmth and energy, vibrant yet grounded' },
+	{
+		id: 'terracotta',
+		name: 'Terracotta',
+		hex: '#E07B5F',
+		category: 'earth',
+		description: 'Warm clay-orange with Mediterranean charm, earthy and inviting',
+	},
+	{
+		id: 'rust',
+		name: 'Rust',
+		hex: '#B7410E',
+		category: 'earth',
+		description: 'Deep reddish-brown with aged patina, rich and organic',
+	},
+	{
+		id: 'cocoa',
+		name: 'Cocoa',
+		hex: '#8D6E63',
+		category: 'earth',
+		description: 'Warm chocolate brown, cozy and grounding with natural depth',
+	},
+	{
+		id: 'espresso',
+		name: 'Espresso',
+		hex: '#3E2723',
+		category: 'earth',
+		description: 'Dark, rich brown like coffee beans, sophisticated and bold',
+	},
+	{
+		id: 'burnt-orange',
+		name: 'Burnt Orange',
+		hex: '#CC5500',
+		category: 'earth',
+		description: 'Deep orange with warmth and energy, vibrant yet grounded',
+	},
 
 	// Yellows & Oranges
-	{ id: 'butter', name: 'Butter', hex: '#FFF700', category: 'warm', description: 'Soft, creamy yellow with gentle warmth, cheerful and bright' },
-	{ id: 'champagne', name: 'Champagne', hex: '#F7E7CE', category: 'warm', description: 'Pale gold with elegant shimmer quality, luxurious and refined' },
-	{ id: 'golden', name: 'Golden', hex: '#FFD700', category: 'warm', description: 'Rich yellow-gold with luminous quality, warm and opulent' },
-	{ id: 'peach', name: 'Peach', hex: '#FFE5B4', category: 'warm', description: 'Soft orange-pink with gentle warmth, welcoming and sweet' },
-	{ id: 'coral', name: 'Coral', hex: '#FF7F50', category: 'warm', description: 'Vibrant orange-pink with tropical energy, lively and warm' },
+	{
+		id: 'butter',
+		name: 'Butter',
+		hex: '#FFF700',
+		category: 'warm',
+		description: 'Soft, creamy yellow with gentle warmth, cheerful and bright',
+	},
+	{
+		id: 'champagne',
+		name: 'Champagne',
+		hex: '#F7E7CE',
+		category: 'warm',
+		description: 'Pale gold with elegant shimmer quality, luxurious and refined',
+	},
+	{
+		id: 'golden',
+		name: 'Golden',
+		hex: '#FFD700',
+		category: 'warm',
+		description: 'Rich yellow-gold with luminous quality, warm and opulent',
+	},
+	{
+		id: 'peach',
+		name: 'Peach',
+		hex: '#FFE5B4',
+		category: 'warm',
+		description: 'Soft orange-pink with gentle warmth, welcoming and sweet',
+	},
+	{
+		id: 'coral',
+		name: 'Coral',
+		hex: '#FF7F50',
+		category: 'warm',
+		description: 'Vibrant orange-pink with tropical energy, lively and warm',
+	},
 
 	// Purples & Pinks
-	{ id: 'lavender', name: 'Lavender', hex: '#E6E6FA', category: 'soft', description: 'Pale purple with floral softness, calming and romantic' },
-	{ id: 'lilac', name: 'Lilac', hex: '#C8A2C8', category: 'soft', description: 'Soft purple with gentle warmth, dreamy and delicate' },
-	{ id: 'blush', name: 'Blush', hex: '#DE5D83', category: 'soft', description: 'Rosy pink with subtle sophistication, warm and feminine' },
-	{ id: 'rose', name: 'Rose', hex: '#FF69B4', category: 'soft', description: 'Vibrant pink with romantic intensity, bold and cheerful' },
+	{
+		id: 'lavender',
+		name: 'Lavender',
+		hex: '#E6E6FA',
+		category: 'soft',
+		description: 'Pale purple with floral softness, calming and romantic',
+	},
+	{
+		id: 'lilac',
+		name: 'Lilac',
+		hex: '#C8A2C8',
+		category: 'soft',
+		description: 'Soft purple with gentle warmth, dreamy and delicate',
+	},
+	{
+		id: 'blush',
+		name: 'Blush',
+		hex: '#DE5D83',
+		category: 'soft',
+		description: 'Rosy pink with subtle sophistication, warm and feminine',
+	},
+	{
+		id: 'rose',
+		name: 'Rose',
+		hex: '#FF69B4',
+		category: 'soft',
+		description: 'Vibrant pink with romantic intensity, bold and cheerful',
+	},
 
 	// Reds
-	{ id: 'brick', name: 'Brick', hex: '#8B4513', category: 'reds', description: 'Deep reddish-brown with earthy warmth, solid and traditional' },
-	{ id: 'burgundy', name: 'Burgundy', hex: '#800020', category: 'reds', description: 'Deep wine red with luxurious depth, rich and elegant' },
-	{ id: 'crimson', name: 'Crimson', hex: '#DC143C', category: 'reds', description: 'Bold, bright red with intensity and drama, passionate and striking' },
+	{
+		id: 'brick',
+		name: 'Brick',
+		hex: '#8B4513',
+		category: 'reds',
+		description: 'Deep reddish-brown with earthy warmth, solid and traditional',
+	},
+	{
+		id: 'burgundy',
+		name: 'Burgundy',
+		hex: '#800020',
+		category: 'reds',
+		description: 'Deep wine red with luxurious depth, rich and elegant',
+	},
+	{
+		id: 'crimson',
+		name: 'Crimson',
+		hex: '#DC143C',
+		category: 'reds',
+		description: 'Bold, bright red with intensity and drama, passionate and striking',
+	},
 
 	// Blacks & Dark
-	{ id: 'black', name: 'Black', hex: '#000000', category: 'dark', description: 'Pure, deep black with maximum contrast, dramatic and modern' },
-	{ id: 'jet-black', name: 'Jet Black', hex: '#0C0C0C', category: 'dark', description: 'Rich, deep black with subtle depth, sophisticated and bold' },
+	{
+		id: 'black',
+		name: 'Black',
+		hex: '#000000',
+		category: 'dark',
+		description: 'Pure, deep black with maximum contrast, dramatic and modern',
+	},
+	{
+		id: 'jet-black',
+		name: 'Jet Black',
+		hex: '#0C0C0C',
+		category: 'dark',
+		description: 'Rich, deep black with subtle depth, sophisticated and bold',
+	},
 ];
 
 const categories = [
@@ -109,6 +403,8 @@ export function ColorStep({
 	compact = false,
 }: ColorStepProps) {
 	const [selectedCategory, setSelectedCategory] = useState<string>('all');
+	const [showCustomColorPicker, setShowCustomColorPicker] = useState(false);
+	const [customColorHex, setCustomColorHex] = useState('#3B82F6');
 
 	const filteredColors =
 		selectedCategory === 'all'
@@ -119,6 +415,34 @@ export function ColorStep({
 		if (onColorSelect) {
 			onColorSelect(color);
 		}
+	};
+
+	const handleCustomColorSelect = () => {
+		const customColor: Color = {
+			id: `custom-${customColorHex}`,
+			name: 'Custom Color',
+			hex: customColorHex,
+			category: 'custom',
+			description: 'Your custom selected color',
+		};
+		handleSelect(customColor);
+		setShowCustomColorPicker(false);
+	};
+
+	// Update customColorHex when a custom color is selected
+	useEffect(() => {
+		if (selectedColor?.id?.startsWith('custom-') && selectedColor?.hex) {
+			setCustomColorHex(selectedColor.hex);
+		}
+	}, [selectedColor]);
+
+	const updateCustomColor = (hex: string) => {
+		setCustomColorHex(hex);
+	};
+
+	const handleColorPickerChange = ({ hex }: { hex: string }) => {
+		'worklet';
+		runOnJS(updateCustomColor)(hex);
 	};
 
 	const renderColor = ({ item }: { item: Color }) => (
@@ -186,6 +510,41 @@ export function ColorStep({
 					</View>
 				</ScrollView>
 
+				{/* Custom Color Button */}
+				<TouchableOpacity
+					onPress={() => setShowCustomColorPicker(true)}
+					className={`mb-3 rounded-2xl overflow-hidden border-2 ${
+						selectedColor?.id?.startsWith('custom-')
+							? 'border-blue-500'
+							: 'border-dashed border-gray-300'
+					}`}
+					style={{
+						backgroundColor:
+							selectedColor?.id?.startsWith('custom-') && selectedColor?.hex
+								? selectedColor.hex
+								: 'white',
+					}}
+				>
+					<View className="flex-row items-center justify-center p-6">
+						<Octicons
+							name="plus-circle"
+							size={24}
+							color={selectedColor?.id?.startsWith('custom-') ? '#FFFFFF' : '#6B7280'}
+						/>
+						<ThemedText
+							variant="title-sm"
+							className={`ml-3 ${
+								selectedColor?.id?.startsWith('custom-')
+									? 'text-white'
+									: 'text-gray-600'
+							}`}
+							bold
+						>
+							Custom Color
+						</ThemedText>
+					</View>
+				</TouchableOpacity>
+
 				{/* Colors Grid */}
 				<FlatList
 					data={filteredColors}
@@ -237,6 +596,41 @@ export function ColorStep({
 				</View>
 			</ScrollView>
 
+			{/* Custom Color Button */}
+			<TouchableOpacity
+				onPress={() => setShowCustomColorPicker(true)}
+				className={`mb-3 rounded-2xl overflow-hidden border-2 ${
+					selectedColor?.id?.startsWith('custom-')
+						? 'border-blue-500'
+						: 'border-dashed border-gray-300'
+				}`}
+				style={{
+					backgroundColor:
+						selectedColor?.id?.startsWith('custom-') && selectedColor?.hex
+							? selectedColor.hex
+							: 'white',
+				}}
+			>
+				<View className="flex-row items-center justify-center p-6">
+					<Octicons
+						name="plus-circle"
+						size={24}
+						color={selectedColor?.id?.startsWith('custom-') ? '#FFFFFF' : '#6B7280'}
+					/>
+					<ThemedText
+						variant="title-sm"
+						className={`ml-3 ${
+							selectedColor?.id?.startsWith('custom-')
+								? 'text-white'
+								: 'text-gray-600'
+						}`}
+						bold
+					>
+						Custom Color
+					</ThemedText>
+				</View>
+			</TouchableOpacity>
+
 			{/* Colors Grid */}
 			<FlatList
 				data={filteredColors}
@@ -245,6 +639,86 @@ export function ColorStep({
 				numColumns={1}
 				showsVerticalScrollIndicator={false}
 			/>
+
+			{/* Custom Color Picker Modal */}
+			<Modal
+				visible={showCustomColorPicker}
+				transparent={true}
+				animationType="fade"
+				onRequestClose={() => setShowCustomColorPicker(false)}
+			>
+				<KeyboardAvoidingView
+					behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+					className="flex-1 "
+				>
+					<View className="flex-1 bg-black/50 justify-center items-center">
+						<View className="bg-white rounded-3xl m-6 w-5/6 max-h-[90%]">
+							<View className="p-6 pb-4">
+								<View className="flex-row items-center justify-between mb-4">
+									<ThemedText
+										variant="title-lg"
+										className="text-gray-900"
+										extraBold
+									>
+										Choose Custom Color
+									</ThemedText>
+									<TouchableOpacity
+										onPress={() => setShowCustomColorPicker(false)}
+									>
+										<Octicons name="x" size={24} color="#6B7280" />
+									</TouchableOpacity>
+								</View>
+
+								<ThemedText variant="body" className="text-gray-600 ">
+									Select any color you'd like
+								</ThemedText>
+							</View>
+
+							<ScrollView
+								className="px-6"
+								showsVerticalScrollIndicator={false}
+								contentContainerStyle={{ paddingBottom: 16 }}
+							>
+								{/* Color Preview */}
+								<View
+									className="h-24 rounded-2xl mb-4 border-2 border-gray-200"
+									style={{ backgroundColor: customColorHex }}
+								/>
+
+								{/* Color Picker */}
+								<View style={{ width: '100%', marginBottom: 16 }}>
+									<ColorPicker
+										style={{ width: '100%' }}
+										value={customColorHex}
+										onComplete={handleColorPickerChange}
+									>
+										<Panel1
+											style={{ width: '100%', height: 200, marginBottom: 12 }}
+										/>
+										<HueSlider style={{ width: '100%', height: 40 }} />
+									</ColorPicker>
+								</View>
+								<View className="flex-row gap-2  pt-2 ">
+									<CustomButton
+										title="Cancel"
+										onPress={() => setShowCustomColorPicker(false)}
+										variant="outline"
+										size="lg"
+										className="flex-1"
+									/>
+									<CustomButton
+										title="Select"
+										onPress={handleCustomColorSelect}
+										variant="primary"
+										size="lg"
+										className="flex-1"
+									/>
+								</View>
+							</ScrollView>
+						</View>
+					</View>
+				</KeyboardAvoidingView>
+			</Modal>
 		</View>
 	);
 }

@@ -164,6 +164,22 @@ export default function HomePage() {
 							router.push('/exteriorgeneratemodal');
 						}}
 					/>
+
+					<ToolCard
+						title="Repaint"
+						description="Repaint parts of your image with AI using custom colors!"
+						materialIcon="format-paint"
+						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-new.jpg'}
+						originalImage={
+							'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-old.png'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Start Repainting"
+						onPress={() => {
+							router.push('/repaintmodal');
+						}}
+					/>
 					<ToolCard
 						title="Replace objects"
 						description="Replace objects in your photo with AI-generated ones!"
@@ -177,21 +193,6 @@ export default function HomePage() {
 						buttonText="Start Painting"
 						onPress={() => {
 							router.push('/paintmodal');
-						}}
-					/>
-					<ToolCard
-						title="Repaint"
-						description="Repaint parts of your image with AI using custom colors!"
-						icon="color-palette"
-						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-new.jpg'}
-						originalImage={
-							'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-old.png'
-						}
-						sharedAnimation={sharedAnimation}
-						showButton={true}
-						buttonText="Start Repainting"
-						onPress={() => {
-							router.push('/repaintmodal');
 						}}
 					/>
 				</View>
