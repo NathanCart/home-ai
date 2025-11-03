@@ -205,6 +205,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your personalized exterior design is ready!',
 		},
 	},
+	repaint: {
+		step1: {
+			title: 'Upload a photo',
+			subtitle: 'Take a photo or upload an existing image to repaint',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step2: {
+			title: 'Choose a color',
+			subtitle: 'Select the color you want to apply',
+			icon: 'color-palette',
+			description: 'Pick a color to repaint your image with',
+		},
+		step3: {
+			title: 'Write what to paint over',
+			subtitle: 'Tell us what you want to repaint',
+			icon: 'sparkle',
+			description: 'Name the thing you want to repaint',
+		},
+		step4: {
+			title: 'Generating...',
+			subtitle: 'AI is repainting your image',
+			icon: 'sparkle',
+			description: 'AI is applying the new color based on your description',
+		},
+		step5: {
+			title: 'Repaint complete',
+			subtitle: 'Your repainted image is ready',
+			icon: 'check-circle',
+			description: 'Your repainted image is ready!',
+		},
+		step6: {
+			title: 'Repaint complete',
+			subtitle: 'Your repainted image is ready',
+			icon: 'check-circle',
+			description: 'Your repainted image is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {

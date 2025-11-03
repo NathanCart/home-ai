@@ -53,6 +53,7 @@ export function GeneratingStep({
 		generateImage,
 		generateInpainting,
 		generateExterior,
+		generateRepaint,
 		isGenerating,
 		error,
 		generatedImageUrl,
@@ -113,6 +114,23 @@ export function GeneratingStep({
 						stylePrompt: style?.prompt || undefined,
 						imageUri: imageUri || undefined,
 						styleImageUri: style?.imageUrl || undefined,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else if (mode === 'repaint') {
+				// Repaint generation
+				if (!style || !customPrompt || !imageUri) {
+					console.error('❌ Missing required params for repaint:', { style, customPrompt, imageUri });
+					return;
+				}
+
+				result = await generateRepaint(
+					{
+						imageUri: imageUri,
+						color: style, // The style is actually a color object for repaint mode
+						prompt: customPrompt,
 					},
 					(progress) => {
 						setProgress(progress);

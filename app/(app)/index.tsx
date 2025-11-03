@@ -179,6 +179,21 @@ export default function HomePage() {
 							router.push('/paintmodal');
 						}}
 					/>
+					<ToolCard
+						title="Repaint"
+						description="Repaint parts of your image with AI using custom colors!"
+						icon="color-palette"
+						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-new.jpg'}
+						originalImage={
+							'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-old.png'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Start Repainting"
+						onPress={() => {
+							router.push('/repaintmodal');
+						}}
+					/>
 				</View>
 			</ScrollView>
 		</View>

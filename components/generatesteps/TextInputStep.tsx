@@ -45,7 +45,7 @@ export function TextInputStep({
 				<TextInput
 					value={text}
 					onChangeText={handleTextChange}
-					placeholder="e.g., a wall, a bookshelf, a plant, a window..."
+					placeholder="e.g., walls, floor, sofa, carpet..."
 					placeholderTextColor="#9CA3AF"
 					multiline
 					numberOfLines={8}

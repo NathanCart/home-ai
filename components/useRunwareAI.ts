@@ -33,6 +33,16 @@ interface InpaintingParams {
 	prompt: string;
 }
 
+interface RepaintParams {
+	imageUri: string;
+	color: {
+		id: string;
+		name: string;
+		hex: string;
+	};
+	prompt: string;
+}
+
 interface RunwareResponse {
 	success: boolean;
 	imageUrl?: string;
@@ -702,6 +712,220 @@ export function useRunwareAI() {
 		}
 	};
 
+	const generateRepaint = async (
+		params: RepaintParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Repaint generation attempt ${attempt}/${MAX_RETRIES}`);
+
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptRepaint(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError = 'Network connection failed. Please check your internet connection.';
+		} else if (errorMessage.includes('timeout')) {
+			userFriendlyError = 'Request timed out. Please try again.';
+		}
+
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptRepaint = async (
+		params: RepaintParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			const repaintPrompt = buildRepaintPrompt(params);
+			console.log('🎨 Generating repaint with Runware API...');
+			console.log('📝 Repaint Prompt:', repaintPrompt);
+
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error('API key is not configured');
+			}
+
+			const requestId = generateUUID();
+
+			const payload = {
+				taskType: 'imageInference',
+				taskUUID: requestId,
+				positivePrompt: repaintPrompt,
+				negativePrompt:
+					'blurry, low quality, distorted, artifacts, watermark, text, logo, bad composition',
+				width: 1248,
+				height: 832,
+				// model: 'runware:108@22',
+				model: 'google:4@1',
+				// steps: 30,
+				outputFormat: 'WEBP',
+				uploadEndpoint: 'https://api.runware.ai/upload-image',
+				includeCost: true,
+				referenceImages: [params.imageUri], // Array of image URIs for reference
+			};
+
+			console.log('📤 Sending request to Runware API...');
+
+			const startTime = Date.now();
+
+			// Simulate progress updates during the request
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				// Estimate progress based on typical generation time (10-30 seconds)
+				if (elapsed < 3000) {
+					// First 3 seconds: 0-30%
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					// Next 12 seconds: 30-85%
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 55;
+				} else {
+					// After 15 seconds: 85-95% (slow progress)
+					estimatedProgress = 85 + Math.min(((elapsed - 15000) / 10000) * 10, 10);
+				}
+
+				// Cap at 95% until we get the actual response
+				estimatedProgress = Math.min(Math.floor(estimatedProgress), 95);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200); // Update every 200ms
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+			const response = await fetch(RUNWARE_API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${RUNWARE_API_KEY}`,
+				},
+				body: JSON.stringify([payload]),
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeoutId);
+
+			if (progressInterval) {
+				clearInterval(progressInterval);
+			}
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API Error Response:', errorText);
+				throw new Error(`API request failed: ${response.status} - ${errorText}`);
+			}
+
+			const data = await response.json();
+			console.log('✅ Repaint API Response:', JSON.stringify(data, null, 2));
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response. Full response:', data);
+				throw new Error('No image URL in response. Response format may have changed.');
+			}
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			setIsGenerating(false);
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Repaint generation completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in repaint attempt:', errorMessage);
+			throw err;
+		}
+	};
+
+	function buildRepaintPrompt(params: RepaintParams): string {
+		const parts: string[] = [];
+
+		// Main instruction - keep everything identical except specified element
+		parts.push(
+			'Create an exact replica of the reference image, maintaining all original elements, composition, lighting, and perspective'
+		);
+
+		// Specify what to change
+		if (params.prompt) {
+			parts.push(
+				`ONLY change the ${params.prompt} to be ${params.color.name} (${params.color.hex})`
+			);
+		}
+
+		// Add detailed color description
+		parts.push(
+			`The ${params.color.name} should appear as a rich, realistic ${params.color.hex} color with natural lighting and texture appropriate for the surface`
+		);
+
+		// Preservation instructions
+		parts.push(
+			'Keep all other colors, objects, textures, and details exactly as they appear in the reference image'
+		);
+		parts.push('Maintain the exact same perspective, angle, and composition');
+		parts.push('Preserve all shadows, highlights, and lighting conditions');
+
+		// Quality descriptors
+		parts.push(
+			'professional interior photography, photorealistic, high detail, sharp focus, natural lighting'
+		);
+
+		return parts.join(', ');
+	}
+
 	function buildExteriorPrompt(params: GenerateExteriorParams): string {
 		const parts: string[] = [];
 
@@ -781,6 +1005,7 @@ export function useRunwareAI() {
 		generateImage,
 		generateInpainting,
 		generateExterior,
+		generateRepaint,
 		isGenerating,
 		error,
 		generatedImageUrl,

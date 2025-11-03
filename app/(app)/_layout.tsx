@@ -172,6 +172,14 @@ export default function RootLayout() {
 								}}
 							/>
 							<Stack.Screen
+								name="repaintmodal"
+								options={{
+									presentation: 'fullScreenModal',
+									animation: 'slide_from_bottom',
+									headerShown: false,
+								}}
+							/>
+							<Stack.Screen
 								name="gardengeneratemodal"
 								options={{
 									presentation: 'fullScreenModal',

@@ -273,6 +273,9 @@ export default function ProjectDetailPage() {
 		if (project?.mode === 'exterior-design') {
 			return 'Exterior Design';
 		}
+		if (project?.mode === 'repaint') {
+			return 'Repaint';
+		}
 		// For interior design, use room name or fallback to 'Design'
 		return roomName || 'Design';
 	};
