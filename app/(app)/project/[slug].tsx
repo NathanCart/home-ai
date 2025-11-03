@@ -21,6 +21,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GenerateHalfModal } from 'components/GenerateHalfModal';
 import { GenerateGardenHalfModal } from 'components/GenerateGardenHalfModal';
+import { GenerateExteriorHalfModal } from 'components/GenerateExteriorHalfModal';
 import { ThumbsUpDown } from 'components/ThumbsUpDown';
 
 interface AlternativeGeneration {
@@ -264,6 +265,18 @@ export default function ProjectDetailPage() {
 	const styleName = project?.style?.name || project?.style?.label || '';
 	const hasOriginalImage = !!project?.originalImage;
 
+	// Determine the title based on mode
+	const getProjectTitle = () => {
+		if (project?.mode === 'garden') {
+			return 'Garden Design';
+		}
+		if (project?.mode === 'exterior-design') {
+			return 'Exterior Design';
+		}
+		// For interior design, use room name or fallback to 'Design'
+		return roomName || 'Design';
+	};
+
 	if (!project) {
 		return (
 			<View className="flex-1 bg-gray-50 items-center justify-center">
@@ -281,7 +294,7 @@ export default function ProjectDetailPage() {
 			>
 				<View className="flex-row items-center justify-between mb-2">
 					<ThemedText variant="title-lg" className="text-gray-900" extraBold>
-						{roomName || 'Design'}
+						{getProjectTitle()}
 					</ThemedText>
 					<TouchableOpacity onPress={() => router.back()}>
 						<Ionicons name="close" size={28} color="#111827" />
@@ -630,6 +643,15 @@ export default function ProjectDetailPage() {
 					onClose={() => setShowModal(false)}
 					onGenerationComplete={handleGenerationComplete}
 					initialImageUri={project?.originalImage}
+					initialStyle={project?.style}
+				/>
+			) : project?.mode === 'exterior-design' ? (
+				<GenerateExteriorHalfModal
+					visible={showModal}
+					onClose={() => setShowModal(false)}
+					onGenerationComplete={handleGenerationComplete}
+					initialImageUri={project?.originalImage}
+					initialHouseType={project?.room}
 					initialStyle={project?.style}
 				/>
 			) : (
