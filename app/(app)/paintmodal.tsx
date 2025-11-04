@@ -236,6 +236,7 @@ export default function PaintModal() {
 						onImageSelect={handleImageSelect}
 						config={config}
 						selectedImageUri={selectedImageUri}
+						hideExamples={!!initialImageUri}
 						customExampleImages={[
 							{
 								id: 'living-room-1',

@@ -25,6 +25,7 @@ interface Project {
 	originalImage?: string;
 	createdAt: string;
 	type: string;
+	mode?: string;
 	alternativeGenerations?: string[];
 }
 
@@ -96,6 +97,28 @@ const AnimatedProjectCard = React.memo(
 			if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
 			if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
 			return `${Math.floor(diffDays / 365)} years ago`;
+		};
+
+		const getProjectTitle = () => {
+			// Check mode first for special modes
+			if (project.mode === 'refloor') {
+				return 'Refloor';
+			}
+			if (project.mode === 'repaint') {
+				return 'Repaint';
+			}
+			if (project.mode === 'paint' || project.type === 'painting') {
+				return 'Replace objects';
+			}
+			if (project.mode === 'garden') {
+				return 'Garden design';
+			}
+			if (project.mode === 'exterior-design') {
+				return 'Exterior design';
+			}
+			
+			// For interior design, use room name if available
+			return project.room?.name || project.room?.label || 'Interior design';
 		};
 
 		return (
@@ -210,7 +233,7 @@ const AnimatedProjectCard = React.memo(
 					{/* Project Info */}
 					<View className="p-4">
 						<ThemedText className="text-gray-900 " variant="title-sm" extraBold>
-							{project.room?.name || project.room?.label || 'Design'}
+							{getProjectTitle()}
 						</ThemedText>
 
 						{project.style && (

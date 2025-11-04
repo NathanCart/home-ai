@@ -3,6 +3,7 @@ import { getStylePrompt, hasStylePrompt } from '../utils/stylePrompts';
 import { getRoomPrompt, hasRoomPrompt } from '../utils/roomPrompts';
 import { getHouseTypePrompt, hasHouseTypePrompt } from '../utils/houseTypePrompts';
 import { getExteriorStylePrompt, hasExteriorStylePrompt } from '../utils/exteriorStylePrompts';
+import { getFloorStylePrompt, hasFloorStylePrompt } from '../utils/floorStylePrompts';
 
 interface ColorPalette {
 	colors?: string[] | string;
@@ -41,6 +42,15 @@ interface RepaintParams {
 		hex: string;
 	};
 	prompt: string;
+}
+
+interface RefloorParams {
+	imageUri: string;
+	floorStyle: {
+		id: string;
+		name: string;
+		prompt: string;
+	};
 }
 
 interface RunwareResponse {
@@ -926,6 +936,215 @@ export function useRunwareAI() {
 		return parts.join(', ');
 	}
 
+	const generateRefloor = async (
+		params: RefloorParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Refloor attempt ${attempt}/${MAX_RETRIES}`);
+
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptRefloor(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		// All retries failed
+		console.error('❌ All refloor attempts failed');
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError = 'Network connection failed. Please check your internet connection.';
+		} else if (errorMessage.includes('timeout')) {
+			userFriendlyError = 'Request timed out. Please try again.';
+		}
+
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptRefloor = async (
+		params: RefloorParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			const refloorPrompt = buildRefloorPrompt(params);
+			console.log('🏠 Generating refloor with Runware API...');
+			console.log('📝 Refloor Prompt:', refloorPrompt);
+
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error('API key is not configured');
+			}
+
+			const requestId = generateUUID();
+
+			const payload = {
+				taskType: 'imageInference',
+				taskUUID: requestId,
+				positivePrompt: refloorPrompt,
+				negativePrompt:
+					'blurry, low quality, distorted, artifacts, watermark, text, logo, bad composition, walls changed, furniture changed, ceiling changed',
+				width: 1248,
+				height: 832,
+				model: 'google:4@1',
+				outputFormat: 'WEBP',
+				uploadEndpoint: 'https://api.runware.ai/upload-image',
+				includeCost: true,
+				referenceImages: [params.imageUri],
+			};
+
+			console.log('📤 Sending request to Runware API...');
+
+			const startTime = Date.now();
+
+			// Simulate progress updates during the request
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 55;
+				} else {
+					estimatedProgress = 85 + Math.min(((elapsed - 15000) / 10000) * 10, 10);
+				}
+
+				estimatedProgress = Math.min(Math.floor(estimatedProgress), 95);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200);
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+			const response = await fetch(RUNWARE_API_URL, {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Authorization: `Bearer ${RUNWARE_API_KEY}`,
+				},
+				body: JSON.stringify([payload]),
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeoutId);
+
+			if (progressInterval) {
+				clearInterval(progressInterval);
+				progressInterval = null;
+			}
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API error response:', errorText);
+				throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			console.log('📦 API Response:', JSON.stringify(data, null, 2));
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response. Full response:', data);
+				throw new Error('No image URL in response. Response format may have changed.');
+			}
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			setIsGenerating(false);
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Refloor generation completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in refloor attempt:', errorMessage);
+			throw err;
+		}
+	};
+
+	function buildRefloorPrompt(params: RefloorParams): string {
+		const parts: string[] = [];
+
+		// Main instruction - keep everything identical except floor
+		parts.push(
+			'Create an exact replica of the reference image, maintaining all original elements, composition, lighting, and perspective'
+		);
+
+		// Specify what to change - the floor
+		parts.push(`ONLY change the floor to be ${params.floorStyle.name}`);
+
+		// Add detailed floor description from the floor style prompt
+		if (params.floorStyle.prompt) {
+			parts.push(params.floorStyle.prompt);
+		}
+
+		// Preservation instructions - be very specific about what NOT to change
+		parts.push(
+			'Keep all walls, ceiling, furniture, decor, objects, and architectural elements exactly as they appear in the reference image'
+		);
+		parts.push('ONLY modify the floor surface, nothing else');
+		parts.push('Maintain the exact same perspective, angle, and composition');
+		parts.push('Preserve all shadows, highlights, and lighting conditions');
+		parts.push('Keep all room boundaries and architectural features unchanged');
+		parts.push('Furniture placement and arrangement must remain identical');
+
+		// Quality descriptors
+		parts.push(
+			'professional interior photography, photorealistic, high detail, sharp focus, natural lighting'
+		);
+
+		return parts.join(', ');
+	}
+
 	function buildExteriorPrompt(params: GenerateExteriorParams): string {
 		const parts: string[] = [];
 
@@ -1006,6 +1225,7 @@ export function useRunwareAI() {
 		generateInpainting,
 		generateExterior,
 		generateRepaint,
+		generateRefloor,
 		isGenerating,
 		error,
 		generatedImageUrl,

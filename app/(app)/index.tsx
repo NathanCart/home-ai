@@ -136,6 +136,7 @@ export default function HomePage() {
 							router.push('/generatemodal?mode=interior-design');
 						}}
 					/>
+					
 					<ToolCard
 						title="Garden design"
 						description="Transform your outdoor space with AI-powered garden design!"
@@ -178,6 +179,21 @@ export default function HomePage() {
 						buttonText="Start Repainting"
 						onPress={() => {
 							router.push('/repaintmodal');
+						}}
+					/>
+					<ToolCard
+						title="Refloor"
+						description="Transform your floor with AI-powered flooring design!"
+						materialIcon="texture-box"
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-new.jpg'}
+						originalImage={
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-old.png'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Change Floor"
+						onPress={() => {
+							router.push('/refloormodal');
 						}}
 					/>
 					<ToolCard

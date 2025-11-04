@@ -13,6 +13,7 @@ interface PhotoStepProps {
 	selectedImageUri?: string | null;
 	compact?: boolean;
 	customExampleImages?: { id: string; source: { uri: string }; name: string }[];
+	hideExamples?: boolean;
 }
 
 export function PhotoStep({
@@ -21,6 +22,7 @@ export function PhotoStep({
 	selectedImageUri,
 	compact = false,
 	customExampleImages = [],
+	hideExamples = false,
 }: PhotoStepProps) {
 	const [showTipsModal, setShowTipsModal] = useState(false);
 	const [showMediaSourceModal, setShowMediaSourceModal] = useState(false);
@@ -227,38 +229,40 @@ export function PhotoStep({
 				</View>
 
 				{/* Example Images Horizontal Scroll */}
-				<View className="">
-					<ThemedText variant="body" className="text-gray-600 mb-2 px-6 leading-6">
-						Or choose from examples
-					</ThemedText>
-					<ScrollView
-						horizontal
-						showsHorizontalScrollIndicator={false}
-						contentContainerStyle={{ paddingHorizontal: 18 }}
-						className="flex-row"
-					>
-						{exampleImages.map((example) => (
-							<TouchableOpacity
-								key={example.id}
-								onPress={() => handleExampleImageSelect(example.source)}
-								className="mr-3 items-center"
-								activeOpacity={0.7}
-							>
-								<View
-									className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-gray-200  ${selectedImageUri === example.source.uri ? '!border-blue-500' : ''}`}
+				{!hideExamples && (
+					<View className="">
+						<ThemedText variant="body" className="text-gray-600 mb-2 px-6 leading-6">
+							Or choose from examples
+						</ThemedText>
+						<ScrollView
+							horizontal
+							showsHorizontalScrollIndicator={false}
+							contentContainerStyle={{ paddingHorizontal: 18 }}
+							className="flex-row"
+						>
+							{exampleImages.map((example) => (
+								<TouchableOpacity
+									key={example.id}
+									onPress={() => handleExampleImageSelect(example.source)}
+									className="mr-3 items-center"
+									activeOpacity={0.7}
 								>
-									<Image
-										source={example.source}
-										className="w-full h-full"
-										resizeMode="cover"
-									/>
-									{/* Highlight overlay */}
-									<View className="absolute inset-0 bg-gray-900/10 opacity-0 hover:opacity-100 transition-opacity duration-200" />
-								</View>
-							</TouchableOpacity>
-						))}
-					</ScrollView>
-				</View>
+									<View
+										className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-gray-200  ${selectedImageUri === example.source.uri ? '!border-blue-500' : ''}`}
+									>
+										<Image
+											source={example.source}
+											className="w-full h-full"
+											resizeMode="cover"
+										/>
+										{/* Highlight overlay */}
+										<View className="absolute inset-0 bg-gray-900/10 opacity-0 hover:opacity-100 transition-opacity duration-200" />
+									</View>
+								</TouchableOpacity>
+							))}
+						</ScrollView>
+					</View>
+				)}
 			</View>
 
 			{/* Photo Tips Modal */}

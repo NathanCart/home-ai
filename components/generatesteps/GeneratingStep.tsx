@@ -54,6 +54,7 @@ export function GeneratingStep({
 		generateInpainting,
 		generateExterior,
 		generateRepaint,
+		generateRefloor,
 		isGenerating,
 		error,
 		generatedImageUrl,
@@ -131,6 +132,22 @@ export function GeneratingStep({
 						imageUri: imageUri,
 						color: style, // The style is actually a color object for repaint mode
 						prompt: customPrompt,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else if (mode === 'refloor') {
+				// Refloor generation
+				if (!style || !imageUri) {
+					console.error('❌ Missing required params for refloor:', { style, imageUri });
+					return;
+				}
+
+				result = await generateRefloor(
+					{
+						imageUri: imageUri,
+						floorStyle: style, // The style is actually a floor style object for refloor mode
 					},
 					(progress) => {
 						setProgress(progress);

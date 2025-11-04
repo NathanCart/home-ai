@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
-import { ColorStep } from 'components/generatesteps/ColorStep';
-import { TextInputStep } from 'components/generatesteps/TextInputStep';
+import { FloorStyleStep } from 'components/generatesteps/FloorStyleStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
@@ -13,28 +12,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FloorStyle } from 'utils/floorStylePrompts';
 
-interface Color {
-	id: string;
-	name: string;
-	hex: string;
-	category?: string;
-}
-
-export default function RepaintModal() {
+export default function RefloorModal() {
 	const { initialImageUri, projectSlug } = useLocalSearchParams<{
 		initialImageUri?: string;
 		projectSlug?: string;
 	}>();
 	const insets = useSafeAreaInsets();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(3); // Photo, Color, Text Input
+	const [totalSteps] = useState(2); // Photo, Floor Style
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
 		initialImageUri || null
 	);
-	const [selectedColor, setSelectedColor] = useState<Color | null>(null);
-	const [customPrompt, setCustomPrompt] = useState<string>('');
+	const [selectedFloorStyle, setSelectedFloorStyle] = useState<FloorStyle | null>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -85,18 +77,13 @@ export default function RepaintModal() {
 		console.log('Image select pressed');
 	};
 
-	const handleColorSelect = (color: Color | null) => {
-		setSelectedColor(color);
+	const handleFloorStyleSelect = (floorStyle: FloorStyle | null) => {
+		setSelectedFloorStyle(floorStyle);
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-	};
-
-	const handleTextSubmit = (text: string) => {
-		setCustomPrompt(text);
 	};
 
 	const handleGenerationComplete = async (imageUrl: string) => {
 		// If we came from project page, save to project and go back immediately
-		// Don't set state that would trigger confirmation step render
 		if (initialImageUri && projectSlug) {
 			try {
 				const storedProjects = await AsyncStorage.getItem('projects');
@@ -123,7 +110,7 @@ export default function RepaintModal() {
 
 				// Store the new variant URL in AsyncStorage with a timestamp so project page can detect it
 				await AsyncStorage.setItem(`newVariant_${projectSlug}`, imageUrl);
-				
+
 				// Navigate back to project page immediately - don't set state first
 				router.back();
 				return; // Exit early, don't proceed to confirmation step
@@ -151,8 +138,8 @@ export default function RepaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate to confirmation step (step 5)
-			setCurrentStep(5);
+			// Navigate to confirmation step (step 4)
+			setCurrentStep(4);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(1);
@@ -199,8 +186,8 @@ export default function RepaintModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate back to generating step (step 4)
-			setCurrentStep(4);
+			// Navigate back to generating step (step 3)
+			setCurrentStep(3);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(-1);
@@ -224,7 +211,7 @@ export default function RepaintModal() {
 	};
 
 	const renderStepContent = () => {
-		const config = getStepConfig('repaint', currentStep);
+		const config = getStepConfig('refloor', currentStep);
 
 		switch (currentStep) {
 			case 1:
@@ -238,51 +225,32 @@ export default function RepaintModal() {
 				);
 			case 2:
 				return (
-					<ColorStep
-						onColorSelect={handleColorSelect}
+					<FloorStyleStep
+						onFloorStyleSelect={handleFloorStyleSelect}
 						config={config}
-						selectedColor={selectedColor}
+						selectedFloorStyle={selectedFloorStyle}
 					/>
 				);
 			case 3:
-				return (
-					<TextInputStep
-						onTextSubmit={handleTextSubmit}
-						config={config}
-						initialText={customPrompt}
-						examples={[
-							'walls',
-							'floor',
-							'sofa',
-							'carpet',
-							'cabinets',
-							'door',
-							'ceiling',
-							'curtains',
-						]}
-					/>
-				);
-			case 4:
 				return (
 					<GeneratingStep
 						onComplete={() => router.back()}
 						onGenerationComplete={handleGenerationComplete}
 						room={null}
-						style={selectedColor}
+						style={selectedFloorStyle}
 						palette={null}
 						imageUri={selectedImageUri}
-						customPrompt={customPrompt}
-						mode="repaint"
+						mode="refloor"
 					/>
 				);
-			case 5:
+			case 4:
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
 						room={null}
-						style={selectedColor}
+						style={selectedFloorStyle}
 						palette={null}
-						mode="repaint"
+						mode="refloor"
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
 						imageUri={selectedImageUri}
@@ -297,7 +265,7 @@ export default function RepaintModal() {
 	return (
 		<View className="bg-gray-50 flex-1" style={{ paddingTop: insets.top }}>
 			{/* Header - Hide on confirmation step */}
-			{currentStep <= 3 && (
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -323,7 +291,7 @@ export default function RepaintModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName={`mt-4 ${currentStep >= 4 ? 'flex-1' : ''}`}
+					contentContainerClassName={`mt-4 ${currentStep >= 3 ? 'flex-1' : ''}`}
 					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
@@ -332,7 +300,7 @@ export default function RepaintModal() {
 			</Animated.View>
 
 			{/* Footer - Hide on confirmation step */}
-			{currentStep <= 3 && (
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -344,7 +312,7 @@ export default function RepaintModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 3 ? 'Generate' : 'Continue'}
+								title={currentStep === 2 ? 'Generate' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -353,8 +321,7 @@ export default function RepaintModal() {
 								className="flex-1"
 								disabled={
 									(currentStep === 1 && !hasImageSelected) ||
-									(currentStep === 2 && !selectedColor) ||
-									(currentStep === 3 && customPrompt.trim().length === 0)
+									(currentStep === 2 && !selectedFloorStyle)
 								}
 							/>
 						</View>

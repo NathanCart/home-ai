@@ -243,6 +243,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your repainted image is ready!',
 		},
 	},
+	refloor: {
+		step1: {
+			title: 'Upload a photo of your floor',
+			subtitle: 'Take a photo or upload an existing image of the room',
+			icon: 'device-camera',
+			description: '💡 Tip: Make sure your floor is clearly visible in the image',
+		},
+		step2: {
+			title: 'Choose floor style',
+			subtitle: 'Select the type of flooring you want',
+			icon: 'stack',
+			description: 'Pick a floor style that matches your vision',
+		},
+		step3: {
+			title: 'Generating...',
+			subtitle: 'AI is changing your floor',
+			icon: 'sparkle',
+			description: 'AI is applying the new floor style to your image',
+		},
+		step4: {
+			title: 'Refloor complete',
+			subtitle: 'Your new floor is ready',
+			icon: 'check-circle',
+			description: 'Your new floor design is ready!',
+		},
+		step5: {
+			title: 'Refloor complete',
+			subtitle: 'Your new floor is ready',
+			icon: 'check-circle',
+			description: 'Your new floor design is ready!',
+		},
+		step6: {
+			title: 'Refloor complete',
+			subtitle: 'Your new floor is ready',
+			icon: 'check-circle',
+			description: 'Your new floor design is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {

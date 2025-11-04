@@ -549,41 +549,37 @@ export default function ProjectDetailPage() {
 							</View>
 						)}
 					</View>
-					<View className="flex-row items-center justify-between mt-4 gap-3">
-						<View className="flex-col items-center gap-2">
-							<TouchableOpacity
-								onPress={() => {
-									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-									router.push({
-										pathname: '/paintmodal',
-										params: {
-											initialImageUri: imageUrl,
-											projectSlug: slug as string,
-										},
-									});
-								}}
-								className="bg-gray-200 w-fit rounded-2xl p-3"
-							>
-								<Octicons name="paintbrush" size={24} color="#111827" />
-							</TouchableOpacity>
-						</View>
-						<View className="flex-col items-center gap-2">
-							<TouchableOpacity
-								onPress={() => {
-									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-									router.push({
-										pathname: '/repaintmodal',
-										params: {
-											initialImageUri: imageUrl,
-											projectSlug: slug as string,
-										},
-									});
-								}}
-								className="bg-gray-200 w-fit rounded-2xl p-3"
-							>
-								<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
-							</TouchableOpacity>
-						</View>
+					<View className="flex-row items-center mt-4 gap-3">
+						<TouchableOpacity
+							onPress={() => {
+								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+								router.push({
+									pathname: '/paintmodal',
+									params: {
+										initialImageUri: imageUrl,
+										projectSlug: slug as string,
+									},
+								});
+							}}
+							className="bg-gray-200 w-fit rounded-2xl p-3"
+						>
+							<Octicons name="paintbrush" size={24} color="#111827" />
+						</TouchableOpacity>
+						<TouchableOpacity
+							onPress={() => {
+								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+								router.push({
+									pathname: '/repaintmodal',
+									params: {
+										initialImageUri: imageUrl,
+										projectSlug: slug as string,
+									},
+								});
+							}}
+							className="bg-gray-200 w-fit rounded-2xl p-3"
+						>
+							<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
+						</TouchableOpacity>
 					</View>
 					{/* Variants Section */}
 					{allVariants.length > 1 && (
