@@ -298,6 +298,12 @@ export default function ProjectDetailPage() {
 		if (project?.mode === 'repaint') {
 			return 'Repaint';
 		}
+		if (project?.mode === 'refloor') {
+			return 'Refloor';
+		}
+		if (project?.mode === 'paint' || project?.type === 'painting') {
+			return 'Replace objects';
+		}
 		// For interior design, use room name or fallback to 'Design'
 		return roomName || 'Design';
 	};
@@ -579,6 +585,21 @@ export default function ProjectDetailPage() {
 							className="bg-gray-200 w-fit rounded-2xl p-3"
 						>
 							<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
+						</TouchableOpacity>
+						<TouchableOpacity
+							onPress={() => {
+								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+								router.push({
+									pathname: '/refloormodal',
+									params: {
+										initialImageUri: imageUrl,
+										projectSlug: slug as string,
+									},
+								});
+							}}
+							className="bg-gray-200 w-fit rounded-2xl p-3"
+						>
+							<MaterialCommunityIcons name="texture-box" size={24} color="#111827" />
 						</TouchableOpacity>
 					</View>
 					{/* Variants Section */}

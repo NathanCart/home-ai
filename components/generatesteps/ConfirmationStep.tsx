@@ -588,6 +588,21 @@ export function ConfirmationStep({
 						>
 							<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
 						</TouchableOpacity>
+						<TouchableOpacity
+							onPress={() => {
+								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+								router.push({
+									pathname: '/refloormodal',
+									params: {
+										initialImageUri: imageUrl,
+										projectSlug: projectSlug || '',
+									},
+								});
+							}}
+							className="bg-gray-200 w-fit rounded-2xl p-3"
+						>
+							<MaterialCommunityIcons name="texture-box" size={24} color="#111827" />
+						</TouchableOpacity>
 					</View>
 
 					{/* Variants Section */}
