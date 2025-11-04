@@ -318,7 +318,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Oak Hardwood',
 		description: 'Classic warm oak with natural grain',
 		imageUrl:
-			'https://images.unsplash.com/photo-1615971677499-5467cbab01c0?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/oakhardwood.webp',
 		prompt: FLOOR_STYLE_PROMPTS['oak-hardwood'],
 	},
 	{
@@ -326,7 +326,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Walnut Hardwood',
 		description: 'Rich dark walnut with deep tones',
 		imageUrl:
-			'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/walnuthardwood.webp',
 		prompt: FLOOR_STYLE_PROMPTS['walnut-hardwood'],
 	},
 	{
@@ -334,7 +334,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'White Marble',
 		description: 'Elegant white marble with grey veining',
 		imageUrl:
-			'https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/whitemarbel.webp',
 		prompt: FLOOR_STYLE_PROMPTS['white-marble'],
 	},
 	{
@@ -342,7 +342,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Black Marble',
 		description: 'Dramatic black marble with white veining',
 		imageUrl:
-			'https://images.unsplash.com/photo-1590642475760-66326486b957?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/blackmarble.webp',
 		prompt: FLOOR_STYLE_PROMPTS['black-marble'],
 	},
 	{
@@ -350,7 +350,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Grey Marble',
 		description: 'Modern grey marble with subtle veining',
 		imageUrl:
-			'https://images.unsplash.com/photo-1619641805634-4c36e34be2a7?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/greymarble.webp',
 		prompt: FLOOR_STYLE_PROMPTS['grey-marble'],
 	},
 	{
@@ -358,7 +358,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Herringbone',
 		description: 'Classic herringbone wood pattern',
 		imageUrl:
-			'https://images.unsplash.com/photo-1617391519106-9de6f063c1b5?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/herringbone.webp',
 		prompt: FLOOR_STYLE_PROMPTS['herringbone-wood'],
 	},
 	{
@@ -366,7 +366,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Chevron',
 		description: 'Sophisticated chevron wood pattern',
 		imageUrl:
-			'https://images.unsplash.com/photo-1609766434617-e7d2e139ffbc?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/chevron.webp',
 		prompt: FLOOR_STYLE_PROMPTS['chevron-wood'],
 	},
 	{
@@ -374,7 +374,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Travertine',
 		description: 'Warm travertine stone with natural texture',
 		imageUrl:
-			'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/travertine.webp',
 		prompt: FLOOR_STYLE_PROMPTS['travertine'],
 	},
 	{
@@ -382,7 +382,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Slate',
 		description: 'Natural slate with rich texture',
 		imageUrl:
-			'https://images.unsplash.com/photo-1600585152915-d208bec867a1?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/slate.webp',
 		prompt: FLOOR_STYLE_PROMPTS['slate'],
 	},
 	{
@@ -390,7 +390,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Polished Concrete',
 		description: 'Modern polished concrete finish',
 		imageUrl:
-			'https://images.unsplash.com/photo-1577035421650-c1c4ce1e0d72?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/polishedconcrete.webp',
 		prompt: FLOOR_STYLE_PROMPTS['concrete-polished'],
 	},
 	{
@@ -398,7 +398,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Terrazzo',
 		description: 'Colorful terrazzo with stone chips',
 		imageUrl:
-			'https://images.unsplash.com/photo-1634154442566-81f574cd0803?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/terrazzo.webp',
 		prompt: FLOOR_STYLE_PROMPTS['terrazzo'],
 	},
 	{
@@ -406,7 +406,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'White Oak',
 		description: 'Light white oak with neutral tones',
 		imageUrl:
-			'https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/whiteoak.webp',
 		prompt: FLOOR_STYLE_PROMPTS['white-oak'],
 	},
 	{
@@ -414,7 +414,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Geometric Tile',
 		description: 'Modern geometric tile pattern',
 		imageUrl:
-			'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/geometrictile.webp',
 		prompt: FLOOR_STYLE_PROMPTS['geometric-tile'],
 	},
 	{
@@ -422,7 +422,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Encaustic Tile',
 		description: 'Colorful patterned encaustic tiles',
 		imageUrl:
-			'https://images.unsplash.com/photo-1599077675125-80d4bb8ea2b8?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/encaustictile.webp',
 		prompt: FLOOR_STYLE_PROMPTS['encaustic-tile'],
 	},
 	{
@@ -430,7 +430,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Reclaimed Wood',
 		description: 'Rustic reclaimed wood with character',
 		imageUrl:
-			'https://images.unsplash.com/photo-1615876234886-fd9a39fda97f?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/reclaimedwood.webp',
 		prompt: FLOOR_STYLE_PROMPTS['reclaimed-wood'],
 	},
 	{
@@ -438,7 +438,7 @@ export const FLOOR_STYLES: FloorStyle[] = [
 		name: 'Wide Plank Oak',
 		description: 'Premium wide plank oak flooring',
 		imageUrl:
-			'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=400&h=300&fit=crop',
+			'https://leafly-app.s3.eu-west-2.amazonaws.com/wideplankoak.webp',
 		prompt: FLOOR_STYLE_PROMPTS['wide-plank-oak'],
 	},
 ];

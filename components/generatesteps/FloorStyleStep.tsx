@@ -316,16 +316,13 @@ export function FloorStyleStep({
 									className="flex-1"
 									resizeMode="cover"
 								>
-									<View className="flex-1 bg-black/40 justify-end p-3">
+									<View className="flex-1 bg-black/30 justify-end p-3">
 										<ThemedText
 											variant="body"
-											className="text-white font-bold text-sm"
+											className="text-white font-bold"
 											extraBold
 										>
 											{floorStyle.name}
-										</ThemedText>
-										<ThemedText variant="body" className="text-white text-xs">
-											{floorStyle.description}
 										</ThemedText>
 									</View>
 								</ImageBackground>

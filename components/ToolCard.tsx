@@ -146,6 +146,9 @@ export function ToolCard({
 								<>
 									{/* Before Image (Full Width - Base Layer) */}
 									<Image
+										resizeMethod="scale"
+									
+									
 										source={{ uri: originalImage! }}
 										style={{
 											width: '100%',
@@ -166,6 +169,7 @@ export function ToolCard({
 										}}
 									>
 										<Image
+											resizeMethod="scale"
 											source={{ uri: image }}
 											style={{
 												width: cardWidth,
@@ -234,6 +238,7 @@ export function ToolCard({
 								</>
 							) : (
 								<Image
+									resizeMethod="scale"
 									source={{ uri: image }}
 									className="w-full h-full"
 									resizeMode="cover"

@@ -27,8 +27,8 @@ export default function HomePage() {
 	const animationRef = useRef<Animated.CompositeAnimation | null>(null);
 
 	// Before and after images
-	const beforeImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-bad.png';
-	const afterImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.png';
+	const beforeImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-bad.webp';
+	const afterImage = 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.webp';
 
 	useEffect(() => {
 		if (hasCompletedOnboarding === false) {
@@ -124,9 +124,9 @@ export default function HomePage() {
 						title="Interior design"
 						description="Upload a photo of your space and let AI design it for you!"
 						icon="home"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.png'}
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.webp'}
 						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.png'
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.webp'
 						}
 						sharedAnimation={sharedAnimation}
 						badge="Popular"
@@ -154,9 +154,9 @@ export default function HomePage() {
 						title="Exterior design"
 						description="Transform your building's exterior with AI-powered design!"
 						materialIcon="office-building"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-good.png'}
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-good.webp'}
 						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-bad.png'
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-bad.webp'
 						}
 						sharedAnimation={sharedAnimation}
 						showButton={true}
@@ -170,9 +170,9 @@ export default function HomePage() {
 						title="Repaint"
 						description="Repaint parts of your image with AI using custom colors!"
 						materialIcon="format-paint"
-						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-new.jpg'}
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/repaint-new.webp'}
 						originalImage={
-							'https://pingu-app.s3.eu-west-2.amazonaws.com/repaint-old.png'
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/repaint-old.webp'
 						}
 						sharedAnimation={sharedAnimation}
 						showButton={true}
@@ -185,9 +185,9 @@ export default function HomePage() {
 						title="Refloor"
 						description="Transform your floor with AI-powered flooring design!"
 						materialIcon="texture-box"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-new.jpg'}
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-new.webp'}
 						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-old.png'
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-old.webp'
 						}
 						sharedAnimation={sharedAnimation}
 						showButton={true}
@@ -200,9 +200,9 @@ export default function HomePage() {
 						title="Replace objects"
 						description="Replace objects in your photo with AI-generated ones!"
 						icon="paintbrush"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-after.png'}
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-after.webp'}
 						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-before.png'
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-before.webp'
 						}
 						sharedAnimation={sharedAnimation}
 						showButton={true}

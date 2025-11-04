@@ -556,51 +556,69 @@ export default function ProjectDetailPage() {
 						)}
 					</View>
 					<View className="flex-row items-center mt-4 gap-3">
-						<TouchableOpacity
-							onPress={() => {
-								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-								router.push({
-									pathname: '/paintmodal',
-									params: {
-										initialImageUri: imageUrl,
-										projectSlug: slug as string,
-									},
-								});
-							}}
-							className="bg-gray-200 w-fit rounded-2xl p-3"
-						>
-							<Octicons name="paintbrush" size={24} color="#111827" />
-						</TouchableOpacity>
-						<TouchableOpacity
-							onPress={() => {
-								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-								router.push({
-									pathname: '/repaintmodal',
-									params: {
-										initialImageUri: imageUrl,
-										projectSlug: slug as string,
-									},
-								});
-							}}
-							className="bg-gray-200 w-fit rounded-2xl p-3"
-						>
-							<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
-						</TouchableOpacity>
-						<TouchableOpacity
-							onPress={() => {
-								Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-								router.push({
-									pathname: '/refloormodal',
-									params: {
-										initialImageUri: imageUrl,
-										projectSlug: slug as string,
-									},
-								});
-							}}
-							className="bg-gray-200 w-fit rounded-2xl p-3"
-						>
-							<MaterialCommunityIcons name="texture-box" size={24} color="#111827" />
-						</TouchableOpacity>
+						<View className="items-center">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/paintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: slug as string,
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3 mb-1"
+								activeOpacity={0.7}
+							>
+								<Octicons name="paintbrush" size={24} color="#111827" />
+							</TouchableOpacity>
+							<ThemedText variant="body" className="text-gray-600 text-xs">
+								Replace
+							</ThemedText>
+						</View>
+						<View className="items-center">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/repaintmodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: slug as string,
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3 mb-1"
+								activeOpacity={0.7}
+							>
+								<MaterialCommunityIcons name="format-paint" size={24} color="#111827" />
+							</TouchableOpacity>
+							<ThemedText variant="body" className="text-gray-600 text-xs">
+								Repaint
+							</ThemedText>
+						</View>
+						<View className="items-center">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/refloormodal',
+										params: {
+											initialImageUri: imageUrl,
+											projectSlug: slug as string,
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3 mb-1"
+								activeOpacity={0.7}
+							>
+								<MaterialCommunityIcons name="texture-box" size={24} color="#111827" />
+							</TouchableOpacity>
+							<ThemedText variant="body" className="text-gray-600 text-xs">
+								Refloor
+							</ThemedText>
+						</View>
 					</View>
 					{/* Variants Section */}
 					{allVariants.length > 1 && (
