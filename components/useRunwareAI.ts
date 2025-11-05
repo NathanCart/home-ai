@@ -414,13 +414,10 @@ export function useRunwareAI() {
 					taskType: 'imageInference',
 					taskUUID,
 					positivePrompt: params.prompt,
-					seedImage: params.seedImageUri,
-					maskImage: params.maskImageUri,
-					model: 'runware:102@1', // Standard inpainting model from docs
-					width: 1024,
-					height: 1024,
-					steps: 40,
-					CFGScale: 50,
+					referenceImages: [params.seedImageUri, params.maskImageUri], // Pass both seed and mask as reference images
+					model: 'runware:108@22',
+					width: 1248,
+					height: 832,
 					numberResults: 1,
 				},
 			];
@@ -804,7 +801,7 @@ export function useRunwareAI() {
 				width: 1248,
 				height: 832,
 				// model: 'runware:108@22',
-				model: 'google:4@1',
+				model: 'runware:108@22',
 				// steps: 30,
 				outputFormat: 'WEBP',
 				uploadEndpoint: 'https://api.runware.ai/upload-image',
@@ -902,6 +899,8 @@ export function useRunwareAI() {
 	};
 
 	// runware:108@22
+
+	//civitai:38784@44876
 	function buildRepaintPrompt(params: RepaintParams): string {
 		const parts: string[] = [];
 
@@ -1020,7 +1019,7 @@ export function useRunwareAI() {
 					'blurry, low quality, distorted, artifacts, watermark, text, logo, bad composition, walls changed, furniture changed, ceiling changed',
 				width: 1248,
 				height: 832,
-				model: 'google:4@1',
+				model: 'runware:108@22',
 				outputFormat: 'WEBP',
 				uploadEndpoint: 'https://api.runware.ai/upload-image',
 				includeCost: true,

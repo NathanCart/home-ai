@@ -389,7 +389,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		natural materials including stone, bamboo, and weathered wood throughout`,
 
 	// Seasonal styles
-	'christmas': `festive holiday decorations with Christmas tree, twinkling string lights, 
+	christmas: `festive holiday decorations with Christmas tree, twinkling string lights, 
 		wreaths and garlands, red and green color scheme, stockings hanging by fireplace, 
 		ornaments and baubles, cozy holiday textiles, warm candlelight, 
 		festive centerpieces, holiday-themed pillows and throws, 
@@ -397,7 +397,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		seasonal greenery like holly and pine, holiday cheer and merriment, 
 		classic Christmas decor elements throughout the space`,
 
-	'easter': `springtime Easter decorations with pastel color palette of soft pinks, yellows, greens, and blues, 
+	easter: `springtime Easter decorations with pastel color palette of soft pinks, yellows, greens, and blues, 
 		Easter eggs and bunny decorations, fresh spring flowers like tulips and daffodils, 
 		light and airy atmosphere, floral patterns and prints, 
 		spring-themed centerpieces and table settings, pastel ribbons and bows, 
@@ -405,7 +405,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		seasonal spring accents throughout, renewal and freshness theme, 
 		soft pastel textiles and accessories`,
 
-	'halloween': `spooky Halloween decorations with orange and black color scheme, 
+	halloween: `spooky Halloween decorations with orange and black color scheme, 
 		pumpkins and jack-o-lanterns, cobwebs and spider decorations, 
 		haunted and mysterious atmosphere, eerie lighting with warm orange glows, 
 		Halloween-themed accessories and props, spooky artwork and wall decor, 
@@ -413,7 +413,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		creepy and fun Halloween vibes, festive but spooky ambiance, 
 		seasonal Halloween touches throughout the space`,
 
-	'thanksgiving': `warm autumn harvest decorations with rich orange, red, and brown color palette, 
+	thanksgiving: `warm autumn harvest decorations with rich orange, red, and brown color palette, 
 		pumpkins and gourds as decorative elements, fall foliage and autumn leaves, 
 		cozy harvest-themed textiles and throws, warm candlelight and ambient lighting, 
 		rustic wooden elements and natural materials, cornucopia and harvest centerpieces, 
@@ -421,7 +421,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		earth tones and warm cozy vibes, traditional Thanksgiving aesthetic, 
 		harvest festival ambiance throughout the space`,
 
-	'valentines': `romantic Valentine's Day decorations with red, pink, and white color scheme, 
+	valentines: `romantic Valentine's Day decorations with red, pink, and white color scheme, 
 		heart-shaped elements and romantic motifs, soft pink and rose-colored textiles, 
 		warm candlelight and intimate lighting, romantic floral arrangements with roses, 
 		love-themed artwork and decor, soft and romantic atmosphere, 
@@ -437,7 +437,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		leprechaun and pot of gold decorative elements, cheerful and fun festive vibe, 
 		green and gold color accents throughout the space`,
 
-	'summer': `bright sunny summer beach vibes with vibrant tropical colors, 
+	summer: `bright sunny summer beach vibes with vibrant tropical colors, 
 		beach-themed decorations with seashells and starfish, light and airy atmosphere, 
 		summer floral patterns with bright blooms, tropical vacation aesthetic, 
 		ocean and beach-inspired color palette of blues, whites, and sandy beiges, 
@@ -445,7 +445,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		beach house and resort-style decor, summer vacation vibes, 
 		tropical plants and palm leaf motifs, refreshing and energizing summer aesthetic`,
 
-	'autumn': `warm fall colors with rich oranges, deep reds, and golden yellows, 
+	autumn: `warm fall colors with rich oranges, deep reds, and golden yellows, 
 		pumpkins, gourds, and autumn harvest elements, fallen leaves and autumn foliage, 
 		cozy autumn textiles with warm textures, warm fireside atmosphere, 
 		rustic wooden elements and natural materials, harvest and Thanksgiving themes, 
@@ -453,7 +453,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		seasonal autumn decorations throughout, earth tones and warm color palette, 
 		comfortable and homey autumn aesthetic`,
 
-	'winter': `cozy winter wonderland with snow and ice elements, 
+	winter: `cozy winter wonderland with snow and ice elements, 
 		cool whites, silvers, and pale blues color palette, 
 		warm fireside atmosphere with fireplace glow, icicles and snowflake decorations, 
 		soft blankets and cozy winter textiles, winter lighting with warm and cool tones, 
@@ -480,7 +480,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		intergalactic atmosphere, otherworldly and cosmic vibes, 
 		space exploration theme throughout`,
 
-	'underwater': `aquatic ocean theme with flowing water elements and marine life, 
+	underwater: `aquatic ocean theme with flowing water elements and marine life, 
 		blues and turquoises color palette with watery textures, 
 		coral reef elements and underwater sea life decorations, 
 		bubbles and wave patterns throughout, serene underwater atmosphere, 
@@ -489,7 +489,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		peaceful and tranquil aquatic ambiance, mermaid and ocean fantasy elements, 
 		liquid and flowing textures, serene underwater paradise aesthetic`,
 
-	'clouds': `ethereal floating cloud aesthetic with soft white and sky blues, 
+	clouds: `ethereal floating cloud aesthetic with soft white and sky blues, 
 		cloud-like textures and fluffy white materials, 
 		soft and dreamy atmosphere with floating elements, 
 		sky-blue color palette with white and silver accents, 
@@ -509,7 +509,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		happy and joyful atmosphere, colorful candy accessories, 
 		whimsical fantasy land aesthetic with edible decor elements`,
 
-	'medieval': `fantasy medieval castle interior with stone, tapestries, and heraldic elements, 
+	medieval: `fantasy medieval castle interior with stone, tapestries, and heraldic elements, 
 		stone walls and architectural elements, rich tapestries with medieval patterns, 
 		dark wood furniture with ornate carvings, torch lighting and candlelit atmosphere, 
 		heraldic banners and coat of arms, rich jewel tones and deep colors, 
@@ -518,7 +518,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		feast hall atmosphere with grand scale, historical fantasy vibe, 
 		majestic and regal medieval aesthetic`,
 
-	'steampunk': `Victorian industrial fantasy with brass, gears, and mechanical elements, 
+	steampunk: `Victorian industrial fantasy with brass, gears, and mechanical elements, 
 		brass and copper metallic finishes throughout, exposed gears and mechanical parts, 
 		Victorian era design with industrial twist, steam-powered aesthetic elements, 
 		rich browns, brass, and bronze color palette, clockwork and machinery motifs, 
@@ -528,7 +528,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		mechanical contraptions as decorative elements, 
 		vintage industrial fantasy aesthetic, retro-futuristic steampunk vibe`,
 
-	'cyberpunk': `neon-lit futuristic dystopian aesthetic with digital and holographic elements, 
+	cyberpunk: `neon-lit futuristic dystopian aesthetic with digital and holographic elements, 
 		vibrant neon colors with dark backgrounds, digital and holographic displays, 
 		high-tech futuristic technology integrated throughout, 
 		neon signs and electric lighting, dark urban atmosphere with bright neon accents, 
@@ -549,7 +549,7 @@ export const STYLE_PROMPTS: Record<string, string> = {
 		neon art and glowing decorative elements, 
 		electric and vibrant neon aesthetic`,
 
-	'jungle': `tropical rainforest paradise with lush greenery and exotic plants, 
+	jungle: `tropical rainforest paradise with lush greenery and exotic plants, 
 		vibrant green foliage and tropical plants throughout, 
 		exotic flowers and jungle blooms, natural wood and bamboo materials, 
 		bright tropical colors with green as dominant, 
