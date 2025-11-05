@@ -157,6 +157,174 @@ const styleTypes: Style[] = [
 	},
 ];
 
+// Seasonal style definitions with their relevant months
+const seasonalStyles: Style[] = [
+	{
+		id: 'christmas',
+		name: 'Christmas',
+		description: 'Festive holiday decorations and warm Christmas vibes',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/christmas.webp',
+	},
+	{
+		id: 'easter',
+		name: 'Easter',
+		description: 'Fresh springtime pastels and Easter decorations',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/easter.webp',
+	},
+	{
+		id: 'halloween',
+		name: 'Halloween',
+		description: 'Spooky decorations and Halloween atmosphere',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/halloween.webp',
+	},
+	{
+		id: 'thanksgiving',
+		name: 'Thanksgiving',
+		description: 'Warm autumn harvest decorations and cozy fall vibes',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/thanksgiving.webp',
+	},
+	{
+		id: 'valentines',
+		name: "Valentine's Day",
+		description: 'Romantic red and pink hearts and love-themed decor',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/valentines.webp',
+	},
+	{
+		id: 'st-patricks',
+		name: "St. Patrick's Day",
+		description: 'Green shamrocks and Irish-themed festive decorations',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/stpatricks.webp',
+	},
+	{
+		id: 'summer',
+		name: 'Summer',
+		description: 'Bright sunny beach vibes and tropical summer decorations',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/summer.webp',
+	},
+	{
+		id: 'autumn',
+		name: 'Autumn',
+		description: 'Warm fall colors with pumpkins, leaves, and cozy harvest decor',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/autumn.webp',
+	},
+	{
+		id: 'winter',
+		name: 'Winter',
+		description: 'Cozy winter wonderland with snow, icicles, and warm fireside atmosphere',
+		imageUrl: 'https://pingu-app.s3.eu-west-2.amazonaws.com/winter.webp',
+	},
+];
+
+// Map seasonal styles to their relevant months (0-indexed, 0 = January, 11 = December)
+const seasonalMonths: Record<string, number[]> = {
+	christmas: [11, 0], // December, January
+	easter: [2, 3], // March, April (varies by year, but typically these months)
+	halloween: [9], // October
+	thanksgiving: [10], // November
+	valentines: [1], // February
+	'st-patricks': [2], // March
+	summer: [5, 6, 7], // June, July, August
+	autumn: [8, 9, 10], // September, October, November
+	winter: [11, 0, 1], // December, January, February
+};
+
+// Function to check if a seasonal style is within a month of the current date
+const isSeasonalUpcoming = (styleId: string): boolean => {
+	const now = new Date();
+	const currentMonth = now.getMonth(); // 0-11
+	const months = seasonalMonths[styleId] || [];
+
+	// Check if current month is in the relevant months
+	if (months.includes(currentMonth)) {
+		return true;
+	}
+
+	// Check if next month is in the relevant months (within a month)
+	const nextMonth = (currentMonth + 1) % 12;
+	if (months.includes(nextMonth)) {
+		return true;
+	}
+
+	return false;
+};
+
+const imaginaryStyles: Style[] = [
+	{
+		id: 'fluffy-pink',
+		name: 'Fluffy Pink',
+		description: 'Ultra-soft pink dreamy fantasy interior',
+		imageUrl: 'https://images.unsplash.com/photo-1540946485067-1e7a0b2b24a1?w=400',
+	},
+	{
+		id: 'space-themed',
+		name: 'Space Themed',
+		description: 'Futuristic cosmic space-inspired design',
+		imageUrl: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=400',
+	},
+	{
+		id: 'underwater',
+		name: 'Underwater',
+		description: 'Aquatic ocean theme with flowing water elements and marine life',
+		imageUrl: 'https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=400',
+	},
+	{
+		id: 'clouds',
+		name: 'Clouds',
+		description: 'Ethereal floating cloud aesthetic with soft white and sky blues',
+		imageUrl: 'https://images.unsplash.com/photo-1534088568595-a066f410bcda?w=400',
+	},
+	{
+		id: 'candy-land',
+		name: 'Candy Land',
+		description: 'Sweet candy-inspired design with lollipops, gumdrops, and vibrant colors',
+		imageUrl: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400',
+	},
+	{
+		id: 'medieval',
+		name: 'Medieval',
+		description:
+			'Fantasy medieval castle interior with stone, tapestries, and heraldic elements',
+		imageUrl: 'https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400',
+	},
+	{
+		id: 'steampunk',
+		name: 'Steampunk',
+		description: 'Victorian industrial fantasy with brass, gears, and mechanical elements',
+		imageUrl: 'https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=400',
+	},
+	{
+		id: 'cyberpunk',
+		name: 'Cyberpunk',
+		description:
+			'Neon-lit futuristic dystopian aesthetic with digital and holographic elements',
+		imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400',
+	},
+	{
+		id: 'neon-glow',
+		name: 'Neon Glow',
+		description: 'Vibrant neon lighting with glowing colors and electric atmosphere',
+		imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+	},
+	{
+		id: 'jungle',
+		name: 'Jungle',
+		description: 'Tropical rainforest paradise with lush greenery and exotic plants',
+		imageUrl: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400',
+	},
+	{
+		id: 'fairy-tale',
+		name: 'Fairy Tale',
+		description: 'Enchanted forest fairy tale with magical elements and whimsical decor',
+		imageUrl: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=400',
+	},
+	{
+		id: 'retro-future',
+		name: 'Retro Future',
+		description: '1950s-60s vision of the future with atomic age and space age aesthetics',
+		imageUrl: 'https://images.unsplash.com/photo-1534796636912-3b95b3ab5986?w=400',
+	},
+];
+
 export function StyleStep({
 	onStyleSelect,
 	config,
@@ -175,7 +343,7 @@ export function StyleStep({
 				? 'exterior-design'
 				: mode || 'interior-design';
 
-	const storageKey =
+	const baseStorageKey =
 		detectedMode === 'garden'
 			? 'customGardenStyles'
 			: detectedMode === 'exterior-design'
@@ -185,7 +353,9 @@ export function StyleStep({
 	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
 		selectedStyle?.id || null
 	);
-	const [customStyles, setCustomStyles] = useState<Style[]>([]);
+	const [customRegularStyles, setCustomRegularStyles] = useState<Style[]>([]);
+	const [customSeasonalStyles, setCustomSeasonalStyles] = useState<Style[]>([]);
+	const [customImaginaryStyles, setCustomImaginaryStyles] = useState<Style[]>([]);
 	const [showAddModal, setShowAddModal] = useState<boolean>(false);
 	const [newStyleName, setNewStyleName] = useState<string>('');
 	const [newStylePrompt, setNewStylePrompt] = useState<string>('');
@@ -197,36 +367,151 @@ export function StyleStep({
 	const [editImageUri, setEditImageUri] = useState<string | null>(null);
 	const [isLoadingImage, setIsLoadingImage] = useState<boolean>(false);
 	const [isLoadingEditImage, setIsLoadingEditImage] = useState<boolean>(false);
+	const [selectedCategory, setSelectedCategory] = useState<'regular' | 'seasonal' | 'imaginary'>(
+		'regular'
+	);
 	const [allStyles, setAllStyles] = useState<Style[]>(styleTypes);
 
-	// Load custom styles from AsyncStorage on component mount
+	// Get storage key for current category
+	const getStorageKey = (category: 'regular' | 'seasonal' | 'imaginary'): string => {
+		return `${baseStorageKey}-${category}`;
+	};
+
+	// Load custom styles from AsyncStorage on component mount and when category changes
 	useEffect(() => {
-		loadCustomStyles();
+		loadAllCustomStyles();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [detectedMode]);
 
-	// Update allStyles when customStyles change - custom styles first
-	useEffect(() => {
-		setAllStyles([...customStyles, ...styleTypes]);
-	}, [customStyles]);
+	// Filter styles based on selected category
+	const getFilteredStyles = (): Style[] => {
+		switch (selectedCategory) {
+			case 'seasonal':
+				// Sort seasonal styles to feature upcoming ones first
+				const sortedSeasonalStyles = [...seasonalStyles].sort((a, b) => {
+					const aUpcoming = isSeasonalUpcoming(a.id);
+					const bUpcoming = isSeasonalUpcoming(b.id);
 
-	const loadCustomStyles = async () => {
-		try {
-			const stored = await AsyncStorage.getItem(storageKey);
-			if (stored) {
-				const parsedStyles = JSON.parse(stored);
-				setCustomStyles(parsedStyles);
-			}
-		} catch (error) {
-			console.error('Error loading custom styles:', error);
+					// Upcoming styles come first
+					if (aUpcoming && !bUpcoming) return -1;
+					if (!aUpcoming && bUpcoming) return 1;
+
+					// If both are upcoming or both are not, maintain original order
+					return 0;
+				});
+
+				return [...customSeasonalStyles, ...sortedSeasonalStyles];
+			case 'imaginary':
+				return [...customImaginaryStyles, ...imaginaryStyles];
+			case 'regular':
+			default:
+				return [...customRegularStyles, ...styleTypes];
 		}
 	};
 
-	const saveCustomStyles = async (styles: Style[]) => {
+	const filteredStyles = getFilteredStyles();
+
+	// Load custom styles when category changes
+	useEffect(() => {
+		loadCustomStylesForCategory(selectedCategory);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedCategory]);
+
+	// Clear selection when category changes if selected style doesn't exist in new category
+	useEffect(() => {
+		if (selectedStyleId) {
+			const styles = getFilteredStyles();
+			const styleExists = styles.some((style) => style.id === selectedStyleId);
+			if (!styleExists) {
+				setSelectedStyleId(null);
+				onStyleSelect?.(null);
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [
+		customRegularStyles,
+		customSeasonalStyles,
+		customImaginaryStyles,
+		selectedCategory,
+		selectedStyleId,
+	]);
+
+	const loadAllCustomStyles = async () => {
+		await loadCustomStylesForCategory('regular');
+		await loadCustomStylesForCategory('seasonal');
+		await loadCustomStylesForCategory('imaginary');
+	};
+
+	const loadCustomStylesForCategory = async (category: 'regular' | 'seasonal' | 'imaginary') => {
 		try {
-			await AsyncStorage.setItem(storageKey, JSON.stringify(styles));
+			const storageKey = getStorageKey(category);
+			const stored = await AsyncStorage.getItem(storageKey);
+			if (stored) {
+				const parsedStyles = JSON.parse(stored);
+				switch (category) {
+					case 'regular':
+						setCustomRegularStyles(parsedStyles);
+						break;
+					case 'seasonal':
+						setCustomSeasonalStyles(parsedStyles);
+						break;
+					case 'imaginary':
+						setCustomImaginaryStyles(parsedStyles);
+						break;
+				}
+			} else {
+				// Initialize empty array if no styles exist
+				switch (category) {
+					case 'regular':
+						setCustomRegularStyles([]);
+						break;
+					case 'seasonal':
+						setCustomSeasonalStyles([]);
+						break;
+					case 'imaginary':
+						setCustomImaginaryStyles([]);
+						break;
+				}
+			}
 		} catch (error) {
-			console.error('Error saving custom styles:', error);
+			console.error(`Error loading custom ${category} styles:`, error);
+		}
+	};
+
+	const saveCustomStyles = async (
+		styles: Style[],
+		category: 'regular' | 'seasonal' | 'imaginary'
+	) => {
+		try {
+			const storageKey = getStorageKey(category);
+			await AsyncStorage.setItem(storageKey, JSON.stringify(styles));
+			// Update the state for the specific category
+			switch (category) {
+				case 'regular':
+					setCustomRegularStyles(styles);
+					break;
+				case 'seasonal':
+					setCustomSeasonalStyles(styles);
+					break;
+				case 'imaginary':
+					setCustomImaginaryStyles(styles);
+					break;
+			}
+		} catch (error) {
+			console.error(`Error saving custom ${category} styles:`, error);
+		}
+	};
+
+	const getCurrentCustomStyles = (): Style[] => {
+		switch (selectedCategory) {
+			case 'regular':
+				return customRegularStyles;
+			case 'seasonal':
+				return customSeasonalStyles;
+			case 'imaginary':
+				return customImaginaryStyles;
+			default:
+				return customRegularStyles;
 		}
 	};
 
@@ -280,9 +565,9 @@ export function StyleStep({
 				isCustom: true,
 			};
 
-			const updatedCustomStyles = [...customStyles, newStyle];
-			setCustomStyles(updatedCustomStyles);
-			saveCustomStyles(updatedCustomStyles);
+			const currentCustomStyles = getCurrentCustomStyles();
+			const updatedCustomStyles = [...currentCustomStyles, newStyle];
+			saveCustomStyles(updatedCustomStyles, selectedCategory);
 
 			// Auto-select the newly added style
 			setSelectedStyleId(newStyle.id);
@@ -347,7 +632,8 @@ export function StyleStep({
 
 	const handleEditStyle = () => {
 		if (editingStyle && editStyleName.trim()) {
-			const updatedCustomStyles = customStyles.map((style) =>
+			const currentCustomStyles = getCurrentCustomStyles();
+			const updatedCustomStyles = currentCustomStyles.map((style: Style) =>
 				style.id === editingStyle.id
 					? {
 							...style,
@@ -358,8 +644,7 @@ export function StyleStep({
 						}
 					: style
 			);
-			setCustomStyles(updatedCustomStyles);
-			saveCustomStyles(updatedCustomStyles);
+			saveCustomStyles(updatedCustomStyles, selectedCategory);
 
 			// Update selected style if it was the one being edited
 			if (selectedStyleId === editingStyle.id) {
@@ -383,11 +668,11 @@ export function StyleStep({
 
 	const handleDeleteStyle = () => {
 		if (editingStyle) {
-			const updatedCustomStyles = customStyles.filter(
-				(style) => style.id !== editingStyle.id
+			const currentCustomStyles = getCurrentCustomStyles();
+			const updatedCustomStyles = currentCustomStyles.filter(
+				(style: Style) => style.id !== editingStyle.id
 			);
-			setCustomStyles(updatedCustomStyles);
-			saveCustomStyles(updatedCustomStyles);
+			saveCustomStyles(updatedCustomStyles, selectedCategory);
 
 			// Clear selection if the deleted style was selected
 			if (selectedStyleId === editingStyle.id) {
@@ -420,7 +705,7 @@ export function StyleStep({
 					showsHorizontalScrollIndicator={false}
 					contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
 				>
-					{allStyles.map((style) => {
+					{filteredStyles.map((style) => {
 						const isSelected = selectedStyleId === style.id;
 
 						return (
@@ -458,13 +743,68 @@ export function StyleStep({
 	// Default grid layout
 	return (
 		<View className="flex-1 px-6">
-			<View className="items-start mb-6">
+			<View className="items-start mb-4">
 				<ThemedText variant="title-md" className="text-gray-900 mb-2 text-center" extraBold>
 					{config.title}
 				</ThemedText>
 				<ThemedText variant="body" className="text-gray-600">
 					{config.description}
 				</ThemedText>
+			</View>
+
+			{/* Category Filter Buttons */}
+			<View className="flex-row gap-2 mb-4">
+				<TouchableOpacity
+					onPress={() => setSelectedCategory('regular')}
+					className={`flex-1 px-4 py-2 rounded-xl border-2 ${
+						selectedCategory === 'regular'
+							? 'bg-gray-900 border-gray-900'
+							: 'bg-white border-gray-200'
+					}`}
+					activeOpacity={0.7}
+				>
+					<ThemedText
+						variant="body"
+						className={`text-center ${selectedCategory === 'regular' ? 'text-white' : 'text-gray-700'}`}
+						bold={selectedCategory === 'regular'}
+					>
+						Regular
+					</ThemedText>
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => setSelectedCategory('seasonal')}
+					className={`flex-1 px-4 py-2 rounded-xl border-2 ${
+						selectedCategory === 'seasonal'
+							? 'bg-gray-900 border-gray-900'
+							: 'bg-white border-gray-200'
+					}`}
+					activeOpacity={0.7}
+				>
+					<ThemedText
+						variant="body"
+						className={`text-center ${selectedCategory === 'seasonal' ? 'text-white' : 'text-gray-700'}`}
+						bold={selectedCategory === 'seasonal'}
+					>
+						Seasonal
+					</ThemedText>
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => setSelectedCategory('imaginary')}
+					className={`flex-1 px-4 py-2 rounded-xl border-2 ${
+						selectedCategory === 'imaginary'
+							? 'bg-gray-900 border-gray-900'
+							: 'bg-white border-gray-200'
+					}`}
+					activeOpacity={0.7}
+				>
+					<ThemedText
+						variant="body"
+						className={`text-center ${selectedCategory === 'imaginary' ? 'text-white' : 'text-gray-700'}`}
+						bold={selectedCategory === 'imaginary'}
+					>
+						Imaginary
+					</ThemedText>
+				</TouchableOpacity>
 			</View>
 
 			<ScrollView
@@ -497,8 +837,10 @@ export function StyleStep({
 							</ThemedText>
 						</View>
 					</TouchableOpacity>
-					{allStyles.map((style) => {
+					{filteredStyles.map((style) => {
 						const isSelected = selectedStyleId === style.id;
+						const isUpcoming =
+							selectedCategory === 'seasonal' && isSeasonalUpcoming(style.id);
 
 						return (
 							<TouchableOpacity
@@ -516,6 +858,17 @@ export function StyleStep({
 									resizeMode="cover"
 								>
 									<View className="flex-1 bg-black/30 justify-end p-3">
+										{isUpcoming && (
+											<View className="absolute top-2 right-2 z-10 bg-gray-50 rounded-full px-2 py-1">
+												<ThemedText
+													variant="body"
+													className="text-gray-900 font-bold text-xs"
+													bold
+												>
+													Featured
+												</ThemedText>
+											</View>
+										)}
 										<ThemedText
 											variant="body"
 											className="text-white font-bold"
