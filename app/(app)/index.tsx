@@ -136,7 +136,7 @@ export default function HomePage() {
 							router.push('/generatemodal?mode=interior-design');
 						}}
 					/>
-					
+
 					<ToolCard
 						title="Garden design"
 						description="Transform your outdoor space with AI-powered garden design!"

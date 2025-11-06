@@ -521,7 +521,7 @@ export default function ExplorePage() {
 							<TouchableOpacity
 								key={item.index}
 								onPress={handleImagePress}
-								className="mb-3 rounded-2xl overflow-hidden"
+								className="mb-3 rounded-3xl overflow-hidden"
 								style={{
 									width: '100%',
 									height: item.height,
@@ -545,7 +545,7 @@ export default function ExplorePage() {
 							<TouchableOpacity
 								key={item.index}
 								onPress={handleImagePress}
-								className="mb-3 rounded-2xl overflow-hidden"
+								className="mb-3 rounded-3xl overflow-hidden"
 								style={{
 									width: '100%',
 									height: item.height,

@@ -112,7 +112,12 @@ export default function RootLayout() {
 									animation: screenAnimation,
 								}}
 							/>
-
+							<Stack.Screen
+								name="explore"
+								options={{
+									animation: screenAnimation,
+								}}
+							/>
 							<Stack.Screen
 								name="settings"
 								options={{

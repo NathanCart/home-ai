@@ -116,7 +116,7 @@ const AnimatedProjectCard = React.memo(
 			if (project.mode === 'exterior-design') {
 				return 'Exterior design';
 			}
-			
+
 			// For interior design, use room name if available
 			return project.room?.name || project.room?.label || 'Interior design';
 		};
