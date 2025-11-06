@@ -10,422 +10,560 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from 'components/ThemedText';
-import { Ionicons, Octicons } from '@expo/vector-icons';
+import { Octicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Haptics from 'expo-haptics';
-import { ViewAllInteriorModal, roomTypes, type Room } from 'components/ViewAllInteriorModal';
-import { ViewAllExteriorModal, houseTypes, type HouseType } from 'components/ViewAllExteriorModal';
-import { ViewAllGardenModal, type InspirationImage } from 'components/ViewAllGardenModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = SCREEN_WIDTH * 0.55; // 70% of screen width for horizontal cards
+const COLUMN_WIDTH = (SCREEN_WIDTH - 48) / 2; // 2 columns with padding
 
-// Garden inspiration images
+// Deterministic shuffle function - produces same random order every time
+const deterministicShuffle = <T,>(array: T[], seed: string): T[] => {
+	const shuffled = [...array];
+	let hash = 0;
+	for (let i = 0; i < seed.length; i++) {
+		const char = seed.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash = hash & hash; // Convert to 32bit integer
+	}
 
-const gardenImages: InspirationImage[] = [
+	// Simple seeded random number generator
+	let random = Math.abs(Math.sin(hash)) * 10000;
+	const seededRandom = () => {
+		random = Math.abs(Math.sin(random)) * 10000;
+		return random - Math.floor(random);
+	};
+
+	// Fisher-Yates shuffle with seeded random
+	for (let i = shuffled.length - 1; i > 0; i--) {
+		const j = Math.floor(seededRandom() * (i + 1));
+		[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+	}
+
+	return shuffled;
+};
+
+// Types
+interface Room {
+	id: string;
+	name: string;
+	icon: string;
+	iconType?: 'octicons' | 'material' | 'material-community' | 'ionicons';
+	description: string;
+	images: string[];
+	count: number;
+}
+
+interface HouseType {
+	id: string;
+	name: string;
+	description: string;
+	images: string[];
+	count: number;
+}
+
+// Room types
+const roomTypes: Room[] = [
 	{
-		id: 'gard-1',
-		imageUrl: 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.webp',
-		title: 'Lush Garden',
-		style: 'Natural',
+		id: 'living-room',
+		name: 'Living Room',
+		icon: 'home',
+		description: 'Main gathering space for relaxation and entertainment',
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 79 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/livingroom${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'living-room'
+		),
+		count: 79,
 	},
 	{
-		id: 'gard-2',
-		imageUrl: 'https://images.unsplash.com/photo-1585320806297-9794b3e4eeae?w=800',
-		title: 'Modern Landscaping',
-		style: 'Modern',
+		id: 'bedroom',
+		name: 'Bedroom',
+		icon: 'bed',
+		iconType: 'material',
+		description: 'Personal space for rest and relaxation',
+		images: ['https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800'],
+		count: 18,
 	},
 	{
-		id: 'gard-3',
-		imageUrl: 'https://images.unsplash.com/photo-1558904541-efa843a96f01?w=800',
-		title: 'Zen Garden',
-		style: 'Zen',
+		id: 'kitchen',
+		name: 'Kitchen',
+		icon: 'kitchen',
+		iconType: 'material',
+		description: 'Cooking and dining area',
+		images: ['https://images.unsplash.com/photo-1556912167-f556f1f39fdf?w=800'],
+		count: 22,
 	},
 	{
-		id: 'gard-4',
-		imageUrl: 'https://images.unsplash.com/photo-1600298881974-6be191ceeda1?w=800',
-		title: 'English Garden',
-		style: 'Traditional',
+		id: 'bathroom',
+		name: 'Bathroom',
+		icon: 'shower',
+		iconType: 'material-community',
+		description: 'Personal hygiene and grooming space',
+		images: ['https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800'],
+		count: 15,
 	},
 	{
-		id: 'gard-5',
-		imageUrl: 'https://images.unsplash.com/photo-1591857177580-dc82b9ac4e1e?w=800',
-		title: 'Tropical Paradise',
-		style: 'Tropical',
+		id: 'dining-room',
+		name: 'Dining Room',
+		icon: 'table',
+		description: 'Formal dining and meal space',
+		images: ['https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=800'],
+		count: 12,
 	},
 	{
-		id: 'gard-6',
-		imageUrl: 'https://images.unsplash.com/photo-1599619865309-e2e42cd1d9e1?w=800',
-		title: 'Desert Landscape',
-		style: 'Desert',
+		id: 'office',
+		name: 'Home Office',
+		icon: 'briefcase',
+		description: 'Work and productivity space',
+		images: ['https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800'],
+		count: 16,
+	},
+	{
+		id: 'nursery',
+		name: 'Nursery',
+		icon: 'heart',
+		description: 'Baby and child room',
+		images: ['https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800'],
+		count: 10,
+	},
+	{
+		id: 'basement',
+		name: 'Basement',
+		icon: 'arrow-down',
+		description: 'Lower level storage and utility space',
+		images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800'],
+		count: 8,
+	},
+	{
+		id: 'attic',
+		name: 'Attic',
+		icon: 'home-roof',
+		iconType: 'material-community',
+		description: 'Upper storage and additional space',
+		images: ['https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800'],
+		count: 7,
+	},
+	{
+		id: 'garage',
+		name: 'Garage',
+		icon: 'car-outline',
+		iconType: 'ionicons',
+		description: 'Vehicle storage and workshop space',
+		images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800'],
+		count: 9,
 	},
 ];
 
-// Room Card Component
-const RoomCard = ({ room, width }: { room: Room; width: number }) => {
-	const scaleAnim = useRef(new Animated.Value(1)).current;
+// House types
+const houseTypes: HouseType[] = [
+	{
+		id: 'house',
+		name: 'House',
+		description: 'Single-family home exterior',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/house.png'],
+		count: 32,
+	},
+	{
+		id: 'apartment',
+		name: 'Apartment',
+		description: 'Multi-unit residential building',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/apartment.png'],
+		count: 28,
+	},
+	{
+		id: 'villa',
+		name: 'Villa',
+		description: 'Large luxury detached home',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/villa.png'],
+		count: 19,
+	},
+	{
+		id: 'townhouse',
+		name: 'Townhouse',
+		description: 'Multi-story attached home',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/townhouse.png'],
+		count: 15,
+	},
+	{
+		id: 'cottage',
+		name: 'Cottage',
+		description: 'Small charming rural home',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/cottage.png'],
+		count: 14,
+	},
+	{
+		id: 'mansion',
+		name: 'Mansion',
+		description: 'Large prestigious estate home',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/mansion.png'],
+		count: 12,
+	},
+	{
+		id: 'office-building',
+		name: 'Office Building',
+		description: 'Commercial office building',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/office.png'],
+		count: 21,
+	},
+	{
+		id: 'retail-building',
+		name: 'Retail Building',
+		description: 'Commercial retail or shop building',
+		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/retail.png'],
+		count: 17,
+	},
+];
 
-	const handlePressIn = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 0.95,
-			useNativeDriver: true,
-		}).start();
-	};
+// Garden images
+const gardenImages = ['https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.webp'];
 
-	const handlePressOut = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 1,
-			friction: 3,
-			tension: 40,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const handlePress = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-		// TODO: Navigate to style transfer modal when built
-		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
-	};
-
-	return (
-		<Animated.View
-			style={{
-				transform: [{ scale: scaleAnim }],
-				width: width,
-				marginRight: 12,
-			}}
-		>
-			<TouchableOpacity
-				onPress={handlePress}
-				onPressIn={handlePressIn}
-				onPressOut={handlePressOut}
-				activeOpacity={1}
-				className="bg-white rounded-2xl overflow-hidden border-2 border-gray-200"
-			>
-				<View className="relative" style={{ height: width * 0.75 }}>
-					<Image
-						source={{ uri: room.imageUrl }}
-						style={{
-							width: '100%',
-							height: '100%',
-						}}
-						resizeMode="cover"
-					/>
-					{/* Dark overlay gradient */}
-					<View className="absolute inset-0 bg-black/30" />
-					{/* Count text overlay at bottom center */}
-					<View className="absolute bottom-0 left-0 right-0 items-center pb-3">
-						<View className="bg-white/90 backdrop-blur-sm px-4 py-1 rounded-full">
-							<ThemedText variant="title-md" extraBold className="text-gray-900">
-								+{room.count}
-							</ThemedText>
-						</View>
-						<ThemedText
-							variant="title-md"
-							bold
-							className="text-gray-50 text-center mt-2"
-						>
-							{room.name}
-						</ThemedText>
-					</View>
-				</View>
-			</TouchableOpacity>
-		</Animated.View>
-	);
+// Get all images for interior (all rooms combined)
+const getAllInteriorImages = (): string[] => {
+	const allImages: string[] = [];
+	roomTypes.forEach((room) => {
+		allImages.push(...room.images);
+	});
+	return allImages;
 };
 
-// House Type Card Component
-const HouseTypeCard = ({ houseType, width }: { houseType: HouseType; width: number }) => {
-	const scaleAnim = useRef(new Animated.Value(1)).current;
-
-	const handlePressIn = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 0.95,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const handlePressOut = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 1,
-			friction: 3,
-			tension: 40,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const handlePress = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-		// TODO: Navigate to style transfer modal when built
-		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
-	};
-
-	return (
-		<Animated.View
-			style={{
-				transform: [{ scale: scaleAnim }],
-				width: width,
-				marginRight: 12,
-			}}
-		>
-			<TouchableOpacity
-				onPress={handlePress}
-				onPressIn={handlePressIn}
-				onPressOut={handlePressOut}
-				activeOpacity={1}
-				className="bg-white rounded-2xl overflow-hidden border-2 border-gray-200"
-			>
-				<View className="relative" style={{ height: width * 0.75 }}>
-					<Image
-						source={{ uri: houseType.imageUrl }}
-						style={{
-							width: '100%',
-							height: '100%',
-						}}
-						resizeMode="cover"
-					/>
-					{/* Dark overlay gradient */}
-					<View className="absolute inset-0 bg-black/30" />
-					{/* Count text overlay at bottom center */}
-					<View className="absolute bottom-0 left-0 right-0 items-center pb-3">
-						<View className="bg-white/90 backdrop-blur-sm px-4 py-1 rounded-full">
-							<ThemedText variant="title-md" extraBold className="text-gray-900">
-								+{houseType.count}
-							</ThemedText>
-						</View>
-						<ThemedText
-							variant="title-md"
-							bold
-							className="text-gray-50 text-center mt-2"
-						>
-							{houseType.name}
-						</ThemedText>
-					</View>
-				</View>
-			</TouchableOpacity>
-		</Animated.View>
-	);
+// Get all images for exterior (all house types combined)
+const getAllExteriorImages = (): string[] => {
+	const allImages: string[] = [];
+	houseTypes.forEach((houseType) => {
+		allImages.push(...houseType.images);
+	});
+	return allImages;
 };
 
-// Garden Inspiration Card Component
-const InspirationCard = ({
-	item,
-	width,
-	isModal = false,
-}: {
-	item: InspirationImage;
-	width: number;
-	isModal?: boolean;
-}) => {
-	const scaleAnim = useRef(new Animated.Value(1)).current;
-
-	const handlePressIn = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 0.95,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const handlePressOut = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 1,
-			friction: 3,
-			tension: 40,
-			useNativeDriver: true,
-		}).start();
-	};
-
-	const handlePress = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-		// TODO: Navigate to style transfer modal when built
-		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
-	};
-
-	return (
-		<Animated.View
-			style={{
-				transform: [{ scale: scaleAnim }],
-				width: width,
-				marginRight: isModal ? 0 : 12,
-			}}
-		>
-			<TouchableOpacity
-				onPress={handlePress}
-				onPressIn={handlePressIn}
-				onPressOut={handlePressOut}
-				activeOpacity={1}
-				className="bg-white rounded-2xl overflow-hidden border-2 border-gray-200"
-			>
-				<Image
-					source={{ uri: item.imageUrl }}
-					style={{
-						width: '100%',
-						height: width * 0.75,
-					}}
-					resizeMode="cover"
-				/>
-				<View className="p-3">
-					<ThemedText variant="title-sm" bold className="text-gray-900">
-						{item.title}
-					</ThemedText>
-					{item.style && (
-						<ThemedText variant="body" className="text-gray-500 text-base">
-							{item.style}
-						</ThemedText>
-					)}
-				</View>
-			</TouchableOpacity>
-		</Animated.View>
-	);
+// Get images for a specific room type
+const getInteriorImagesByRoom = (roomId: string | null): string[] => {
+	if (!roomId) return getAllInteriorImages();
+	const room = roomTypes.find((r) => r.id === roomId);
+	if (!room) return [];
+	return room.images;
 };
+
+// Get images for a specific house type
+const getExteriorImagesByHouseType = (houseTypeId: string | null): string[] => {
+	if (!houseTypeId) return getAllExteriorImages();
+	const houseType = houseTypes.find((h) => h.id === houseTypeId);
+	if (!houseType) return [];
+	return houseType.images;
+};
+
+// Get random heights for masonry layout
+const getImageHeight = (index: number) => {
+	const heights = [200, 250, 180, 220, 190, 240, 210, 230, 195, 225];
+	return heights[index % heights.length];
+};
+
+// Distribute images into two columns for proper masonry layout
+const distributeImages = (images: string[]) => {
+	const leftColumn: { imageUrl: string; index: number; height: number }[] = [];
+	const rightColumn: { imageUrl: string; index: number; height: number }[] = [];
+	let leftHeight = 0;
+	let rightHeight = 0;
+
+	images.forEach((imageUrl, index) => {
+		const height = getImageHeight(index);
+		if (leftHeight <= rightHeight) {
+			leftColumn.push({ imageUrl, index, height });
+			leftHeight += height + 12; // 12px for margin-bottom
+		} else {
+			rightColumn.push({ imageUrl, index, height });
+			rightHeight += height + 12;
+		}
+	});
+
+	return { leftColumn, rightColumn };
+};
+
+type TabType = 'interior' | 'exterior' | 'garden';
 
 export default function ExplorePage() {
 	const insets = useSafeAreaInsets();
+	const [activeTab, setActiveTab] = useState<TabType>('interior');
+	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
+	const [selectedHouseTypeId, setSelectedHouseTypeId] = useState<string | null>(null);
 
-	// First level modals
-	const [interiorModalVisible, setInteriorModalVisible] = useState(false);
-	const [exteriorModalVisible, setExteriorModalVisible] = useState(false);
-	const [gardenModalVisible, setGardenModalVisible] = useState(false);
-
-	const handleViewAllRooms = () => {
+	const handleTabChange = (tab: TabType) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		setInteriorModalVisible(true);
+		setActiveTab(tab);
+		setSelectedRoomId(null);
+		setSelectedHouseTypeId(null);
 	};
 
-	const handleViewAllHouseTypes = () => {
+	const handleRoomFilter = (roomId: string | null) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		setExteriorModalVisible(true);
+		setSelectedRoomId(roomId);
 	};
 
-	const handleViewAllImages = () => {
+	const handleHouseTypeFilter = (houseTypeId: string | null) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		setGardenModalVisible(true);
+		setSelectedHouseTypeId(houseTypeId);
 	};
 
-	const renderInteriorSection = () => (
-		<View className="mb-6">
-			<View className="flex-row items-center justify-between mb-2 px-5">
-				<View className="flex-row items-center flex-1">
-					<Octicons name="home" size={24} color="#111827" />
-					<View className="ml-2 flex-1">
-						<ThemedText variant="title-sm" extraBold className="text-gray-900">
-							Interior Designs
-						</ThemedText>
-					</View>
-				</View>
-				<TouchableOpacity onPress={handleViewAllRooms} className="px-3 py-2">
-					<ThemedText variant="body" bold className="text-gray-900">
-						View all
-					</ThemedText>
-				</TouchableOpacity>
-			</View>
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ paddingHorizontal: 16 }}
-			>
-				{roomTypes.map((room) => (
-					<RoomCard key={room.id} room={room} width={CARD_WIDTH} />
-				))}
-			</ScrollView>
-		</View>
-	);
+	const getCurrentImages = (): string[] => {
+		switch (activeTab) {
+			case 'interior':
+				return getInteriorImagesByRoom(selectedRoomId);
+			case 'exterior':
+				return getExteriorImagesByHouseType(selectedHouseTypeId);
+			case 'garden':
+				return gardenImages;
+			default:
+				return [];
+		}
+	};
 
-	const renderExteriorSection = () => (
-		<View className="mb-6">
-			<View className="flex-row items-center justify-between mb-2 px-4">
-				<View className="flex-row items-center flex-1">
-					<MaterialCommunityIcons name="office-building" size={24} color="#111827" />
-					<View className="ml-2 flex-1">
-						<ThemedText variant="title-sm" extraBold className="text-gray-900">
-							Exterior Designs
-						</ThemedText>
-					</View>
-				</View>
-				<TouchableOpacity onPress={handleViewAllHouseTypes} className="px-3 py-2">
-					<ThemedText variant="body" bold className="text-gray-900">
-						View all
-					</ThemedText>
-				</TouchableOpacity>
-			</View>
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ paddingHorizontal: 16 }}
-			>
-				{houseTypes.map((houseType) => (
-					<HouseTypeCard key={houseType.id} houseType={houseType} width={CARD_WIDTH} />
-				))}
-			</ScrollView>
-		</View>
-	);
+	const handleImagePress = () => {
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
+	};
 
-	const renderGardenSection = () => (
-		<View className="">
-			<View className="flex-row items-center justify-between  px-4">
-				<View className="flex-row items-center flex-1">
-					<MaterialCommunityIcons name="flower-tulip-outline" size={24} color="#111827" />
-					<View className="ml-2 flex-1">
-						<ThemedText variant="title-sm" extraBold className="text-gray-900">
-							Garden Designs
-						</ThemedText>
-					</View>
-				</View>
-				<TouchableOpacity onPress={handleViewAllImages} className="px-3 py-2">
-					<ThemedText variant="body" bold className="text-gray-900">
-						View all
-					</ThemedText>
-				</TouchableOpacity>
-			</View>
-			<ScrollView
-				horizontal
-				showsHorizontalScrollIndicator={false}
-				contentContainerStyle={{ paddingHorizontal: 16 }}
-			>
-				{gardenImages.slice(0, 5).map((image) => (
-					<InspirationCard key={image.id} item={image} width={CARD_WIDTH} />
-				))}
-			</ScrollView>
-		</View>
-	);
+	const images = getCurrentImages();
+	const { leftColumn, rightColumn } = distributeImages(images);
 
 	return (
-		<>
-			<View className="flex-1 bg-gray-50">
-				{/* Header */}
-				<View className="pb-4 px-6" style={{ paddingTop: insets.top + 16 }}>
-					<View className="flex-row items-center justify-center">
-						<ThemedText extraBold className="text-gray-900" variant="title-lg">
-							Explore
-						</ThemedText>
-					</View>
+		<View className="flex-1 bg-gray-50">
+			{/* Header */}
+			<View className="pb-4 px-6" style={{ paddingTop: insets.top + 16 }}>
+				<View className="flex-row items-center justify-center">
+					<ThemedText extraBold className="text-gray-900" variant="title-lg">
+						Explore
+					</ThemedText>
 				</View>
-
-				<ScrollView
-					className="flex-1"
-					contentContainerStyle={{ paddingBottom: 32 }}
-					showsVerticalScrollIndicator={false}
-				>
-					{renderInteriorSection()}
-					{renderExteriorSection()}
-					{renderGardenSection()}
-				</ScrollView>
 			</View>
 
-			{/* Modals */}
-			<ViewAllInteriorModal
-				visible={interiorModalVisible}
-				onClose={() => setInteriorModalVisible(false)}
-			/>
-			<ViewAllExteriorModal
-				visible={exteriorModalVisible}
-				onClose={() => setExteriorModalVisible(false)}
-			/>
-			<ViewAllGardenModal
-				visible={gardenModalVisible}
-				onClose={() => setGardenModalVisible(false)}
-				images={gardenImages}
-			/>
-		</>
+			{/* Tabs */}
+			<View
+				className={`flex-row px-4 border-b border-gray-200 ${activeTab === 'garden' ? 'mb-0' : 'mb-4'}`}
+			>
+				<TouchableOpacity
+					onPress={() => handleTabChange('interior')}
+					className="flex-1 items-center pb-3"
+					style={{
+						borderBottomWidth: activeTab === 'interior' ? 2 : 0,
+						borderBottomColor: activeTab === 'interior' ? '#111827' : 'transparent',
+					}}
+				>
+					<View className="flex-row items-center">
+						<Octicons
+							name="home"
+							size={20}
+							color={activeTab === 'interior' ? '#111827' : '#9CA3AF'}
+						/>
+						<ThemedText
+							variant="body"
+							bold
+							className={
+								activeTab === 'interior'
+									? 'text-gray-900 ml-2'
+									: 'text-gray-400 ml-2'
+							}
+						>
+							Interior
+						</ThemedText>
+					</View>
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => handleTabChange('exterior')}
+					className="flex-1 items-center pb-3"
+					style={{
+						borderBottomWidth: activeTab === 'exterior' ? 2 : 0,
+						borderBottomColor: activeTab === 'exterior' ? '#111827' : 'transparent',
+					}}
+				>
+					<View className="flex-row items-center">
+						<MaterialCommunityIcons
+							name="office-building"
+							size={20}
+							color={activeTab === 'exterior' ? '#111827' : '#9CA3AF'}
+						/>
+						<ThemedText
+							variant="body"
+							bold
+							className={
+								activeTab === 'exterior'
+									? 'text-gray-900 ml-2'
+									: 'text-gray-400 ml-2'
+							}
+						>
+							Exterior
+						</ThemedText>
+					</View>
+				</TouchableOpacity>
+				<TouchableOpacity
+					onPress={() => handleTabChange('garden')}
+					className="flex-1 items-center pb-3"
+					style={{
+						borderBottomWidth: activeTab === 'garden' ? 2 : 0,
+						borderBottomColor: activeTab === 'garden' ? '#111827' : 'transparent',
+					}}
+				>
+					<View className="flex-row items-center">
+						<MaterialCommunityIcons
+							name="flower-tulip-outline"
+							size={20}
+							color={activeTab === 'garden' ? '#111827' : '#9CA3AF'}
+						/>
+						<ThemedText
+							variant="body"
+							bold
+							className={
+								activeTab === 'garden' ? 'text-gray-900 ml-2' : 'text-gray-400 ml-2'
+							}
+						>
+							Garden
+						</ThemedText>
+					</View>
+				</TouchableOpacity>
+			</View>
+
+			{/* Filter Chips */}
+			{(activeTab === 'interior' || activeTab === 'exterior') && (
+				<View className="px-4 mb-4">
+					<ScrollView horizontal showsHorizontalScrollIndicator={false}>
+						<TouchableOpacity
+							onPress={() =>
+								activeTab === 'interior'
+									? handleRoomFilter(null)
+									: handleHouseTypeFilter(null)
+							}
+							className={`px-4 py-2 rounded-full mr-2 ${
+								(activeTab === 'interior' && selectedRoomId === null) ||
+								(activeTab === 'exterior' && selectedHouseTypeId === null)
+									? 'bg-gray-900'
+									: 'bg-gray-200'
+							}`}
+						>
+							<ThemedText
+								variant="body"
+								bold
+								className={
+									(activeTab === 'interior' && selectedRoomId === null) ||
+									(activeTab === 'exterior' && selectedHouseTypeId === null)
+										? 'text-white'
+										: 'text-gray-700'
+								}
+							>
+								All
+							</ThemedText>
+						</TouchableOpacity>
+						{activeTab === 'interior'
+							? roomTypes.map((room) => (
+									<TouchableOpacity
+										key={room.id}
+										onPress={() => handleRoomFilter(room.id)}
+										className={`px-4 py-2 rounded-full mr-2 ${
+											selectedRoomId === room.id
+												? 'bg-gray-900'
+												: 'bg-gray-200'
+										}`}
+									>
+										<ThemedText
+											variant="body"
+											bold
+											className={
+												selectedRoomId === room.id
+													? 'text-white'
+													: 'text-gray-700'
+											}
+										>
+											{room.name}
+										</ThemedText>
+									</TouchableOpacity>
+								))
+							: houseTypes.map((houseType) => (
+									<TouchableOpacity
+										key={houseType.id}
+										onPress={() => handleHouseTypeFilter(houseType.id)}
+										className={`px-4 py-2 rounded-full mr-2 ${
+											selectedHouseTypeId === houseType.id
+												? 'bg-gray-900'
+												: 'bg-gray-200'
+										}`}
+									>
+										<ThemedText
+											variant="body"
+											bold
+											className={
+												selectedHouseTypeId === houseType.id
+													? 'text-white'
+													: 'text-gray-700'
+											}
+										>
+											{houseType.name}
+										</ThemedText>
+									</TouchableOpacity>
+								))}
+					</ScrollView>
+				</View>
+			)}
+
+			{/* Masonry Grid */}
+			<ScrollView
+				showsVerticalScrollIndicator={false}
+				contentContainerStyle={{
+					padding: 16,
+					paddingBottom: 32,
+					paddingTop: activeTab === 'garden' ? 16 : 0,
+				}}
+			>
+				<View className="flex-row" style={{ gap: 12 }}>
+					{/* Left Column */}
+					<View style={{ width: COLUMN_WIDTH }}>
+						{leftColumn.map((item) => (
+							<TouchableOpacity
+								key={item.index}
+								onPress={handleImagePress}
+								className="mb-3 rounded-2xl overflow-hidden"
+								style={{
+									width: '100%',
+									height: item.height,
+								}}
+							>
+								<Image
+									source={{ uri: item.imageUrl }}
+									style={{
+										width: '100%',
+										height: '100%',
+									}}
+									resizeMode="cover"
+								/>
+							</TouchableOpacity>
+						))}
+					</View>
+
+					{/* Right Column */}
+					<View style={{ width: COLUMN_WIDTH }}>
+						{rightColumn.map((item) => (
+							<TouchableOpacity
+								key={item.index}
+								onPress={handleImagePress}
+								className="mb-3 rounded-2xl overflow-hidden"
+								style={{
+									width: '100%',
+									height: item.height,
+								}}
+							>
+								<Image
+									source={{ uri: item.imageUrl }}
+									style={{
+										width: '100%',
+										height: '100%',
+									}}
+									resizeMode="cover"
+								/>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+			</ScrollView>
+		</View>
 	);
 }
