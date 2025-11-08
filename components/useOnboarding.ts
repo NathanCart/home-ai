@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useEffect, useState } from 'react';
 
-export const ONBOARDING_COMPLETE_KEY = 'onboarding_comp3l4d4d3de433te';
+export const ONBOARDING_COMPLETE_KEY = 'onboarding_comp3l4d4d3de433te2';
 
 export const useOnboarding = () => {
 	const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean | null>(null);
