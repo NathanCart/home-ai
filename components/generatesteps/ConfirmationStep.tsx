@@ -268,6 +268,15 @@ export function ConfirmationStep({
 					projectSlug: projectSlug || '',
 				},
 			});
+		} else if (restyleMode === 'styletransfer') {
+			// Navigate to style transfer modal
+			router.push({
+				pathname: '/styletransfermodal',
+				params: {
+					initialImageUri: imageUri || '',
+					projectSlug: projectSlug || '',
+				},
+			});
 		} else {
 			// Open the appropriate half-modal
 			setShowModal(true);

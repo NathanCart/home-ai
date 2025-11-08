@@ -199,6 +199,15 @@ export default function ProjectDetailPage() {
 					projectSlug: slug as string,
 				},
 			});
+		} else if (restyleMode === 'styletransfer') {
+			// Navigate to style transfer modal
+			router.push({
+				pathname: '/styletransfermodal',
+				params: {
+					initialImageUri: project?.originalImage || imageUrl || '',
+					projectSlug: slug as string,
+				},
+			});
 		} else {
 			// Open the appropriate half-modal
 			setShowModal(true);

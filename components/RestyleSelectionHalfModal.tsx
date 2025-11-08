@@ -37,6 +37,13 @@ const restyleOptions: RestyleOption[] = [
 		icon: 'office-building',
 		iconType: 'material',
 	},
+	{
+		id: 'styletransfer',
+		title: 'Style Transfer',
+		description: 'Transfer style from one image to your room',
+		icon: 'palette-outline',
+		iconType: 'material',
+	},
 ];
 
 interface RestyleSelectionHalfModalProps {
