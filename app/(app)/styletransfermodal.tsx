@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
+import { StyleTransferPhotoStep } from 'components/generatesteps/StyleTransferPhotoStep';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
-import { RoomStep } from 'components/generatesteps/RoomStep';
-import { StyleStep } from 'components/generatesteps/StyleStep';
 import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
@@ -13,25 +12,32 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
 
-export default function GenerateModal() {
+export default function StyleTransferModal() {
 	const insets = useSafeAreaInsets();
-	const { mode, initialImageUri } = useLocalSearchParams();
+	const { initialImageUri, initialStyleImageUri } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
-	const [totalSteps] = useState(3); // Photo, Room, Style (no color palette)
-	const [hasImageSelected, setHasImageSelected] = useState(false);
-	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
+	const [totalSteps] = useState(2); // Style Photo, Room Photo
+	const [hasStyleImageSelected, setHasStyleImageSelected] = useState(false);
+	const [hasRoomImageSelected, setHasRoomImageSelected] = useState(false);
+	const [selectedStyleImageUri, setSelectedStyleImageUri] = useState<string | null>(
+		(initialStyleImageUri as string) || null
+	);
+	const [selectedRoomImageUri, setSelectedRoomImageUri] = useState<string | null>(
 		(initialImageUri as string) || null
 	);
 
-	// Set initial image if provided
+	// Set initial images if provided
 	useEffect(() => {
-		if (initialImageUri) {
-			setSelectedImageUri(initialImageUri as string);
-			setHasImageSelected(true);
+		if (initialStyleImageUri) {
+			setSelectedStyleImageUri(initialStyleImageUri as string);
+			setHasStyleImageSelected(true);
 		}
-	}, [initialImageUri]);
-	const [selectedRoom, setSelectedRoom] = useState<any>(null);
-	const [selectedStyle, setSelectedStyle] = useState<any>(null);
+		if (initialImageUri) {
+			setSelectedRoomImageUri(initialImageUri as string);
+			setHasRoomImageSelected(true);
+		}
+	}, [initialImageUri, initialStyleImageUri]);
+
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -65,23 +71,20 @@ export default function GenerateModal() {
 		handlePreviousStepAnimation();
 	};
 
-	const handleImageSelect = (imageUri?: string) => {
-		setHasImageSelected(true);
+	const handleStyleImageSelect = (imageUri?: string) => {
+		setHasStyleImageSelected(true);
 		if (imageUri) {
-			setSelectedImageUri(imageUri);
+			setSelectedStyleImageUri(imageUri);
 		}
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		console.log('Image select pressed');
 	};
 
-	const handleRoomSelect = (room: any) => {
-		setSelectedRoom(room);
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-	};
-
-	const handleStyleSelect = (style: any) => {
-		setSelectedStyle(style);
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+	const handleRoomImageSelect = (imageUri?: string) => {
+		setHasRoomImageSelected(true);
+		if (imageUri) {
+			setSelectedRoomImageUri(imageUri);
+		}
+		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 	};
 
 	const handleGenerationComplete = (imageUrl: string) => {
@@ -102,8 +105,8 @@ export default function GenerateModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate to confirmation step (step 5)
-			setCurrentStep(5);
+			// Navigate to confirmation step (step 4)
+			setCurrentStep(4);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(1);
@@ -150,8 +153,8 @@ export default function GenerateModal() {
 				useNativeDriver: true,
 			}),
 		]).start(() => {
-			// Navigate back to generating step (step 4)
-			setCurrentStep(4);
+			// Navigate back to generating step (step 3)
+			setCurrentStep(3);
 
 			// Reset animations for the next step
 			slideAnimation.setValue(-1);
@@ -175,57 +178,49 @@ export default function GenerateModal() {
 	};
 
 	const renderStepContent = () => {
-		const config = getStepConfig(mode as string, currentStep);
+		const config = getStepConfig('styletransfer', currentStep);
 
 		switch (currentStep) {
 			case 1:
 				return (
-					<PhotoStep
-						onImageSelect={handleImageSelect}
+					<StyleTransferPhotoStep
+						onImageSelect={handleStyleImageSelect}
 						config={config}
-						selectedImageUri={selectedImageUri}
+						selectedImageUri={selectedStyleImageUri}
 					/>
 				);
 			case 2:
 				return (
-					<RoomStep
-						onRoomSelect={handleRoomSelect}
+					<PhotoStep
+						onImageSelect={handleRoomImageSelect}
 						config={config}
-						selectedRoom={selectedRoom}
+						selectedImageUri={selectedRoomImageUri}
 					/>
 				);
 			case 3:
 				return (
-					<StyleStep
-						onStyleSelect={handleStyleSelect}
-						config={config}
-						selectedStyle={selectedStyle}
-						mode="interior-design"
-					/>
-				);
-			case 4:
-				return (
 					<GeneratingStep
 						onComplete={() => router.back()}
 						onGenerationComplete={handleGenerationComplete}
-						room={selectedRoom}
-						style={selectedStyle}
+						room={null}
+						style={null}
 						palette={null}
-						imageUri={selectedImageUri}
-						mode={mode as string}
+						imageUri={selectedRoomImageUri}
+						mode="styletransfer"
+						styleImageUri={selectedStyleImageUri}
 					/>
 				);
-			case 5:
+			case 4:
 				return generatedImageUrl ? (
 					<ConfirmationStep
 						imageUrl={generatedImageUrl}
-						room={selectedRoom}
-						style={selectedStyle}
+						room={null}
+						style={null}
 						palette={null}
-						mode={mode as string}
+						mode="styletransfer"
 						onComplete={() => router.back()}
 						onRegenerate={handleRegenerate}
-						imageUri={selectedImageUri}
+						imageUri={selectedRoomImageUri}
 						onSaveComplete={handleSaveComplete}
 					/>
 				) : null;
@@ -235,9 +230,9 @@ export default function GenerateModal() {
 	};
 
 	return (
-		<View className=" bg-gray-50 flex-1 pb" style={{ paddingTop: insets.top }}>
-			{/* Header - Hide on confirmation step */}
-			{currentStep !== 5 && (
+		<View className="bg-gray-50 flex-1" style={{ paddingTop: insets.top }}>
+			{/* Header - Hide on generating and confirmation steps */}
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: headerAnimation }],
@@ -263,7 +258,7 @@ export default function GenerateModal() {
 			>
 				<ScrollView
 					className=""
-					contentContainerClassName={`mt-4 ${currentStep >= totalSteps + 1 ? 'flex-1' : ''}`}
+					contentContainerClassName={`mt-4 ${currentStep >= 3 ? 'flex-1' : ''}`}
 					contentContainerStyle={{ paddingBottom: 24 }}
 					showsVerticalScrollIndicator={false}
 				>
@@ -271,8 +266,8 @@ export default function GenerateModal() {
 				</ScrollView>
 			</Animated.View>
 
-			{/* Footer - Hide on confirmation step */}
-			{currentStep !== 5 && (
+			{/* Footer - Hide on generating and confirmation steps */}
+			{currentStep <= 2 && (
 				<Animated.View
 					style={{
 						transform: [{ translateY: footerAnimation }],
@@ -284,7 +279,7 @@ export default function GenerateModal() {
 					>
 						<View className="flex-row justify-between items-center">
 							<CustomButton
-								title={currentStep === 3 ? 'Generate' : 'Continue'}
+								title={currentStep === 2 ? 'Generate' : 'Continue'}
 								onPress={handleNextStep}
 								icon="arrow-right"
 								iconPosition="right"
@@ -292,9 +287,8 @@ export default function GenerateModal() {
 								size="lg"
 								className="flex-1"
 								disabled={
-									(currentStep === 1 && !hasImageSelected) ||
-									(currentStep === 2 && !selectedRoom) ||
-									(currentStep === 3 && !selectedStyle)
+									(currentStep === 1 && !hasStyleImageSelected) ||
+									(currentStep === 2 && !hasRoomImageSelected)
 								}
 							/>
 						</View>
@@ -304,3 +298,4 @@ export default function GenerateModal() {
 		</View>
 	);
 }
+

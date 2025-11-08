@@ -211,6 +211,21 @@ export default function HomePage() {
 							router.push('/paintmodal');
 						}}
 					/>
+					<ToolCard
+						title="Style transfer"
+						description="Transfer the style from one image to your room!"
+						materialIcon="palette-outline"
+						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.webp'}
+						originalImage={
+							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.webp'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Transfer Style"
+						onPress={() => {
+							router.push('/styletransfermodal');
+						}}
+					/>
 				</View>
 			</ScrollView>
 		</View>

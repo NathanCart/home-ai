@@ -53,6 +53,11 @@ interface RefloorParams {
 	};
 }
 
+interface StyleTransferParams {
+	imageUri: string; // Room image
+	styleImageUri: string; // Style reference image
+}
+
 interface RunwareResponse {
 	success: boolean;
 	imageUrl?: string;
@@ -179,8 +184,8 @@ export function useRunwareAI() {
 					positivePrompt: buildPrompt(params),
 					// negativePrompt:
 					// 	'low quality, blurry, distorted, bad anatomy, poorly drawn, cartoon, illustration, unrealistic',
-					width: 1024,
-					height: 1024,
+					width: 1280,
+					height: 832,
 					strength: 0.7, // Higher strength for stronger style transformation
 					CFGScale: 9, // High CFG for strong prompt influence
 					steps: 40, // More steps for better quality
@@ -608,8 +613,8 @@ export function useRunwareAI() {
 					taskUUID,
 					model: 'runware:104@1',
 					positivePrompt: prompt,
-					width: 1024,
-					height: 1024,
+					width: 1280,
+					height: 832,
 					strength: 0.7,
 					CFGScale: 9,
 					steps: 40,
@@ -1220,12 +1225,220 @@ export function useRunwareAI() {
 		return parts.join(', ');
 	}
 
+	const generateStyleTransfer = async (
+		params: StyleTransferParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Style transfer attempt ${attempt}/${MAX_RETRIES}`);
+
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptStyleTransfer(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError = 'Network connection failed. Please check your internet connection.';
+		} else if (errorMessage.includes('timeout')) {
+			userFriendlyError = 'Request timed out. Please try again.';
+		}
+
+		setError(userFriendlyError);
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptStyleTransfer = async (
+		params: StyleTransferParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			const styleTransferPrompt = buildStyleTransferPrompt();
+			console.log('🎨 Generating style transfer with Runware API...');
+			console.log('📝 Style Transfer Prompt:', styleTransferPrompt);
+
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error('API key is not configured');
+			}
+
+			const requestId = generateUUID();
+
+			const payload = {
+				taskType: 'imageInference',
+				taskUUID: requestId,
+				positivePrompt: styleTransferPrompt,
+				width: 1280,
+				height: 832,
+				model: 'runware:104@1',
+				strength: 0.8,
+				CFGScale: 9,
+				steps: 40,
+				numberResults: 1,
+				seedImage: params.imageUri, // Room image as base
+				ipAdapters: [
+					{
+						model: 'runware:105@1',
+						guideImage: params.styleImageUri, // Style reference image
+						weight: 0.9, // Strong style influence
+					},
+				],
+			};
+
+			console.log('📤 Sending style transfer request to Runware API...');
+
+			const startTime = Date.now();
+
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 55;
+				} else {
+					estimatedProgress = 85 + Math.min(((elapsed - 15000) / 10000) * 10, 10);
+				}
+
+				estimatedProgress = Math.min(Math.floor(estimatedProgress), 95);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200);
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+			let response;
+			try {
+				response = await fetch(RUNWARE_API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${RUNWARE_API_KEY}`,
+					},
+					body: JSON.stringify([payload]),
+					signal: controller.signal,
+				});
+			} catch (fetchError: any) {
+				clearTimeout(timeoutId);
+				if (fetchError.name === 'AbortError') {
+					throw new Error(
+						'Request timed out. The image generation is taking longer than expected. Please try again.'
+					);
+				}
+				throw new Error(`Network error: ${fetchError.message || 'Connection failed'}`);
+			}
+
+			clearTimeout(timeoutId);
+
+			if (progressInterval) {
+				clearInterval(progressInterval);
+				progressInterval = null;
+			}
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API error response:', errorText);
+				throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			console.log('📦 Style Transfer API Response:', JSON.stringify(data, null, 2));
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response. Full response:', data);
+				throw new Error('No image URL in response. Response format may have changed.');
+			}
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			setIsGenerating(false);
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Style transfer completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in style transfer attempt:', errorMessage);
+			throw err;
+		}
+	};
+
+	function buildStyleTransferPrompt(): string {
+		const parts: string[] = [];
+
+		parts.push('Apply the artistic style and aesthetic from the reference style image');
+		parts.push('Transfer the color palette, textures, and visual style');
+		parts.push('Maintain the room structure, layout, and perspective');
+		parts.push(
+			'Keep strucutral elements such as windows, doors, and walls positioned exactly as they are in the reference image'
+		);
+		parts.push('Preserve all architectural elements and furniture placement');
+		parts.push('Blend the style seamlessly with the room composition');
+		parts.push(
+			'professional interior photography, photorealistic, high detail, sharp focus, natural lighting'
+		);
+
+		return parts.join(', ');
+	}
+
 	return {
 		generateImage,
 		generateInpainting,
 		generateExterior,
 		generateRepaint,
 		generateRefloor,
+		generateStyleTransfer,
 		isGenerating,
 		error,
 		generatedImageUrl,

@@ -281,6 +281,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your new floor design is ready!',
 		},
 	},
+	styletransfer: {
+		step1: {
+			title: 'Upload a style reference image',
+			subtitle: 'Choose an image with the style you want to transfer',
+			icon: 'device-camera',
+			description: '💡 Tip: Choose an image with a clear, distinctive style',
+		},
+		step2: {
+			title: 'Upload your photo to transfer style',
+			subtitle: 'Take a photo or upload an existing image of your room',
+			icon: 'home',
+			description: '💡 Tip: Make sure your image is clear and well-lit for best results',
+		},
+		step3: {
+			title: 'Generating...',
+			subtitle: 'AI is transferring the style to your room',
+			icon: 'sparkle',
+			description: 'AI is applying the style from your reference image',
+		},
+		step4: {
+			title: 'Style transfer complete',
+			subtitle: 'Your styled room is ready',
+			icon: 'check-circle',
+			description: 'Your style transfer is ready!',
+		},
+		step5: {
+			title: 'Style transfer complete',
+			subtitle: 'Your styled room is ready',
+			icon: 'check-circle',
+			description: 'Your style transfer is ready!',
+		},
+		step6: {
+			title: 'Style transfer complete',
+			subtitle: 'Your styled room is ready',
+			icon: 'check-circle',
+			description: 'Your style transfer is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {

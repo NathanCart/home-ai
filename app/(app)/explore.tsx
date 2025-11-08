@@ -718,30 +718,13 @@ export default function ExplorePage() {
 	const handleTryStyle = () => {
 		if (!selectedImageUrl) return;
 
-		// Navigate to the appropriate generate modal based on active tab
-		if (activeTab === 'interior') {
-			router.push({
-				pathname: '/generatemodal',
-				params: {
-					mode: 'interior-design',
-					initialImageUri: selectedImageUrl,
-				},
-			});
-		} else if (activeTab === 'exterior') {
-			router.push({
-				pathname: '/exteriorgeneratemodal',
-				params: {
-					initialImageUri: selectedImageUrl,
-				},
-			});
-		} else if (activeTab === 'garden') {
-			router.push({
-				pathname: '/gardengeneratemodal',
-				params: {
-					initialImageUri: selectedImageUrl,
-				},
-			});
-		}
+		// Navigate to style transfer modal with the selected image as the style reference
+		router.push({
+			pathname: '/styletransfermodal',
+			params: {
+				initialStyleImageUri: selectedImageUrl,
+			},
+		});
 	};
 
 	// Memoize expensive computations

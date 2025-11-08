@@ -14,6 +14,7 @@ interface GeneratingStepProps {
 	palette?: any;
 	imageUri?: string | null;
 	maskImageUri?: string | null;
+	styleImageUri?: string | null;
 	type?: string;
 	customPrompt?: string;
 	mode?: string;
@@ -38,6 +39,7 @@ export function GeneratingStep({
 	palette,
 	imageUri,
 	maskImageUri,
+	styleImageUri,
 	type,
 	customPrompt,
 	mode,
@@ -55,6 +57,7 @@ export function GeneratingStep({
 		generateExterior,
 		generateRepaint,
 		generateRefloor,
+		generateStyleTransfer,
 		isGenerating,
 		error,
 		generatedImageUrl,
@@ -148,6 +151,22 @@ export function GeneratingStep({
 					{
 						imageUri: imageUri,
 						floorStyle: style, // The style is actually a floor style object for refloor mode
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else if (mode === 'styletransfer') {
+				// Style transfer generation
+				if (!imageUri || !styleImageUri) {
+					console.error('❌ Missing required params for style transfer:', { imageUri, styleImageUri });
+					return;
+				}
+
+				result = await generateStyleTransfer(
+					{
+						imageUri: imageUri,
+						styleImageUri: styleImageUri,
 					},
 					(progress) => {
 						setProgress(progress);
