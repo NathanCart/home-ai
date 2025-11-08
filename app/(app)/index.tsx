@@ -165,7 +165,21 @@ export default function HomePage() {
 							router.push('/exteriorgeneratemodal');
 						}}
 					/>
-
+					<ToolCard
+						title="Style transfer"
+						description="Transfer the style from one image to your room!"
+						materialIcon="palette-outline"
+						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/restyle-old.webp'}
+						originalImage={
+							'https://pingu-app.s3.eu-west-2.amazonaws.com/restyle-before.webp'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Transfer Style"
+						onPress={() => {
+							router.push('/styletransfermodal');
+						}}
+					/>
 					<ToolCard
 						title="Repaint"
 						description="Repaint parts of your image with AI using custom colors!"
@@ -209,21 +223,6 @@ export default function HomePage() {
 						buttonText="Start Painting"
 						onPress={() => {
 							router.push('/paintmodal');
-						}}
-					/>
-					<ToolCard
-						title="Style transfer"
-						description="Transfer the style from one image to your room!"
-						materialIcon="palette-outline"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.webp'}
-						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.webp'
-						}
-						sharedAnimation={sharedAnimation}
-						showButton={true}
-						buttonText="Transfer Style"
-						onPress={() => {
-							router.push('/styletransfermodal');
 						}}
 					/>
 				</View>

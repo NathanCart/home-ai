@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { View, TouchableOpacity, Modal, Animated, Image } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from './ThemedText';
@@ -13,6 +13,18 @@ interface TryThisStyleModalProps {
 	imageUrl: string;
 }
 
+// Skeleton component for loading state
+const ImageSkeleton = () => (
+	<View
+		className="rounded-3xl"
+		style={{
+			width: '100%',
+			height: '100%',
+			backgroundColor: '#E5E7EB',
+		}}
+	/>
+);
+
 export function TryThisStyleModal({
 	visible,
 	onClose,
@@ -22,6 +34,52 @@ export function TryThisStyleModal({
 	const fadeAnim = useRef(new Animated.Value(0)).current;
 	const scaleAnim = useRef(new Animated.Value(0.9)).current;
 	const insets = useSafeAreaInsets();
+	const [isLoading, setIsLoading] = useState(true);
+	const timeoutRef = useRef<number | null>(null);
+
+	// Handlers for image load events
+	const handleLoad = useCallback(() => {
+		if (timeoutRef.current) {
+			clearTimeout(timeoutRef.current);
+			timeoutRef.current = null;
+		}
+		setIsLoading(false);
+	}, []);
+
+	const handleError = useCallback(() => {
+		if (timeoutRef.current) {
+			clearTimeout(timeoutRef.current);
+			timeoutRef.current = null;
+		}
+		setIsLoading(false);
+	}, []);
+
+	// Set up loading state when imageUrl changes
+	useEffect(() => {
+		if (imageUrl) {
+			// Always show skeleton initially
+			setIsLoading(true);
+
+			// Clear any existing timeout
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+				timeoutRef.current = null;
+			}
+
+			// Set a timeout to hide skeleton after 3 seconds (fallback)
+			timeoutRef.current = setTimeout(() => {
+				setIsLoading(false);
+				timeoutRef.current = null;
+			}, 3000);
+		}
+
+		return () => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+				timeoutRef.current = null;
+			}
+		};
+	}, [imageUrl]);
 
 	// Fade and scale animation when modal opens
 	useEffect(() => {
@@ -116,7 +174,7 @@ export function TryThisStyleModal({
 					</TouchableOpacity>
 
 					{/* Image */}
-					<View className="w-full" style={{ aspectRatio: 1 }}>
+					<View className="w-full" style={{ aspectRatio: 1, position: 'relative' }}>
 						<Image
 							source={{ uri: imageUrl }}
 							style={{
@@ -125,7 +183,25 @@ export function TryThisStyleModal({
 							}}
 							className="rounded-3xl"
 							resizeMode="cover"
+							onLoad={handleLoad}
+							onError={handleError}
 						/>
+						{/* Skeleton overlay */}
+						{isLoading && (
+							<View
+								style={{
+									position: 'absolute',
+									top: 0,
+									left: 0,
+									right: 0,
+									bottom: 0,
+									zIndex: 1,
+								}}
+								pointerEvents="none"
+							>
+								<ImageSkeleton />
+							</View>
+						)}
 					</View>
 
 					{/* Try This Style Button */}

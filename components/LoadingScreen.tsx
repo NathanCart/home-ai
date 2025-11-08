@@ -9,7 +9,7 @@ interface LoadingScreenProps {
 export function LoadingScreen({ message = 'Loading...' }: LoadingScreenProps) {
 	return (
 		<View className="flex-1 justify-center items-center bg-white">
-			<ActivityIndicator size="large" color="#3b82f6" />
+			<ActivityIndicator size="large" color="#111827" />
 		</View>
 	);
 }

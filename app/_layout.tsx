@@ -58,6 +58,13 @@ export default function RootLayout() {
 							animationDuration: 300,
 						}}
 					/>
+					<Stack.Screen
+						name="(app)"
+						options={{
+							animation: 'fade',
+							animationDuration: 300,
+						}}
+					/>
 				</Stack>
 			</GestureHandlerRootView>
 		</SafeAreaProvider>
