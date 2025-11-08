@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Octicons } from '@expo/vector-icons';
 import { ThemedText } from '../ThemedText';
@@ -6,6 +6,46 @@ import { StepConfig } from '../../config/stepConfig';
 import { CustomButton } from '../CustomButton';
 import { PhotoTipsModal } from './PhotoTipsModal';
 import { MediaSourceModal } from './MediaSourceModal';
+
+// Get all images from explore page
+const getAllExploreImages = (): string[] => {
+	// Interior images - all rooms combined
+	const interiorImages: string[] = [];
+	const roomTypes = [
+		{ id: 'living-room', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/livingroom${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'bedroom', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/bedroom${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'kitchen', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/kitchen${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'bathroom', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/bathroom${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'dining-room', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/diningroom${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'office', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/office${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'garage', images: Array.from({ length: 9 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/garage${i === 0 ? '1' : i + 1}.jpg`) },
+	];
+	roomTypes.forEach((room) => {
+		interiorImages.push(...room.images);
+	});
+
+	// Exterior images - all house types combined
+	const exteriorImages: string[] = [];
+	const houseTypes = [
+		{ id: 'house', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/house${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'apartment', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/apartment${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'villa', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/villa${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'townhouse', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/townhouse${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'cottage', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/cottage${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'mansion', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/mansion${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'office-building', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/officebuilding${i === 0 ? '1' : i + 1}.jpg`) },
+		{ id: 'retail-building', images: Array.from({ length: 18 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/retail${i === 0 ? '1' : i + 1}.jpg`) },
+	];
+	houseTypes.forEach((houseType) => {
+		exteriorImages.push(...houseType.images);
+	});
+
+	// Garden images
+	const gardenImages = Array.from({ length: 36 }, (_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/garden${i === 0 ? '1' : i + 1}.jpg`);
+
+	// Combine all images
+	return [...interiorImages, ...exteriorImages, ...gardenImages];
+};
 
 interface StyleTransferPhotoStepProps {
 	onImageSelect?: (imageUri?: string) => void;
@@ -35,93 +75,12 @@ export function StyleTransferPhotoStep({
 		setShowMediaSourceModal(true);
 	};
 
-	const handleExampleImageSelect = (imageSource: { uri: string }) => {
-		onImageSelect?.(imageSource.uri);
+	const handleExampleImageSelect = (imageUri: string) => {
+		onImageSelect?.(imageUri);
 	};
 
-	const exampleImages = !!customExampleImages.length
-		? customExampleImages
-		: [
-				{
-					id: 'living-room-1',
-					source: {
-						uri: 'https://media.houseandgarden.co.uk/photos/67dc464c0f2847aedf2da20b/master/w_1600%2Cc_limit/Shot05117_RT-production_digital.jpg',
-					},
-					name: 'Modern Living',
-				},
-				{
-					id: 'bathroom-1',
-					source: {
-						uri: 'https://www.jasmine-roth.com/cdn/shop/files/5-Different-Living-Room-Styles-and-How-to-Achieve-Each-Look-Living-Room_1512x.jpg?v=1675386734',
-					},
-					name: 'Luxury Bathroom',
-				},
-				{
-					id: 'br-2',
-					source: {
-						uri: 'https://www.bellabathrooms.co.uk/blog/wp-content/uploads/2020/09/iStock-1158066696-1.jpg',
-					},
-					name: 'Luxury Bathroom',
-				},
-				{
-					id: 'kt-1',
-					source: {
-						uri: 'https://john-lewis.co.uk/wp-content/img-cache/14978/210615_JLH-IG_0022-Edit_JW-scaled-e1710431120803.webp',
-					},
-					name: 'Luxury Bathroom',
-				},
-
-				{
-					id: 'br-1',
-					source: {
-						uri: 'https://images.ctfassets.net/g44e4oo0e2sa/7Ap4IIvcLDXaeyOZtTIIsE/a3640577789c4e8b70e5cb676b88a939/The_Bathroom_Showroom.jpg?fm=webp&q=75&r=4',
-					},
-					name: 'Elegant Dining',
-				},
-
-				{
-					id: 'office-1',
-					source: {
-						uri: 'https://www.betterkitchens.co.uk/web/image/kitchen.style/19/banner_image?unique=d79acaf',
-					},
-					name: 'Home Office',
-				},
-				{
-					id: 'office-dsadas1',
-					source: {
-						uri: 'https://www.tomhowley.co.uk/wp-content/uploads/ModernShakerKitchen_hero1.jpg',
-					},
-					name: 'Home Office',
-				},
-				{
-					id: 'office-dsaddsadasas1',
-					source: {
-						uri: 'https://media.houseandgarden.co.uk/photos/661814569705e8148a61a04c/master/w_1600%2Cc_limit/HouseAndGarden_SussexHouse_S6_0092.jpg',
-					},
-					name: 'Home Office',
-				},
-				{
-					id: 'officdsae-dsaddsadasas1',
-					source: {
-						uri: 'https://cdn-web.redrow.co.uk/-/media/redrow-2020/global/news-and-inspiration/inspiration/interior-design/2025/bedroom-ideas-for-national-bed-month/redrow-inspiration-hampstead-grey-bedroom.jpg?w=1280&h=720&useCustomFunctions=1&centerCrop=1&hash=E0053128ED174E1228445C6B88432C41',
-					},
-					name: 'Home Office',
-				},
-				{
-					id: 'officdsadsae-dsaddsadasas1',
-					source: {
-						uri: 'https://hips.hearstapps.com/hmg-prod/images/461-w-montecito-ave-virtuallyherestudios-com-13-646eaa638cb69.jpg?crop=1xw:1xh;center,top',
-					},
-					name: 'Home Office',
-				},
-				{
-					id: 'offiscdsadsae-dsaddsadasas1',
-					source: {
-						uri: 'https://www.bhg.com/thmb/dcA2PxsOahxmk2LgzWAaqOWFfxU=/6000x0/filters:no_upscale():strip_icc()/200522-EB_12-Living-Room_1267-b13debcb440a4471981d7ac637e76e7a.jpg',
-					},
-					name: 'Home Office',
-				},
-			];
+	// Get all explore images
+	const exploreImages = useMemo(() => getAllExploreImages(), []);
 
 	// Compact layout
 	if (compact) {
@@ -240,26 +199,27 @@ export function StyleTransferPhotoStep({
 							contentContainerStyle={{ paddingHorizontal: 18 }}
 							className="flex-row"
 						>
-							{exampleImages.map((example) => (
-								<TouchableOpacity
-									key={example.id}
-									onPress={() => handleExampleImageSelect(example.source)}
-									className="mr-3 items-center"
-									activeOpacity={0.7}
-								>
-									<View
-										className={`w-32 h-32 rounded-3xl overflow-hidden border-2 border-gray-200  ${selectedImageUri === example.source.uri ? '!border-blue-500' : ''}`}
+							{exploreImages.map((imageUri, index) => {
+								const isSelected = selectedImageUri === imageUri;
+								return (
+									<TouchableOpacity
+										key={`explore-image-${index}`}
+										onPress={() => handleExampleImageSelect(imageUri)}
+										className="mr-3 items-center"
+										activeOpacity={0.7}
 									>
-										<Image
-											source={example.source}
-											className="w-full h-full"
-											resizeMode="cover"
-										/>
-										{/* Highlight overlay */}
-										<View className="absolute inset-0 bg-gray-900/10 opacity-0 hover:opacity-100 transition-opacity duration-200" />
-									</View>
-								</TouchableOpacity>
-							))}
+										<View
+											className={`w-32 h-32 rounded-3xl overflow-hidden border-2 ${isSelected ? 'border-blue-500' : 'border-gray-200'}`}
+										>
+											<Image
+												source={{ uri: imageUri }}
+												className="w-full h-full"
+												resizeMode="cover"
+											/>
+										</View>
+									</TouchableOpacity>
+								);
+							})}
 						</ScrollView>
 					</View>
 				)}
