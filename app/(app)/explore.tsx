@@ -15,7 +15,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const COLUMN_WIDTH = (SCREEN_WIDTH - 48) / 2; // 2 columns with padding
+const GAP = 12; // Gap between columns and rows (must match MARGIN_BOTTOM)
+const COLUMN_WIDTH = (SCREEN_WIDTH - 32 - GAP) / 2; // 2 columns: 16px padding each side + gap between columns
 
 // Deterministic shuffle function - produces same random order every time
 const deterministicShuffle = <T,>(array: T[], seed: string): T[] => {
@@ -197,62 +198,124 @@ const houseTypes: HouseType[] = [
 		id: 'house',
 		name: 'House',
 		description: 'Single-family home exterior',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/house.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/house${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'house'
+		),
 		count: 32,
 	},
 	{
 		id: 'apartment',
 		name: 'Apartment',
 		description: 'Multi-unit residential building',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/apartment.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/apartment${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'apartment'
+		),
 		count: 28,
 	},
 	{
 		id: 'villa',
 		name: 'Villa',
 		description: 'Large luxury detached home',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/villa.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/villa${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'villa'
+		),
 		count: 19,
 	},
 	{
 		id: 'townhouse',
 		name: 'Townhouse',
 		description: 'Multi-story attached home',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/townhouse.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/townhouse${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'townhouse'
+		),
 		count: 15,
 	},
 	{
 		id: 'cottage',
 		name: 'Cottage',
 		description: 'Small charming rural home',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/cottage.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/cottage${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'cottage'
+		),
 		count: 14,
 	},
 	{
 		id: 'mansion',
 		name: 'Mansion',
 		description: 'Large prestigious estate home',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/mansion.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/mansion${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'mansion'
+		),
 		count: 12,
 	},
 	{
 		id: 'office-building',
 		name: 'Office Building',
 		description: 'Commercial office building',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/office.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/officebuilding${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'office'
+		),
 		count: 21,
 	},
 	{
 		id: 'retail-building',
 		name: 'Retail Building',
 		description: 'Commercial retail or shop building',
-		images: ['https://leafly-app.s3.eu-west-2.amazonaws.com/retail.png'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 18 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/retail${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'retail'
+		),
 		count: 17,
 	},
 ];
 
 // Garden images
-const gardenImages = ['https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.webp'];
+const gardenImages = deterministicShuffle(
+	Array.from(
+		{ length: 36 },
+		(_, i) => `https://pingu-app.s3.eu-west-2.amazonaws.com/garden${i === 0 ? '1' : i + 1}.jpg`
+	),
+	'garden'
+);
 
 // Get all images for interior (all rooms combined)
 const getAllInteriorImages = (): string[] => {
@@ -318,7 +381,7 @@ const distributeImagesIntoRows = (images: string[]): MasonryRow[] => {
 	const rightColumn: ColumnItemWithPosition[] = [];
 	let leftTop = 0;
 	let rightTop = 0;
-	const MARGIN_BOTTOM = 12;
+	const MARGIN_BOTTOM = GAP; // Match horizontal gap
 
 	// Distribute images into columns based on which column is shorter
 	images.forEach((imageUrl, index) => {
@@ -538,7 +601,7 @@ const MasonryRow = React.memo(
 				<View
 					style={{
 						position: 'absolute',
-						right: 0,
+						left: COLUMN_WIDTH + GAP, // Position with gap from left column
 						top: row.right.relativeTop,
 						width: COLUMN_WIDTH,
 					}}
