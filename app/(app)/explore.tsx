@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react';
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import {
 	View,
 	FlatList,
@@ -397,27 +397,136 @@ const distributeImagesIntoRows = (images: string[]): MasonryRow[] => {
 	return rows;
 };
 
+// Skeleton component for loading state
+const ImageSkeleton = ({ height }: { height: number }) => (
+	<View
+		className="rounded-3xl"
+		style={{
+			width: '100%',
+			height: height,
+			backgroundColor: '#E5E7EB',
+		}}
+	/>
+);
+
 // Memoized image item component to prevent unnecessary re-renders
 const ImageItem = React.memo(
-	({ imageUrl, height, onPress }: { imageUrl: string; height: number; onPress: () => void }) => (
-		<TouchableOpacity
-			onPress={onPress}
-			className="rounded-3xl overflow-hidden"
-			style={{
-				width: '100%',
-				height: height,
-			}}
-		>
-			<Image
-				source={{ uri: imageUrl }}
+	({ imageUrl, height, onPress }: { imageUrl: string; height: number; onPress: () => void }) => {
+		const [isLoading, setIsLoading] = useState(true);
+		const skeletonOpacity = useRef(new Animated.Value(1)).current;
+		const timeoutRef = useRef<number | null>(null);
+		const loadStartTimeRef = useRef<number | null>(null);
+		const MIN_SKELETON_TIME = 200; // Minimum time to show skeleton (ms)
+
+		const hideSkeleton = () => {
+			const elapsed = loadStartTimeRef.current ? Date.now() - loadStartTimeRef.current : 0;
+			const remainingTime = Math.max(0, MIN_SKELETON_TIME - elapsed);
+
+			if (remainingTime > 0) {
+				setTimeout(() => {
+					setIsLoading(false);
+					Animated.timing(skeletonOpacity, {
+						toValue: 0,
+						duration: 200,
+						useNativeDriver: true,
+					}).start();
+				}, remainingTime);
+			} else {
+				setIsLoading(false);
+				Animated.timing(skeletonOpacity, {
+					toValue: 0,
+					duration: 200,
+					useNativeDriver: true,
+				}).start();
+			}
+		};
+
+		// Reset loading state when image URL changes
+		useEffect(() => {
+			// Always show skeleton when URL changes
+			setIsLoading(true);
+			skeletonOpacity.setValue(1);
+			loadStartTimeRef.current = Date.now();
+
+			// Clear any existing timeout
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+
+			// Set a timeout to hide skeleton after 3 seconds (fallback)
+			timeoutRef.current = setTimeout(() => {
+				hideSkeleton();
+			}, 3000);
+
+			return () => {
+				if (timeoutRef.current) {
+					clearTimeout(timeoutRef.current);
+				}
+			};
+		}, [imageUrl]);
+
+		const handleLoad = () => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+			hideSkeleton();
+		};
+
+		const handleError = () => {
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+			}
+			hideSkeleton();
+		};
+
+		return (
+			<TouchableOpacity
+				onPress={onPress}
+				className="rounded-3xl overflow-hidden"
 				style={{
 					width: '100%',
-					height: '100%',
+					height: height,
+					position: 'relative',
 				}}
-				resizeMode="cover"
-			/>
-		</TouchableOpacity>
-	)
+			>
+				{/* Image always renders so it can load */}
+				<Image
+					key={imageUrl}
+					source={{ uri: imageUrl }}
+					style={{
+						width: '100%',
+						height: '100%',
+					}}
+					resizeMode="cover"
+					onLoadStart={() => {
+						setIsLoading(true);
+						skeletonOpacity.setValue(1);
+						loadStartTimeRef.current = Date.now();
+					}}
+					onLoad={handleLoad}
+					onLoadEnd={handleLoad}
+					onError={handleError}
+				/>
+				{/* Skeleton overlay that fades out when image loads */}
+				{isLoading && (
+					<Animated.View
+						style={{
+							position: 'absolute',
+							top: 0,
+							left: 0,
+							right: 0,
+							bottom: 0,
+							opacity: skeletonOpacity,
+							zIndex: 1,
+						}}
+						pointerEvents="none"
+					>
+						<ImageSkeleton height={height} />
+					</Animated.View>
+				)}
+			</TouchableOpacity>
+		);
+	}
 );
 
 ImageItem.displayName = 'ImageItem';
@@ -480,11 +589,31 @@ export default function ExplorePage() {
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [selectedHouseTypeId, setSelectedHouseTypeId] = useState<string | null>(null);
 
+	// Animation for filter and tab changes
+	const fadeAnim = useRef(new Animated.Value(1)).current;
+	const flatListRef = useRef<FlatList>(null);
+
 	const handleTabChange = (tab: TabType) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-		setActiveTab(tab);
-		setSelectedRoomId(null);
-		setSelectedHouseTypeId(null);
+		// Animate out before changing tab
+		Animated.timing(fadeAnim, {
+			toValue: 0,
+			duration: 150,
+			useNativeDriver: true,
+		}).start(() => {
+			// Change tab and filters
+			setActiveTab(tab);
+			setSelectedRoomId(null);
+			setSelectedHouseTypeId(null);
+			// Scroll to top
+			flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+			// Animate back in
+			Animated.timing(fadeAnim, {
+				toValue: 1,
+				duration: 200,
+				useNativeDriver: true,
+			}).start();
+		});
 	};
 
 	const handleRoomFilter = (roomId: string | null) => {
@@ -521,6 +650,25 @@ export default function ExplorePage() {
 		[activeTab, selectedRoomId, selectedHouseTypeId]
 	);
 	const masonryRows = useMemo(() => distributeImagesIntoRows(images), [images]);
+
+	// Animate when filter changes (tab changes are handled in handleTabChange)
+	useEffect(() => {
+		// Scroll to top
+		flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+		// Fade out
+		Animated.timing(fadeAnim, {
+			toValue: 0,
+			duration: 150,
+			useNativeDriver: true,
+		}).start(() => {
+			// Fade back in
+			Animated.timing(fadeAnim, {
+				toValue: 1,
+				duration: 200,
+				useNativeDriver: true,
+			}).start();
+		});
+	}, [selectedRoomId, selectedHouseTypeId]);
 
 	return (
 		<View className="flex-1 bg-gray-50">
@@ -700,36 +848,42 @@ export default function ExplorePage() {
 			)}
 
 			{/* Masonry Grid - Single Virtualized FlatList */}
-			<FlatList
-				data={masonryRows}
-				keyExtractor={(item) => item.id}
-				renderItem={({ item }) => <MasonryRow row={item} onImagePress={handleImagePress} />}
-				showsVerticalScrollIndicator={false}
-				removeClippedSubviews={true}
-				initialNumToRender={5}
-				maxToRenderPerBatch={5}
-				windowSize={10}
-				updateCellsBatchingPeriod={50}
-				getItemLayout={(data, index) => {
-					if (!data || index >= data.length) {
-						return { length: 0, offset: 0, index };
-					}
-					let offset = 16; // padding top
-					for (let i = 0; i < index; i++) {
-						offset += data[i]?.rowHeight || 0;
-					}
-					return {
-						length: data[index].rowHeight,
-						offset,
-						index,
-					};
-				}}
-				contentContainerStyle={{
-					padding: 16,
-					paddingBottom: 32,
-					paddingTop: activeTab === 'garden' ? 16 : 0,
-				}}
-			/>
+			<Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+				<FlatList
+					ref={flatListRef}
+					key={`${activeTab}-${selectedRoomId}-${selectedHouseTypeId}`}
+					data={masonryRows}
+					keyExtractor={(item) => item.id}
+					renderItem={({ item }) => (
+						<MasonryRow row={item} onImagePress={handleImagePress} />
+					)}
+					showsVerticalScrollIndicator={false}
+					removeClippedSubviews={true}
+					initialNumToRender={10}
+					maxToRenderPerBatch={10}
+					windowSize={10}
+					updateCellsBatchingPeriod={50}
+					getItemLayout={(data, index) => {
+						if (!data || index >= data.length) {
+							return { length: 0, offset: 0, index };
+						}
+						let offset = 16; // padding top
+						for (let i = 0; i < index; i++) {
+							offset += data[i]?.rowHeight || 0;
+						}
+						return {
+							length: data[index].rowHeight,
+							offset,
+							index,
+						};
+					}}
+					contentContainerStyle={{
+						padding: 16,
+						paddingBottom: 32,
+						paddingTop: activeTab === 'garden' ? 16 : 0,
+					}}
+				/>
+			</Animated.View>
 		</View>
 	);
 }
