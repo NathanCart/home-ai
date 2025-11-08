@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { CustomButton } from 'components/CustomButton';
 import { PhotoStep } from 'components/generatesteps/PhotoStep';
@@ -8,17 +8,28 @@ import { GeneratingStep } from 'components/generatesteps/GeneratingStep';
 import { ConfirmationStep } from 'components/generatesteps/ConfirmationStep';
 import { ModalHeader } from 'components/generatesteps/ModalHeader';
 import { getStepConfig } from 'config/stepConfig';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
 
 export default function ExteriorGenerateModal() {
 	const insets = useSafeAreaInsets();
+	const { initialImageUri } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(3); // Photo, House Type, Style
 	const [hasImageSelected, setHasImageSelected] = useState(false);
-	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
+		(initialImageUri as string) || null
+	);
+
+	// Set initial image if provided
+	useEffect(() => {
+		if (initialImageUri) {
+			setSelectedImageUri(initialImageUri as string);
+			setHasImageSelected(true);
+		}
+	}, [initialImageUri]);
 	const [selectedHouseType, setSelectedHouseType] = useState<any>(null);
 	const [selectedStyle, setSelectedStyle] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);

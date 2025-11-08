@@ -15,11 +15,21 @@ import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation'
 
 export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
-	const { mode } = useLocalSearchParams();
+	const { mode, initialImageUri } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(3); // Photo, Room, Style (no color palette)
 	const [hasImageSelected, setHasImageSelected] = useState(false);
-	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
+		(initialImageUri as string) || null
+	);
+
+	// Set initial image if provided
+	useEffect(() => {
+		if (initialImageUri) {
+			setSelectedImageUri(initialImageUri as string);
+			setHasImageSelected(true);
+		}
+	}, [initialImageUri]);
 	const [selectedRoom, setSelectedRoom] = useState<any>(null);
 	const [selectedStyle, setSelectedStyle] = useState<any>(null);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);

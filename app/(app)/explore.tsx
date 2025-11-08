@@ -5,14 +5,16 @@ import {
 	ScrollView,
 	TouchableOpacity,
 	Image,
-	Alert,
 	Dimensions,
+	Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from 'components/ThemedText';
 import { Octicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import { TryThisStyleModal } from 'components/TryThisStyleModal';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 12; // Gap between columns and rows (must match MARGIN_BOTTOM)
@@ -473,9 +475,18 @@ const ImageSkeleton = ({ height }: { height: number }) => (
 
 // Memoized image item component to prevent unnecessary re-renders
 const ImageItem = React.memo(
-	({ imageUrl, height, onPress }: { imageUrl: string; height: number; onPress: () => void }) => {
+	({
+		imageUrl,
+		height,
+		onPress,
+	}: {
+		imageUrl: string;
+		height: number;
+		onPress: (imageUrl: string) => void;
+	}) => {
 		const [isLoading, setIsLoading] = useState(true);
 		const timeoutRef = useRef<number | null>(null);
+		const scaleAnim = useRef(new Animated.Value(1)).current;
 
 		// Handlers for image load events
 		const handleLoad = useCallback(() => {
@@ -519,9 +530,35 @@ const ImageItem = React.memo(
 			};
 		}, [imageUrl]);
 
+		const handlePressIn = useCallback(() => {
+			Animated.spring(scaleAnim, {
+				toValue: 0.95,
+				useNativeDriver: true,
+				tension: 300,
+				friction: 10,
+			}).start();
+		}, [scaleAnim]);
+
+		const handlePressOut = useCallback(() => {
+			Animated.spring(scaleAnim, {
+				toValue: 1,
+				useNativeDriver: true,
+				tension: 300,
+				friction: 10,
+			}).start();
+		}, [scaleAnim]);
+
+		const handlePress = useCallback(() => {
+			Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+			onPress(imageUrl);
+		}, [imageUrl, onPress]);
+
 		return (
 			<TouchableOpacity
-				onPress={onPress}
+				onPress={handlePress}
+				onPressIn={handlePressIn}
+				onPressOut={handlePressOut}
+				activeOpacity={1}
 				className="rounded-3xl overflow-hidden"
 				style={{
 					width: '100%',
@@ -529,34 +566,42 @@ const ImageItem = React.memo(
 					position: 'relative',
 				}}
 			>
-				{/* Image always renders so it can load */}
-				<Image
-					key={imageUrl}
-					source={{ uri: imageUrl }}
+				<Animated.View
 					style={{
 						width: '100%',
 						height: '100%',
+						transform: [{ scale: scaleAnim }],
 					}}
-					resizeMode="cover"
-					onLoad={handleLoad}
-					onError={handleError}
-				/>
-				{/* Skeleton overlay */}
-				{isLoading && (
-					<View
+				>
+					{/* Image always renders so it can load */}
+					<Image
+						key={imageUrl}
+						source={{ uri: imageUrl }}
 						style={{
-							position: 'absolute',
-							top: 0,
-							left: 0,
-							right: 0,
-							bottom: 0,
-							zIndex: 1,
+							width: '100%',
+							height: '100%',
 						}}
-						pointerEvents="none"
-					>
-						<ImageSkeleton height={height} />
-					</View>
-				)}
+						resizeMode="cover"
+						onLoad={handleLoad}
+						onError={handleError}
+					/>
+					{/* Skeleton overlay */}
+					{isLoading && (
+						<View
+							style={{
+								position: 'absolute',
+								top: 0,
+								left: 0,
+								right: 0,
+								bottom: 0,
+								zIndex: 1,
+							}}
+							pointerEvents="none"
+						>
+							<ImageSkeleton height={height} />
+						</View>
+					)}
+				</Animated.View>
 			</TouchableOpacity>
 		);
 	},
@@ -570,7 +615,7 @@ ImageItem.displayName = 'ImageItem';
 
 // Memoized row component for masonry layout - columns are independent
 const MasonryRow = React.memo(
-	({ row, onImagePress }: { row: MasonryRow; onImagePress: () => void }) => (
+	({ row, onImagePress }: { row: MasonryRow; onImagePress: (imageUrl: string) => void }) => (
 		<View
 			style={{
 				height: row.rowHeight,
@@ -627,6 +672,8 @@ export default function ExplorePage() {
 	const [activeTab, setActiveTab] = useState<TabType>('interior');
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [selectedHouseTypeId, setSelectedHouseTypeId] = useState<string | null>(null);
+	const [showTryStyleModal, setShowTryStyleModal] = useState(false);
+	const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
 	const flatListRef = useRef<FlatList>(null);
 
@@ -662,9 +709,39 @@ export default function ExplorePage() {
 		}
 	};
 
-	const handleImagePress = () => {
-		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
+	const handleImagePress = (imageUrl: string) => {
+		// Haptic feedback is handled in ImageItem component
+		setSelectedImageUrl(imageUrl);
+		setShowTryStyleModal(true);
+	};
+
+	const handleTryStyle = () => {
+		if (!selectedImageUrl) return;
+
+		// Navigate to the appropriate generate modal based on active tab
+		if (activeTab === 'interior') {
+			router.push({
+				pathname: '/generatemodal',
+				params: {
+					mode: 'interior-design',
+					initialImageUri: selectedImageUrl,
+				},
+			});
+		} else if (activeTab === 'exterior') {
+			router.push({
+				pathname: '/exteriorgeneratemodal',
+				params: {
+					initialImageUri: selectedImageUrl,
+				},
+			});
+		} else if (activeTab === 'garden') {
+			router.push({
+				pathname: '/gardengeneratemodal',
+				params: {
+					initialImageUri: selectedImageUrl,
+				},
+			});
+		}
 	};
 
 	// Memoize expensive computations
@@ -889,6 +966,17 @@ export default function ExplorePage() {
 					paddingTop: activeTab === 'garden' ? 16 : 0,
 				}}
 				style={{ flex: 1 }}
+			/>
+
+			{/* Try This Style Modal */}
+			<TryThisStyleModal
+				visible={showTryStyleModal}
+				onClose={() => {
+					setShowTryStyleModal(false);
+					setSelectedImageUrl(null);
+				}}
+				onTryStyle={handleTryStyle}
+				imageUrl={selectedImageUrl || ''}
 			/>
 		</View>
 	);
