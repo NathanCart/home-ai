@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import {
 	View,
+	FlatList,
 	ScrollView,
 	TouchableOpacity,
 	Image,
@@ -85,7 +86,14 @@ const roomTypes: Room[] = [
 		icon: 'bed',
 		iconType: 'material',
 		description: 'Personal space for rest and relaxation',
-		images: ['https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/bedroom${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'bedroom'
+		),
 		count: 18,
 	},
 	{
@@ -94,7 +102,14 @@ const roomTypes: Room[] = [
 		icon: 'kitchen',
 		iconType: 'material',
 		description: 'Cooking and dining area',
-		images: ['https://images.unsplash.com/photo-1556912167-f556f1f39fdf?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/kitchen${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'kitchen'
+		),
 		count: 22,
 	},
 	{
@@ -103,7 +118,14 @@ const roomTypes: Room[] = [
 		icon: 'shower',
 		iconType: 'material-community',
 		description: 'Personal hygiene and grooming space',
-		images: ['https://images.unsplash.com/photo-1620626011761-996317b8d101?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/bathroom${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'bathroom'
+		),
 		count: 15,
 	},
 	{
@@ -111,7 +133,14 @@ const roomTypes: Room[] = [
 		name: 'Dining Room',
 		icon: 'table',
 		description: 'Formal dining and meal space',
-		images: ['https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/diningroom${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'dining-room'
+		),
 		count: 12,
 	},
 	{
@@ -119,7 +148,14 @@ const roomTypes: Room[] = [
 		name: 'Home Office',
 		icon: 'briefcase',
 		description: 'Work and productivity space',
-		images: ['https://images.unsplash.com/photo-1600210492493-0946911123ea?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/homeoffice${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'office'
+		),
 		count: 16,
 	},
 	{
@@ -127,33 +163,31 @@ const roomTypes: Room[] = [
 		name: 'Nursery',
 		icon: 'heart',
 		description: 'Baby and child room',
-		images: ['https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/nursery${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'nursery'
+		),
 		count: 10,
 	},
-	{
-		id: 'basement',
-		name: 'Basement',
-		icon: 'arrow-down',
-		description: 'Lower level storage and utility space',
-		images: ['https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800'],
-		count: 8,
-	},
-	{
-		id: 'attic',
-		name: 'Attic',
-		icon: 'home-roof',
-		iconType: 'material-community',
-		description: 'Upper storage and additional space',
-		images: ['https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=800'],
-		count: 7,
-	},
+
 	{
 		id: 'garage',
 		name: 'Garage',
 		icon: 'car-outline',
 		iconType: 'ionicons',
 		description: 'Vehicle storage and workshop space',
-		images: ['https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800'],
+		images: deterministicShuffle(
+			Array.from(
+				{ length: 36 },
+				(_, i) =>
+					`https://pingu-app.s3.eu-west-2.amazonaws.com/garage${i === 0 ? '1' : i + 1}.jpg`
+			),
+			'garage'
+		),
 		count: 9,
 	},
 ];
@@ -261,26 +295,182 @@ const getImageHeight = (index: number) => {
 	return heights[index % heights.length];
 };
 
-// Distribute images into two columns for proper masonry layout
-const distributeImages = (images: string[]) => {
-	const leftColumn: { imageUrl: string; index: number; height: number }[] = [];
-	const rightColumn: { imageUrl: string; index: number; height: number }[] = [];
-	let leftHeight = 0;
-	let rightHeight = 0;
+// Distribute images into two columns for masonry layout
+interface ColumnItem {
+	imageUrl: string;
+	index: number;
+	height: number;
+}
 
+interface ColumnItemWithPosition extends ColumnItem {
+	top: number;
+	bottom: number;
+}
+
+interface MasonryRow {
+	id: string;
+	left?: ColumnItem & { relativeTop: number };
+	right?: ColumnItem & { relativeTop: number };
+	rowHeight: number;
+}
+
+const distributeImagesIntoRows = (images: string[]): MasonryRow[] => {
+	const leftColumn: ColumnItemWithPosition[] = [];
+	const rightColumn: ColumnItemWithPosition[] = [];
+	let leftTop = 0;
+	let rightTop = 0;
+	const MARGIN_BOTTOM = 12;
+
+	// Distribute images into columns based on which column is shorter
 	images.forEach((imageUrl, index) => {
 		const height = getImageHeight(index);
-		if (leftHeight <= rightHeight) {
-			leftColumn.push({ imageUrl, index, height });
-			leftHeight += height + 12; // 12px for margin-bottom
+		if (leftTop <= rightTop) {
+			leftColumn.push({
+				imageUrl,
+				index,
+				height,
+				top: leftTop,
+				bottom: leftTop + height,
+			});
+			leftTop += height + MARGIN_BOTTOM;
 		} else {
-			rightColumn.push({ imageUrl, index, height });
-			rightHeight += height + 12;
+			rightColumn.push({
+				imageUrl,
+				index,
+				height,
+				top: rightTop,
+				bottom: rightTop + height,
+			});
+			rightTop += height + MARGIN_BOTTOM;
 		}
 	});
 
-	return { leftColumn, rightColumn };
+	// Collect all vertical breakpoints (where items start or end)
+	const breakpoints = new Set<number>();
+	leftColumn.forEach((item) => {
+		breakpoints.add(item.top);
+		breakpoints.add(item.bottom);
+	});
+	rightColumn.forEach((item) => {
+		breakpoints.add(item.top);
+		breakpoints.add(item.bottom);
+	});
+
+	const sortedBreakpoints = Array.from(breakpoints).sort((a, b) => a - b);
+
+	// Create rows for each vertical slice
+	const rows: MasonryRow[] = [];
+	for (let i = 0; i < sortedBreakpoints.length - 1; i++) {
+		const rowTop = sortedBreakpoints[i];
+		const rowBottom = sortedBreakpoints[i + 1];
+		const rowHeight = rowBottom - rowTop;
+
+		// Find items that are active in this vertical range
+		const leftItem = leftColumn.find((item) => item.top < rowBottom && item.bottom > rowTop);
+		const rightItem = rightColumn.find((item) => item.top < rowBottom && item.bottom > rowTop);
+
+		// Only create row if there's at least one item
+		if (leftItem || rightItem) {
+			rows.push({
+				id: `row-${i}`,
+				left: leftItem
+					? {
+							imageUrl: leftItem.imageUrl,
+							index: leftItem.index,
+							height: leftItem.height,
+							relativeTop: leftItem.top - rowTop,
+						}
+					: undefined,
+				right: rightItem
+					? {
+							imageUrl: rightItem.imageUrl,
+							index: rightItem.index,
+							height: rightItem.height,
+							relativeTop: rightItem.top - rowTop,
+						}
+					: undefined,
+				rowHeight: rowHeight + (i === sortedBreakpoints.length - 2 ? MARGIN_BOTTOM : 0),
+			});
+		}
+	}
+
+	return rows;
 };
+
+// Memoized image item component to prevent unnecessary re-renders
+const ImageItem = React.memo(
+	({ imageUrl, height, onPress }: { imageUrl: string; height: number; onPress: () => void }) => (
+		<TouchableOpacity
+			onPress={onPress}
+			className="rounded-3xl overflow-hidden"
+			style={{
+				width: '100%',
+				height: height,
+			}}
+		>
+			<Image
+				source={{ uri: imageUrl }}
+				style={{
+					width: '100%',
+					height: '100%',
+				}}
+				resizeMode="cover"
+			/>
+		</TouchableOpacity>
+	)
+);
+
+ImageItem.displayName = 'ImageItem';
+
+// Memoized row component for masonry layout - columns are independent
+const MasonryRow = React.memo(
+	({ row, onImagePress }: { row: MasonryRow; onImagePress: () => void }) => (
+		<View
+			style={{
+				height: row.rowHeight,
+				position: 'relative',
+			}}
+		>
+			{/* Left Column */}
+			{row.left && (
+				<View
+					style={{
+						position: 'absolute',
+						left: 0,
+						top: row.left.relativeTop,
+						width: COLUMN_WIDTH,
+					}}
+				>
+					<ImageItem
+						imageUrl={row.left.imageUrl}
+						height={row.left.height}
+						onPress={onImagePress}
+					/>
+				</View>
+			)}
+
+			{/* Right Column */}
+			{row.right && (
+				<View
+					style={{
+						position: 'absolute',
+						right: 0,
+						top: row.right.relativeTop,
+						width: COLUMN_WIDTH,
+					}}
+				>
+					<ImageItem
+						imageUrl={row.right.imageUrl}
+						height={row.right.height}
+						onPress={onImagePress}
+					/>
+				</View>
+			)}
+		</View>
+	)
+);
+
+MasonryRow.displayName = 'MasonryRow';
 
 type TabType = 'interior' | 'exterior' | 'garden';
 
@@ -325,8 +515,12 @@ export default function ExplorePage() {
 		Alert.alert('Coming Soon', 'Style transfer feature is coming soon! 🎨');
 	};
 
-	const images = getCurrentImages();
-	const { leftColumn, rightColumn } = distributeImages(images);
+	// Memoize expensive computations
+	const images = useMemo(
+		() => getCurrentImages(),
+		[activeTab, selectedRoomId, selectedHouseTypeId]
+	);
+	const masonryRows = useMemo(() => distributeImagesIntoRows(images), [images]);
 
 	return (
 		<View className="flex-1 bg-gray-50">
@@ -505,65 +699,37 @@ export default function ExplorePage() {
 				</View>
 			)}
 
-			{/* Masonry Grid */}
-			<ScrollView
+			{/* Masonry Grid - Single Virtualized FlatList */}
+			<FlatList
+				data={masonryRows}
+				keyExtractor={(item) => item.id}
+				renderItem={({ item }) => <MasonryRow row={item} onImagePress={handleImagePress} />}
 				showsVerticalScrollIndicator={false}
+				removeClippedSubviews={true}
+				initialNumToRender={5}
+				maxToRenderPerBatch={5}
+				windowSize={10}
+				updateCellsBatchingPeriod={50}
+				getItemLayout={(data, index) => {
+					if (!data || index >= data.length) {
+						return { length: 0, offset: 0, index };
+					}
+					let offset = 16; // padding top
+					for (let i = 0; i < index; i++) {
+						offset += data[i]?.rowHeight || 0;
+					}
+					return {
+						length: data[index].rowHeight,
+						offset,
+						index,
+					};
+				}}
 				contentContainerStyle={{
 					padding: 16,
 					paddingBottom: 32,
 					paddingTop: activeTab === 'garden' ? 16 : 0,
 				}}
-			>
-				<View className="flex-row" style={{ gap: 12 }}>
-					{/* Left Column */}
-					<View style={{ width: COLUMN_WIDTH }}>
-						{leftColumn.map((item) => (
-							<TouchableOpacity
-								key={item.index}
-								onPress={handleImagePress}
-								className="mb-3 rounded-3xl overflow-hidden"
-								style={{
-									width: '100%',
-									height: item.height,
-								}}
-							>
-								<Image
-									source={{ uri: item.imageUrl }}
-									style={{
-										width: '100%',
-										height: '100%',
-									}}
-									resizeMode="cover"
-								/>
-							</TouchableOpacity>
-						))}
-					</View>
-
-					{/* Right Column */}
-					<View style={{ width: COLUMN_WIDTH }}>
-						{rightColumn.map((item) => (
-							<TouchableOpacity
-								key={item.index}
-								onPress={handleImagePress}
-								className="mb-3 rounded-3xl overflow-hidden"
-								style={{
-									width: '100%',
-									height: item.height,
-								}}
-							>
-								<Image
-									source={{ uri: item.imageUrl }}
-									style={{
-										width: '100%',
-										height: '100%',
-									}}
-									resizeMode="cover"
-								/>
-							</TouchableOpacity>
-						))}
-					</View>
-				</View>
-			</ScrollView>
+			/>
 		</View>
 	);
 }
