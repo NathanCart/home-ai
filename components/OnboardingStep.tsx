@@ -163,15 +163,24 @@ export function OnboardingStep({
 
 			const createAnimationSequence = () => {
 				return Animated.sequence([
+					// Reveal to 30%
 					Animated.timing(sharedAnimation, {
-						toValue: 0, // Show before
-						duration: 2000,
-						easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+						toValue: 0.3,
+						duration: 600,
+						easing: Easing.out(Easing.quad),
 						useNativeDriver: false,
 					}),
+					// Bounce back a little (more subtle)
+					Animated.spring(sharedAnimation, {
+						toValue: 0.27,
+						tension: 80,
+						friction: 7,
+						useNativeDriver: false,
+					}),
+					// Continue to full reveal
 					Animated.timing(sharedAnimation, {
 						toValue: 1, // Show after
-						duration: 2000,
+						duration: 1400,
 						easing: Easing.bezier(0.4, 0.0, 0.2, 1),
 						useNativeDriver: false,
 					}),
@@ -370,8 +379,13 @@ export function OnboardingStep({
 								top: 0,
 								bottom: 0,
 								left: revealPosition,
-								width: 2,
+								width: 3,
 								backgroundColor: '#fff',
+								shadowColor: '#fff',
+								shadowOffset: { width: 0, height: 0 },
+								shadowOpacity: 0.8,
+								shadowRadius: 8,
+								elevation: 10,
 							}}
 						/>
 
@@ -474,13 +488,17 @@ export function OnboardingStep({
 
 			{/* Content Section with 3D Background */}
 			<View
-				className="bg-gray-50 px-8 -mt-10 rounded-t-[40px] pt-10 border-2 border-gray-200"
+				className="bg-gray-50 px-8 -mt-10 rounded-t-[40px] pt-10 "
 				style={{
 					paddingBottom: insets.bottom + 16,
 				}}
 			>
 				{/* Title */}
-				<ThemedText extraBold variant="title-lg" className="text-center  mb-4 !px-0">
+				<ThemedText
+					extraBold
+					variant="title-lg"
+					className="!text-4xl text-center  mb-4 !px-0"
+				>
 					{title}
 				</ThemedText>
 

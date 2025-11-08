@@ -49,8 +49,8 @@ export default function OnboardingStep1() {
 	return (
 		<OnboardingStep
 			imagePairs={imagePairs}
-			title="Transform Your Home with AI"
-			description="Design your dream interior, garden, and exterior spaces with the power of artificial intelligence."
+			title="Transform your home with AI"
+			description="Design your dream interior, garden, and exterior spaces with AI."
 			buttonText="Get Started"
 			onContinue={handleContinue}
 		/>
