@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Image, Animated, useWindowDimensions, Easing } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ThemedText } from './ThemedText';
 import { CustomButton } from './CustomButton';
 import { Video, ResizeMode } from 'expo-av';
@@ -328,7 +329,7 @@ export function OnboardingStep({
 	// Title opacity - controlled by titleOpacity ref, stays visible during reveal, fades only when switching pairs
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 relative">
 			{/* Media Section */}
 			<View className="flex-1">
 				{hasBeforeAfterAnimation &&
@@ -486,35 +487,55 @@ export function OnboardingStep({
 				) : null}
 			</View>
 
-			{/* Content Section with 3D Background */}
+			{/* Content Section - Overlay on entire screen */}
 			<View
-				className="bg-gray-50 px-8 -mt-10 rounded-t-[40px] pt-10 "
+				className="absolute inset-0 justify-end px-4"
 				style={{
-					paddingBottom: insets.bottom + 16,
+					paddingBottom: 16,
+					paddingTop: insets.top,
 				}}
 			>
-				{/* Title */}
-				<ThemedText
-					extraBold
-					variant="title-lg"
-					className="!text-4xl text-center  mb-4 !px-0"
-				>
-					{title}
-				</ThemedText>
+				{/* Dark gradient overlay from bottom to top */}
+				<LinearGradient
+					colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,1)']}
+					locations={[0.3, 0.6, 1]}
+					style={{
+						position: 'absolute',
+						bottom: 0,
+						left: 0,
+						right: 0,
+						top: 0,
+					}}
+					pointerEvents="none"
+				/>
 
-				{/* Description */}
-				<ThemedText variant="body" className="text-center text-gray-600">
-					{description}
-				</ThemedText>
+				{/* Content */}
+				<View style={{ paddingBottom: insets.bottom }}>
+					{/* Title */}
+					<ThemedText
+						extraBold
+						variant="title-lg"
+						className="!text-4xl text-center mb-4 !px-0 text-white"
+					>
+						{title}
+					</ThemedText>
 
-				{/* Continue Button */}
-				<View className="mt-8">
-					<CustomButton
-						title={buttonText}
-						onPress={handlePress}
-						size="lg"
-						hapticFeedback={true}
-					/>
+					{/* Description */}
+					<ThemedText variant="body" bold className="text-center !text-xl text-gray-200">
+						{description}
+					</ThemedText>
+
+					{/* Continue Button */}
+					<View className="mt-6">
+						<CustomButton
+							title={buttonText}
+							onPress={handlePress}
+							size="lg"
+							buttonTextClassName="!text-2xl"
+							variant="white"
+							hapticFeedback={true}
+						/>
+					</View>
 				</View>
 			</View>
 		</View>

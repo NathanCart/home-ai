@@ -10,38 +10,38 @@ export default function OnboardingStep1() {
 
 	const imagePairs = [
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before1.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after1.jpg',
 			title: 'Interior design',
 		},
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-bad.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/garden-good.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before2.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after2.jpg',
 			title: 'Garden design',
 		},
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-bad.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/exterior-good.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before3.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after3.jpg',
 			title: 'Exterior design',
 		},
 		{
-			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/restyle-before.webp',
-			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/restyle-old.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before4.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after4.jpg',
 			title: 'Style transfer',
 		},
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/repaint-old.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/repaint-new.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before5.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after5.jpg',
 			title: 'Repaint',
 		},
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-old.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/refloor-new.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before6.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after6.jpg',
 			title: 'Refloor',
 		},
 		{
-			before: 'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-before.webp',
-			after: 'https://leafly-app.s3.eu-west-2.amazonaws.com/replace-after.webp',
+			before: 'https://pingu-app.s3.eu-west-2.amazonaws.com/before7.jpg',
+			after: 'https://pingu-app.s3.eu-west-2.amazonaws.com/after7.jpg',
 			title: 'Replace objects',
 		},
 	];
@@ -49,9 +49,9 @@ export default function OnboardingStep1() {
 	return (
 		<OnboardingStep
 			imagePairs={imagePairs}
-			title="Transform your home with AI"
-			description="Design your dream interior, garden, and exterior spaces with AI."
-			buttonText="Get Started"
+			title="Reimagine your home with the power of AI"
+			description="Instantly design your dream interior, garden, and exterior spaces with AI."
+			buttonText="Continue"
 			onContinue={handleContinue}
 		/>
 	);

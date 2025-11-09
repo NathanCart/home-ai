@@ -8,7 +8,7 @@ interface CustomButtonProps {
 	title: string;
 	onPress: () => void;
 	icon?: keyof typeof Octicons.glyphMap;
-	variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+	variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'white';
 	size?: 'sm' | 'md' | 'lg';
 	disabled?: boolean;
 	loading?: boolean;
@@ -16,6 +16,7 @@ interface CustomButtonProps {
 	iconPosition?: 'left' | 'right';
 	hapticFeedback?: boolean;
 	vertical?: boolean;
+	buttonTextClassName?: string;
 }
 
 export function CustomButton({
@@ -30,6 +31,7 @@ export function CustomButton({
 	iconPosition = 'left',
 	hapticFeedback = true,
 	vertical = false,
+	buttonTextClassName = '',
 }: CustomButtonProps) {
 	const scaleAnimation = useRef(new Animated.Value(1)).current;
 	const opacityAnimation = useRef(new Animated.Value(1)).current;
@@ -73,6 +75,7 @@ export function CustomButton({
 			secondary: 'bg-gray-600',
 			outline: 'border-2 border-gray-900 bg-transparent',
 			ghost: 'bg-transparent',
+			white: 'bg-white',
 		};
 
 		// Disabled styles
@@ -93,6 +96,7 @@ export function CustomButton({
 			secondary: 'text-white',
 			outline: 'text-gray-900',
 			ghost: 'text-gray-900',
+			white: 'text-gray-900',
 		};
 
 		return `${sizeStyles[size]} ${variantStyles[variant]}`;
@@ -113,6 +117,7 @@ export function CustomButton({
 			secondary: '#ffffff',
 			outline: '#111827',
 			ghost: '#111827',
+			white: '#111827',
 		};
 		return iconColors[variant];
 	};
@@ -201,7 +206,11 @@ export function CustomButton({
 						<ThemedText
 							variant="body"
 							className={`${getTextStyles()} text-xs`}
-							bold={variant === 'primary' || variant === 'secondary'}
+							bold={
+								variant === 'primary' ||
+								variant === 'secondary' ||
+								variant === 'white'
+							}
 						>
 							{loading ? 'Loading...' : title}
 						</ThemedText>
@@ -211,8 +220,12 @@ export function CustomButton({
 						{iconPosition === 'left' && renderIcon()}
 						<ThemedText
 							variant="body"
-							className={`${getTextStyles()} !text-xl`}
-							bold={variant === 'primary' || variant === 'secondary'}
+							className={`${getTextStyles()} !text-xl ${buttonTextClassName}`}
+							bold={
+								variant === 'primary' ||
+								variant === 'secondary' ||
+								variant === 'white'
+							}
 						>
 							{loading ? 'Loading...' : title}
 						</ThemedText>
