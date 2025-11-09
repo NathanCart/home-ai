@@ -22,6 +22,8 @@ interface OnboardingStepProps {
 	buttonText: string;
 	onContinue: () => void;
 	isLastStep?: boolean;
+	backgroundColor?: string; // Custom background color
+	overlayElements?: React.ReactNode; // Custom overlay elements
 }
 
 export function OnboardingStep({
@@ -34,6 +36,8 @@ export function OnboardingStep({
 	buttonText,
 	onContinue,
 	isLastStep = false,
+	backgroundColor,
+	overlayElements,
 }: OnboardingStepProps) {
 	const insets = useSafeAreaInsets();
 	const { width: screenWidth } = useWindowDimensions();
@@ -329,7 +333,7 @@ export function OnboardingStep({
 	// Title opacity - controlled by titleOpacity ref, stays visible during reveal, fades only when switching pairs
 
 	return (
-		<View className="flex-1 relative">
+		<View className="flex-1 relative" style={{ backgroundColor }}>
 			{/* Media Section */}
 			<View className="flex-1">
 				{hasBeforeAfterAnimation &&
@@ -498,7 +502,7 @@ export function OnboardingStep({
 				{/* Dark gradient overlay from bottom to top */}
 				<LinearGradient
 					colors={['transparent', 'rgba(0,0,0,0.6)', 'rgba(0,0,0,1)']}
-					locations={[0.3, 0.6, 1]}
+					locations={[0.55, 0.73, 1]}
 					style={{
 						position: 'absolute',
 						bottom: 0,
@@ -538,6 +542,9 @@ export function OnboardingStep({
 					</View>
 				</View>
 			</View>
+			{overlayElements && (
+				<View className="absolute inset-0 pointer-events-none">{overlayElements}</View>
+			)}
 		</View>
 	);
 }
