@@ -1432,6 +1432,222 @@ export function useRunwareAI() {
 		return parts.join(', ');
 	}
 
+	interface FreeformParams {
+		imageUri: string;
+		customPrompt: string;
+	}
+
+	const generateFreeform = async (
+		params: FreeformParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		const MAX_RETRIES = 3;
+		let lastError: any = null;
+
+		for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+			try {
+				console.log(`🔄 Freeform generation attempt ${attempt}/${MAX_RETRIES}`);
+
+				if (attempt > 1) {
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+				}
+
+				const result = await attemptFreeformGeneration(params, onProgress);
+				return result;
+			} catch (error) {
+				lastError = error;
+				console.error(`❌ Attempt ${attempt} failed:`, error);
+
+				if (attempt < MAX_RETRIES) {
+					console.log(`⏳ Retrying in ${attempt} second(s)...`);
+					setGenerationProgress(0);
+					if (onProgress) {
+						onProgress(0);
+					}
+					await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+				}
+			}
+		}
+
+		setIsGenerating(false);
+		const errorMessage = lastError instanceof Error ? lastError.message : 'Unknown error';
+
+		let userFriendlyError = errorMessage;
+		if (errorMessage.includes('Network request failed')) {
+			userFriendlyError =
+				'Unable to reach Runware API after 3 attempts. Please check your internet connection and try again.';
+		} else if (errorMessage.includes('API key not configured')) {
+			userFriendlyError = errorMessage;
+		}
+
+		console.error(`❌ All ${MAX_RETRIES} attempts failed. Final error:`, userFriendlyError);
+
+		return { success: false, error: userFriendlyError };
+	};
+
+	const attemptFreeformGeneration = async (
+		params: FreeformParams,
+		onProgress?: (progress: number) => void
+	): Promise<RunwareResponse> => {
+		setIsGenerating(true);
+		setError(null);
+		setGeneratedImageUrl(null);
+
+		const RUNWARE_API_KEY = process.env.EXPO_PUBLIC_RUNWARE_API_KEY;
+		const RUNWARE_API_URL = 'https://api.runware.ai/v1';
+
+		let progressInterval: ReturnType<typeof setInterval> | null = null;
+
+		try {
+			// Build prompt that emphasizes preserving everything except the requested change
+			const prompt = buildFreeformPrompt(params.customPrompt);
+
+			console.log('🎨 Generating freeform image with Runware API...');
+			console.log('📝 Prompt:', prompt);
+			console.log('🔑 API Key exists:', !!RUNWARE_API_KEY);
+
+			if (!RUNWARE_API_KEY || RUNWARE_API_KEY === 'undefined') {
+				throw new Error(
+					'API key not configured. Please set EXPO_PUBLIC_RUNWARE_API_KEY in your .env file'
+				);
+			}
+
+			const taskUUID = generateUUID();
+
+			console.log('🖼️ Seed image URI:', params.imageUri);
+
+			const payload = {
+				taskType: 'imageInference',
+				taskUUID,
+				positivePrompt: prompt,
+				width: 1248,
+				height: 832,
+				model: 'runware:108@22',
+				outputFormat: 'WEBP',
+				uploadEndpoint: 'https://api.runware.ai/upload-image',
+				includeCost: true,
+				referenceImages: [params.imageUri, params.imageUri], // Use same image twice for better preservation
+			};
+
+			console.log('📤 Sending request to Runware API...');
+
+			const startTime = Date.now();
+
+			progressInterval = setInterval(() => {
+				const elapsed = Date.now() - startTime;
+				let estimatedProgress = 0;
+
+				if (elapsed < 3000) {
+					estimatedProgress = (elapsed / 3000) * 30;
+				} else if (elapsed < 15000) {
+					estimatedProgress = 30 + ((elapsed - 3000) / 12000) * 55;
+				} else {
+					estimatedProgress = 85 + Math.min(((elapsed - 15000) / 10000) * 10, 10);
+				}
+
+				estimatedProgress = Math.min(Math.floor(estimatedProgress), 95);
+
+				if (onProgress) {
+					onProgress(estimatedProgress);
+				}
+				setGenerationProgress(estimatedProgress);
+			}, 200);
+
+			const controller = new AbortController();
+			const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+			let response;
+			try {
+				response = await fetch(RUNWARE_API_URL, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Authorization: `Bearer ${RUNWARE_API_KEY}`,
+					},
+					body: JSON.stringify([payload]),
+					signal: controller.signal,
+				});
+			} finally {
+				clearTimeout(timeoutId);
+			}
+
+			if (progressInterval) {
+				clearInterval(progressInterval);
+				progressInterval = null;
+			}
+
+			if (!response.ok) {
+				const errorText = await response.text();
+				console.error('❌ API Error Response:', errorText);
+				throw new Error(`Runware API error: ${response.status} ${response.statusText}`);
+			}
+
+			const data = await response.json();
+			console.log('✅ Runware API Response:', JSON.stringify(data, null, 2));
+
+			if (onProgress) {
+				onProgress(100);
+			}
+			setGenerationProgress(100);
+
+			const imageUrl =
+				data.data?.[0]?.imageURL ||
+				data.imageURLs?.[0]?.imageURL ||
+				data.imageUrl ||
+				data.images?.[0]?.url;
+
+			if (!imageUrl) {
+				console.error('❌ No image URL in response:', data);
+				throw new Error('No image URL returned from Runware API');
+			}
+
+			setIsGenerating(false);
+			setGeneratedImageUrl(imageUrl);
+			console.log('✅ Freeform generation completed successfully:', imageUrl);
+
+			return { success: true, imageUrl };
+		} catch (err) {
+			if (typeof progressInterval !== 'undefined' && progressInterval) {
+				clearInterval(progressInterval);
+			}
+			const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+			console.error('❌ Error in freeform generation attempt:', errorMessage);
+			throw err;
+		}
+	};
+
+	function buildFreeformPrompt(userPrompt: string): string {
+		const parts: string[] = [];
+
+		// Emphasize preserving the original image
+		parts.push('Keep the exact same room layout, furniture arrangement, and perspective');
+		parts.push(
+			'Preserve all existing elements, objects, and architectural features exactly as they are'
+		);
+		parts.push('Maintain the same camera angle, lighting, and composition');
+		parts.push(
+			'Keep windows, doors, walls, and structural elements in the exact same positions'
+		);
+
+		// Add the user's requested change
+		parts.push(`Apply the following change: ${userPrompt}`);
+
+		// Emphasize minimal changes
+		parts.push('Only modify what was specifically requested, keep everything else identical');
+		parts.push(
+			'Make subtle, minimal changes that preserve the original character of the space'
+		);
+
+		// Quality descriptors
+		parts.push('professional interior photography, high quality, realistic lighting');
+		parts.push('preserve room structure, maintain layout and perspective');
+
+		return parts.join(', ');
+	}
+
 	return {
 		generateImage,
 		generateInpainting,
@@ -1439,6 +1655,7 @@ export function useRunwareAI() {
 		generateRepaint,
 		generateRefloor,
 		generateStyleTransfer,
+		generateFreeform,
 		isGenerating,
 		error,
 		generatedImageUrl,
@@ -1450,6 +1667,18 @@ export function useRunwareAI() {
 function buildPrompt(params: GenerateImageParams): string {
 	const parts: string[] = [];
 	const isGardenMode = params.mode === 'garden';
+	const isFreeformMode = params.mode === 'freeform';
+
+	// Freeform mode - use custom prompt directly
+	if (isFreeformMode && params.stylePrompt) {
+		parts.push(
+			'Keep everything identical in the image except for the described changes below.'
+		);
+		parts.push(params.stylePrompt);
+		parts.push('professional photography, high quality, realistic lighting');
+		parts.push('preserve room structure, maintain layout and perspective');
+		return parts.join(', ');
+	}
 
 	// Different prompt structure for garden vs interior
 	if (isGardenMode) {

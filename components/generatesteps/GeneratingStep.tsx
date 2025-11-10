@@ -58,6 +58,7 @@ export function GeneratingStep({
 		generateRepaint,
 		generateRefloor,
 		generateStyleTransfer,
+		generateFreeform,
 		isGenerating,
 		error,
 		generatedImageUrl,
@@ -167,6 +168,22 @@ export function GeneratingStep({
 					{
 						imageUri: imageUri,
 						styleImageUri: styleImageUri,
+					},
+					(progress) => {
+						setProgress(progress);
+					}
+				);
+			} else if (mode === 'freeform') {
+				// Freeform generation
+				if (!imageUri || !customPrompt) {
+					console.error('❌ Missing required params for freeform:', { imageUri, customPrompt });
+					return;
+				}
+
+				result = await generateFreeform(
+					{
+						imageUri: imageUri,
+						customPrompt: customPrompt,
 					},
 					(progress) => {
 						setProgress(progress);

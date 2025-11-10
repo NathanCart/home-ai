@@ -319,6 +319,44 @@ export const stepConfigs: Record<string, ModeConfig> = {
 			description: 'Your style transfer is ready!',
 		},
 	},
+	freeform: {
+		step1: {
+			title: 'Upload your photo',
+			subtitle: 'Take a photo or upload an existing image',
+			icon: 'device-camera',
+			description: 'Upload the image you want to transform',
+		},
+		step2: {
+			title: 'Describe your changes',
+			subtitle: 'Tell us what you want to change or improve',
+			icon: 'pencil',
+			description: 'Describe any changes you want to make to your space',
+		},
+		step3: {
+			title: 'Generating...',
+			subtitle: 'AI is creating your custom design',
+			icon: 'sparkle',
+			description: 'AI is applying your requested changes',
+		},
+		step4: {
+			title: 'Design complete',
+			subtitle: 'Your custom design is ready',
+			icon: 'check-circle',
+			description: 'Your personalized design is ready!',
+		},
+		step5: {
+			title: 'Design complete',
+			subtitle: 'Your custom design is ready',
+			icon: 'check-circle',
+			description: 'Your personalized design is ready!',
+		},
+		step6: {
+			title: 'Design complete',
+			subtitle: 'Your custom design is ready',
+			icon: 'check-circle',
+			description: 'Your personalized design is ready!',
+		},
+	},
 };
 
 export function getStepConfig(mode: string, step: number): StepConfig {
