@@ -15,13 +15,16 @@ import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation'
 
 export default function GenerateModal() {
 	const insets = useSafeAreaInsets();
-	const { mode, initialImageUri } = useLocalSearchParams();
+	const { mode, initialImageUri, initialStyle } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(3); // Photo, Room, Style (no color palette)
 	const [hasImageSelected, setHasImageSelected] = useState(false);
 	const [selectedImageUri, setSelectedImageUri] = useState<string | null>(
 		(initialImageUri as string) || null
 	);
+
+	const [selectedRoom, setSelectedRoom] = useState<any>(null);
+	const [selectedStyle, setSelectedStyle] = useState<any>(null);
 
 	// Set initial image if provided
 	useEffect(() => {
@@ -30,8 +33,18 @@ export default function GenerateModal() {
 			setHasImageSelected(true);
 		}
 	}, [initialImageUri]);
-	const [selectedRoom, setSelectedRoom] = useState<any>(null);
-	const [selectedStyle, setSelectedStyle] = useState<any>(null);
+
+	// Set initial style if provided
+	useEffect(() => {
+		if (initialStyle) {
+			try {
+				const parsedStyle = JSON.parse(initialStyle as string);
+				setSelectedStyle(parsedStyle);
+			} catch (error) {
+				console.error('Error parsing initial style:', error);
+			}
+		}
+	}, [initialStyle]);
 	const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
 	const [isTransitioning, setIsTransitioning] = useState(false);
 

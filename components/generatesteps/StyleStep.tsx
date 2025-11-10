@@ -353,6 +353,41 @@ export function StyleStep({
 	const [selectedStyleId, setSelectedStyleId] = useState<string | null>(
 		selectedStyle?.id || null
 	);
+
+	// Track if we're setting a seasonal style to prevent clearing
+	const settingSeasonalStyleRef = React.useRef<string | null>(null);
+
+	// Update selectedStyleId when selectedStyle prop changes
+	useEffect(() => {
+		if (selectedStyle?.id) {
+			// If it's a seasonal style, switch to seasonal category first
+			const seasonalStyleIds = seasonalStyles.map((s) => s.id);
+			if (seasonalStyleIds.includes(selectedStyle.id)) {
+				settingSeasonalStyleRef.current = selectedStyle.id;
+				setSelectedCategory('seasonal');
+			} else {
+				// For non-seasonal styles, set immediately
+				setSelectedStyleId(selectedStyle.id);
+				onStyleSelect?.(selectedStyle);
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedStyle?.id]);
+
+	// When category changes to seasonal and we have a pending style, set it
+	useEffect(() => {
+		if (selectedCategory === 'seasonal' && settingSeasonalStyleRef.current && selectedStyle?.id === settingSeasonalStyleRef.current) {
+			const styles = getFilteredStyles();
+			const styleExists = styles.some((style) => style.id === settingSeasonalStyleRef.current);
+			if (styleExists) {
+				setSelectedStyleId(settingSeasonalStyleRef.current);
+				onStyleSelect?.(selectedStyle);
+				settingSeasonalStyleRef.current = null;
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [selectedCategory, customSeasonalStyles]);
+
 	const [customRegularStyles, setCustomRegularStyles] = useState<Style[]>([]);
 	const [customSeasonalStyles, setCustomSeasonalStyles] = useState<Style[]>([]);
 	const [customImaginaryStyles, setCustomImaginaryStyles] = useState<Style[]>([]);
@@ -418,8 +453,9 @@ export function StyleStep({
 	}, [selectedCategory]);
 
 	// Clear selection when category changes if selected style doesn't exist in new category
+	// But don't clear if we're setting a seasonal style
 	useEffect(() => {
-		if (selectedStyleId) {
+		if (selectedStyleId && !settingSeasonalStyleRef.current && selectedStyle?.id !== selectedStyleId) {
 			const styles = getFilteredStyles();
 			const styleExists = styles.some((style) => style.id === selectedStyleId);
 			if (!styleExists) {

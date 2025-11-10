@@ -14,6 +14,7 @@ import { ToolCard } from 'components/ToolCard';
 import { CustomButton } from 'components/CustomButton';
 import { scheduleOneTimeOfferNotificationsIfNeeded } from 'components/useOneTimeOfferNotifications';
 import { scheduleEngagementNotificationsIfNeeded } from 'components/useEngagementNotifications';
+import { SeasonalBanner } from 'components/SeasonalBanner';
 
 export default function HomePage() {
 	const insets = useSafeAreaInsets();
@@ -156,6 +157,9 @@ export default function HomePage() {
 				showsVerticalScrollIndicator={false}
 			>
 				<View className="w-full flex flex-col gap-6">
+					{/* Seasonal Banner */}
+					<SeasonalBanner sharedAnimation={sharedAnimation} />
+
 					{/* Design Tools */}
 					<ToolCard
 						title="Interior design"
