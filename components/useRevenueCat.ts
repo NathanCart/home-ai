@@ -144,7 +144,11 @@ export function useRevenuecat(
 			paywallResult === PAYWALL_RESULT.PURCHASED ||
 			paywallResult === PAYWALL_RESULT.RESTORED
 		) {
-			// await cancelUpsell15MinNotification();
+			// Cancel one-time offer notifications
+			const { cancelOneTimeOfferNotifications } = await import(
+				'./useOneTimeOfferNotifications'
+			);
+			await cancelOneTimeOfferNotifications();
 		}
 
 		// --- your existing logic unchanged below ---
@@ -214,11 +218,19 @@ export function useSubscriptionStatus() {
 
 	useEffect(() => {
 		// Add listener for subscription status changes
-		const cleanup = addSubscriptionListener((status: boolean) => {
+		const cleanup = addSubscriptionListener(async (status: boolean) => {
 			// Only log when status actually changes
 			if (previousStatusRef.current !== status) {
 				console.log('useSubscriptionStatus: Subscription status changed to:', status);
 				previousStatusRef.current = status;
+
+				// Cancel one-time offer notifications when user subscribes
+				if (status) {
+					const { cancelOneTimeOfferNotifications } = await import(
+						'./useOneTimeOfferNotifications'
+					);
+					await cancelOneTimeOfferNotifications();
+				}
 			}
 			setIsSubscribed(status);
 			setIsLoading(false);

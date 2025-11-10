@@ -12,6 +12,8 @@ import { SubscriptionBanner } from 'components/SubscriptionBanner';
 import { useReviewPrompt } from 'components/useReviewPrompt';
 import { ToolCard } from 'components/ToolCard';
 import { CustomButton } from 'components/CustomButton';
+import { scheduleOneTimeOfferNotificationsIfNeeded } from 'components/useOneTimeOfferNotifications';
+import { scheduleEngagementNotificationsIfNeeded } from 'components/useEngagementNotifications';
 
 export default function HomePage() {
 	const insets = useSafeAreaInsets();
@@ -34,6 +36,11 @@ export default function HomePage() {
 	useEffect(() => {
 		if (hasCompletedOnboarding === false) {
 			router.replace('/onboarding');
+		} else if (hasCompletedOnboarding === true) {
+			// Schedule one-time offer notifications for new users
+			scheduleOneTimeOfferNotificationsIfNeeded();
+			// Schedule engagement notifications (weekly + day 1 & 2)
+			scheduleEngagementNotificationsIfNeeded();
 		}
 	}, [hasCompletedOnboarding]);
 
