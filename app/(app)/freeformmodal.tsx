@@ -264,12 +264,15 @@ export default function FreeformModal() {
 						onTextSubmit={handleTextSubmit}
 						config={config}
 						initialText={customPrompt}
+						placeholder="Describe any changes you want to make to your space..."
 						examples={[
-							'Make it more modern',
-							'Add more plants',
-							'Change the color scheme to blue and white',
-							'Make it cozier',
-							'Add more natural light',
+							'Transform the walls to a warm terracotta color with subtle texture',
+							'Replace the flooring with dark hardwood planks in a herringbone pattern',
+							'Add floor-to-ceiling windows with natural light and modern black frames',
+							'Introduce a minimalist fireplace with a marble surround and built-in shelving',
+							'Redesign the lighting with recessed ceiling lights and a statement pendant fixture',
+							'Update the furniture to mid-century modern pieces with velvet upholstery',
+							'Create an accent wall with exposed brick and industrial-style wall sconces',
 						]}
 					/>
 				);

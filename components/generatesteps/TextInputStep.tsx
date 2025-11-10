@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { StepConfig } from '../../config/stepConfig';
@@ -9,6 +9,7 @@ interface TextInputStepProps {
 	config: StepConfig;
 	initialText?: string;
 	examples?: string[];
+	placeholder?: string;
 }
 
 export function TextInputStep({
@@ -16,17 +17,31 @@ export function TextInputStep({
 	config,
 	initialText = '',
 	examples = [],
+	placeholder,
 }: TextInputStepProps) {
 	const [text, setText] = useState(initialText);
+	const [selectedExample, setSelectedExample] = useState<string | null>(null);
+
+	// Check if initialText matches any example
+	useEffect(() => {
+		if (initialText && examples.includes(initialText)) {
+			setSelectedExample(initialText);
+		}
+	}, [initialText, examples]);
 
 	const handleTextChange = (newText: string) => {
 		setText(newText);
+		// Clear selected example if user types something different
+		if (selectedExample && newText !== selectedExample) {
+			setSelectedExample(null);
+		}
 		onTextSubmit?.(newText);
 	};
 
 	const handleExamplePress = (example: string) => {
 		Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 		setText(example);
+		setSelectedExample(example);
 		onTextSubmit?.(example);
 	};
 
@@ -45,7 +60,7 @@ export function TextInputStep({
 				<TextInput
 					value={text}
 					onChangeText={handleTextChange}
-					placeholder="e.g., walls, floor, sofa, carpet..."
+					placeholder={placeholder || "e.g., walls, floor, sofa, carpet..."}
 					placeholderTextColor="#9CA3AF"
 					multiline
 					numberOfLines={8}
@@ -68,7 +83,11 @@ export function TextInputStep({
 							<TouchableOpacity
 								key={index}
 								onPress={() => handleExamplePress(example)}
-								className="px-4 py-3 bg-white border border-gray-300 rounded-xl"
+								className={`px-4 py-3 bg-white rounded-xl ${
+									selectedExample === example
+										? 'border-2 border-gray-900'
+										: 'border border-gray-300'
+								}`}
 							>
 								<ThemedText variant="body" className="text-gray-900">
 									{example}
