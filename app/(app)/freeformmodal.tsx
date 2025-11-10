@@ -11,6 +11,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useGenerateModalAnimation } from 'components/useGenerateModalAnimation';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Deterministic shuffle function (same as explore page)
 const deterministicShuffle = <T,>(array: T[], seed: string): T[] => {
@@ -92,7 +93,7 @@ const getExampleImages = () => {
 
 export default function FreeformModal() {
 	const insets = useSafeAreaInsets();
-	const { initialImageUri } = useLocalSearchParams();
+	const { initialImageUri, exitOnGenerate, projectSlug } = useLocalSearchParams();
 	const [currentStep, setCurrentStep] = useState(1);
 	const [totalSteps] = useState(2); // Photo, Text Input (Generate is step 3 but not shown in header)
 	const [hasImageSelected, setHasImageSelected] = useState(false);
@@ -156,7 +157,71 @@ export default function FreeformModal() {
 		setCustomPrompt(text);
 	};
 
-	const handleGenerationComplete = (imageUrl: string) => {
+	const handleGenerationComplete = async (imageUrl: string) => {
+		// If we came from project page, save to project and go back immediately
+		// Don't set state that would trigger confirmation step render
+		if (initialImageUri && projectSlug) {
+			try {
+				console.log('💾 Saving to project:', { projectSlug, imageUrl, initialImageUri });
+				const storedProjects = await AsyncStorage.getItem('projects');
+				if (storedProjects) {
+					const projects = JSON.parse(storedProjects);
+					// Find project by slug (matching imageUrl with slug)
+					const projectIndex = projects.findIndex((p: any) =>
+						p.imageUrl.includes(projectSlug as string)
+					);
+
+					console.log('🔍 Project search:', {
+						projectIndex,
+						totalProjects: projects.length,
+					});
+
+					if (projectIndex !== -1) {
+						// Add to alternative generations
+						if (!projects[projectIndex].alternativeGenerations) {
+							projects[projectIndex].alternativeGenerations = [];
+						}
+						const alternatives = projects[projectIndex].alternativeGenerations.map(
+							(alt: any) => (typeof alt === 'string' ? { imageUrl: alt } : alt)
+						);
+						alternatives.push({ imageUrl });
+						projects[projectIndex].alternativeGenerations = alternatives;
+						await AsyncStorage.setItem('projects', JSON.stringify(projects));
+						console.log(
+							'✅ Saved to project alternativeGenerations:',
+							alternatives.length
+						);
+					} else {
+						console.log('❌ Project not found with slug:', projectSlug);
+					}
+				}
+
+				// Store the new variant URL in AsyncStorage with a timestamp so project page can detect it
+				await AsyncStorage.setItem(`newVariant_${projectSlug}`, imageUrl);
+				console.log('✅ Stored newVariant key:', `newVariant_${projectSlug}`);
+
+				// Navigate back to project page immediately - don't set state first
+				router.back();
+				return; // Exit early, don't proceed to confirmation step
+			} catch (error) {
+				console.error('Error saving to project:', error);
+				// Fall through to normal confirmation flow
+			}
+		} else {
+			console.log('⚠️ Not saving to project:', {
+				hasInitialImageUri: !!initialImageUri,
+				hasProjectSlug: !!projectSlug,
+				projectSlugValue: projectSlug,
+			});
+		}
+
+		// If exitOnGenerate is true, just go back (for confirmation step without project)
+		if (exitOnGenerate === 'true') {
+			router.back();
+			return;
+		}
+
+		// Normal flow: go to confirmation step
 		setGeneratedImageUrl(imageUrl);
 
 		// Trigger the animation to transition to the next step

@@ -630,6 +630,28 @@ export function ConfirmationStep({
 								Refloor
 							</ThemedText>
 						</View>
+						<View className="items-center">
+							<TouchableOpacity
+								onPress={() => {
+									Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+									router.push({
+										pathname: '/freeformmodal',
+										params: {
+											initialImageUri: imageUrl,
+											exitOnGenerate: 'true',
+											projectSlug: projectSlug || '',
+										},
+									});
+								}}
+								className="bg-gray-200 w-fit rounded-2xl p-3 mb-1"
+								activeOpacity={0.7}
+							>
+								<MaterialCommunityIcons name="lightbulb-on-outline" size={24} color="#111827" />
+							</TouchableOpacity>
+							<ThemedText variant="body" className="text-gray-600 text-xs">
+								Custom
+							</ThemedText>
+						</View>
 					</View>
 
 					{/* Variants Section */}
