@@ -16,6 +16,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { LoadingScreen } from 'components/LoadingScreen';
 import * as Haptics from 'expo-haptics';
+import { useSubscriptionStatus, useRevenuecat } from 'components/useRevenueCat';
+import { useFocusEffect } from '@react-navigation/native';
 
 interface Project {
 	imageUrl: string;
@@ -256,6 +258,8 @@ const AnimatedProjectCard = React.memo(
 
 export default function ProjectsPage() {
 	const insets = useSafeAreaInsets();
+	const { isSubscribed } = useSubscriptionStatus();
+	const { presentPaywallIfNeeded } = useRevenuecat();
 	const [projects, setProjects] = useState<Project[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -300,10 +304,13 @@ export default function ProjectsPage() {
 			const storedProjects = await AsyncStorage.getItem('projects');
 			if (storedProjects) {
 				setProjects(JSON.parse(storedProjects));
+			} else {
+				setProjects([]);
 			}
 		} catch (error) {
 			console.error('Error loading projects:', error);
 			Alert.alert('Error', 'Failed to load projects.');
+			setProjects([]);
 		} finally {
 			setIsLoading(false);
 			setRefreshing(false);
@@ -314,6 +321,13 @@ export default function ProjectsPage() {
 		setRefreshing(true);
 		loadProjects();
 	}, []);
+
+	// Reload projects when screen comes into focus (e.g., after clearing storage)
+	useFocusEffect(
+		useCallback(() => {
+			loadProjects();
+		}, [])
+	);
 
 	const handleProjectPress = useCallback((project: Project) => {
 		// Generate a slug from the project
@@ -351,23 +365,56 @@ export default function ProjectsPage() {
 	return (
 		<View className="flex-1 bg-gray-50">
 			{/* Header */}
-			<View
-				className="flex-row items-center justify-between pb-4 px-4"
-				style={{ paddingTop: insets.top + 16 }}
-			>
-				<View style={{ width: 24 }} />
-				<ThemedText extraBold className="text-gray-900" variant="title-lg">
-					Projects
-				</ThemedText>
-				<View style={{ width: 24 }} />
+			<View className="pb-4 px-6" style={{ paddingTop: insets.top + 16 }}>
+				<View className="flex-row items-center justify-between">
+					<View className="flex-1 items-start">
+						{!isSubscribed && (
+							<TouchableOpacity
+								onPress={async () => {
+									try {
+										await presentPaywallIfNeeded();
+									} catch (error) {
+										console.error('Error presenting paywall:', error);
+									}
+								}}
+								className="bg-gray-900 px-4 py-1 rounded-full flex-row items-center"
+							>
+								<ThemedText
+									extraBold
+									className="text-gray-50 text-lg"
+									variant="body"
+								>
+									PRO
+								</ThemedText>
+							</TouchableOpacity>
+						)}
+					</View>
+					<View className="flex-1 items-center">
+						<ThemedText extraBold className="text-gray-900" variant="title-lg">
+							Projects
+						</ThemedText>
+					</View>
+					<View className="flex-1 items-end">
+						<TouchableOpacity onPress={() => router.push('/settings')} className="p-2">
+							<Ionicons name="settings" size={28} color="#111827" />
+						</TouchableOpacity>
+					</View>
+				</View>
 			</View>
 
 			{/* Projects List */}
 			{projects.length === 0 ? (
 				<View className="flex-1 items-center justify-center px-4">
-					<Ionicons name="folder-open-outline" size={64} color="#9CA3AF" />
-					<ThemedText className="text-gray-500 text-center mt-4" variant="body">
-						No projects yet.{'\n'}Save your AI designs to see them here.
+					<Ionicons name="folder-open-outline" size={64} color="#4b5563" />
+					<ThemedText
+						className="text-gray-900 text-center mt-4"
+						variant="title-lg"
+						extraBold
+					>
+						No projects yet.
+					</ThemedText>
+					<ThemedText className="text-gray-600 text-center mt-2" variant="body">
+						Save your AI designs to see them here.
 					</ThemedText>
 				</View>
 			) : (

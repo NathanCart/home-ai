@@ -1,13 +1,13 @@
 import { View, TouchableOpacity, Animated } from 'react-native';
 import { router } from 'expo-router';
-import { Octicons } from '@expo/vector-icons';
+import { Octicons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedText } from 'components/ThemedText';
 import { ScrollView } from 'react-native-gesture-handler';
 import { useEffect, useState, useRef } from 'react';
 import { LoadingScreen } from 'components/LoadingScreen';
 import { useOnboarding } from 'components/useOnboarding';
-import { useSubscriptionStatus } from 'components/useRevenueCat';
+import { useSubscriptionStatus, useRevenuecat } from 'components/useRevenueCat';
 import { SubscriptionBanner } from 'components/SubscriptionBanner';
 import { useReviewPrompt } from 'components/useReviewPrompt';
 import { ToolCard } from 'components/ToolCard';
@@ -17,6 +17,7 @@ export default function HomePage() {
 	const insets = useSafeAreaInsets();
 	const { hasCompletedOnboarding, isLoading: onboardingLoading } = useOnboarding();
 	const { isSubscribed } = useSubscriptionStatus();
+	const { presentPaywallIfNeeded } = useRevenuecat();
 	const [showBanner, setShowBanner] = useState(true);
 	const {
 		showReviewPrompt,
@@ -100,10 +101,39 @@ export default function HomePage() {
 		<View className="flex-1 bg-gray-50">
 			{/* Header */}
 			<View className=" pb-4 px-6" style={{ paddingTop: insets.top + 16 }}>
-				<View className="flex-row items-center justify-center">
-					<ThemedText extraBold className="text-gray-900" variant="title-lg">
-						housi ai
-					</ThemedText>
+				<View className="flex-row items-center justify-between">
+					<View className="flex-1 items-start">
+						{!isSubscribed && (
+							<TouchableOpacity
+								onPress={async () => {
+									try {
+										await presentPaywallIfNeeded();
+									} catch (error) {
+										console.error('Error presenting paywall:', error);
+									}
+								}}
+								className="bg-gray-900 px-4 py-1 rounded-full flex-row items-center"
+							>
+								<ThemedText
+									extraBold
+									className="text-gray-50 text-lg"
+									variant="body"
+								>
+									PRO
+								</ThemedText>
+							</TouchableOpacity>
+						)}
+					</View>
+					<View className="flex-1 items-center">
+						<ThemedText extraBold className="text-gray-900" variant="title-lg">
+							housi ai
+						</ThemedText>
+					</View>
+					<View className="flex-1 items-end">
+						<TouchableOpacity onPress={() => router.push('/settings')} className="p-2">
+							<Ionicons name="settings" size={28} color="#111827" />
+						</TouchableOpacity>
+					</View>
 				</View>
 			</View>
 

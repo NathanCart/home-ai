@@ -15,6 +15,8 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { TryThisStyleModal } from 'components/TryThisStyleModal';
+import { useSubscriptionStatus, useRevenuecat } from 'components/useRevenueCat';
+import { Ionicons } from '@expo/vector-icons';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const GAP = 12; // Gap between columns and rows (must match MARGIN_BOTTOM)
@@ -669,6 +671,8 @@ type TabType = 'interior' | 'exterior' | 'garden';
 
 export default function ExplorePage() {
 	const insets = useSafeAreaInsets();
+	const { isSubscribed } = useSubscriptionStatus();
+	const { presentPaywallIfNeeded } = useRevenuecat();
 	const [activeTab, setActiveTab] = useState<TabType>('interior');
 	const [selectedRoomId, setSelectedRoomId] = useState<string | null>(null);
 	const [selectedHouseTypeId, setSelectedHouseTypeId] = useState<string | null>(null);
@@ -743,10 +747,39 @@ export default function ExplorePage() {
 		<View className="flex-1 bg-gray-50">
 			{/* Header */}
 			<View className="pb-4 px-6" style={{ paddingTop: insets.top + 16 }}>
-				<View className="flex-row items-center justify-center">
-					<ThemedText extraBold className="text-gray-900" variant="title-lg">
-						Explore
-					</ThemedText>
+				<View className="flex-row items-center justify-between">
+					<View className="flex-1 items-start">
+						{!isSubscribed && (
+							<TouchableOpacity
+								onPress={async () => {
+									try {
+										await presentPaywallIfNeeded();
+									} catch (error) {
+										console.error('Error presenting paywall:', error);
+									}
+								}}
+								className="bg-gray-900 px-4 py-1 rounded-full flex-row items-center"
+							>
+								<ThemedText
+									extraBold
+									className="text-gray-50 text-lg"
+									variant="body"
+								>
+									PRO
+								</ThemedText>
+							</TouchableOpacity>
+						)}
+					</View>
+					<View className="flex-1 items-center">
+						<ThemedText extraBold className="text-gray-900" variant="title-lg">
+							Explore
+						</ThemedText>
+					</View>
+					<View className="flex-1 items-end">
+						<TouchableOpacity onPress={() => router.push('/settings')} className="p-2">
+							<Ionicons name="settings" size={28} color="#111827" />
+						</TouchableOpacity>
+					</View>
 				</View>
 			</View>
 
