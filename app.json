@@ -23,14 +23,6 @@
 			"expo-media-library",
 			"expo-router",
 			"expo-video",
-			[
-				"react-native-google-mobile-ads",
-				{
-					"androidAppId": "ca-app-pub-4272728413119527~8692365194",
-					"iosAppId": "ca-app-pub-4272728413119527~5075681679",
-					"userTrackingUsageDescription": "This app uses Google Mobile Ads SDK to provide personalized ads and improve your experience. We may collect information about your device and use it to show you relevant ads."
-				}
-			],
 			"expo-font"
 		],
 		"orientation": "portrait",

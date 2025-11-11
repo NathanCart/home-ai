@@ -10,7 +10,6 @@ import { useRevenuecat } from 'components/useRevenueCat';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useOnboarding } from 'components/useOnboarding';
-import mobileAds from 'react-native-google-mobile-ads';
 
 export default function RootLayout() {
 	const { initializeRevenueCat } = useRevenuecat();
