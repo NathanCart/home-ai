@@ -160,22 +160,6 @@ export default function HomePage() {
 					{/* Seasonal Banner */}
 					<SeasonalBanner sharedAnimation={sharedAnimation} />
 
-					{/* Design Tools */}
-					<ToolCard
-						title="Custom Request"
-						description="Describe any changes you want and let AI transform your space!"
-						materialIcon="lightbulb-on-outline"
-						image={'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-good.webp'}
-						originalImage={
-							'https://leafly-app.s3.eu-west-2.amazonaws.com/interior-bad.webp'
-						}
-						sharedAnimation={sharedAnimation}
-						showButton={true}
-						buttonText="Make Request"
-						onPress={() => {
-							router.push('/freeformmodal');
-						}}
-					/>
 					<ToolCard
 						title="Interior design"
 						description="Upload a photo of your space and let AI design it for you!"
@@ -234,6 +218,23 @@ export default function HomePage() {
 						buttonText="Transfer Style"
 						onPress={() => {
 							router.push('/styletransfermodal');
+						}}
+					/>
+
+					{/* Design Tools */}
+					<ToolCard
+						title="Custom Request"
+						description="Describe any changes you want and let AI transform your space!"
+						materialIcon="lightbulb-on-outline"
+						image={'https://pingu-app.s3.eu-west-2.amazonaws.com/freeform-new+(1).webp'}
+						originalImage={
+							'https://pingu-app.s3.eu-west-2.amazonaws.com/freeform-new.webp'
+						}
+						sharedAnimation={sharedAnimation}
+						showButton={true}
+						buttonText="Make Request"
+						onPress={() => {
+							router.push('/freeformmodal');
 						}}
 					/>
 					<ToolCard

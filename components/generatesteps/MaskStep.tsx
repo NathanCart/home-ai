@@ -126,6 +126,9 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 		// Counter to throttle mask updates during drawing
 		const segmentCounterRef = useRef(0);
 
+		// Guard to prevent concurrent surface operations
+		const isSurfaceOperationInProgressRef = useRef(false);
+
 		// Track last view coordinate for live path interpolation
 		const lastViewPointRef = useRef<{ x: number; y: number } | null>(null);
 
@@ -181,48 +184,64 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 		// Create/Reset full-res black mask when image loads/changes
 		useEffect(() => {
 			if (!skImage) return;
-			// Offscreen mask surface at image resolution
-			const imgW = skImage.width();
-			const imgH = skImage.height();
-			const surface = Skia.Surface.MakeOffscreen(imgW, imgH);
-			maskSurfaceRef.current = surface;
+			// Wait for any in-progress operations to complete
+			const setupMask = async () => {
+				// Wait a bit to ensure no concurrent operations
+				while (isSurfaceOperationInProgressRef.current) {
+					await new Promise((resolve) => setTimeout(resolve, 10));
+				}
 
-			// Fill black (preserve areas). Runware expects white to be the edited area.
-			const canvas = surface?.getCanvas();
-			if (canvas) {
-				// If we have an initial mask, load it, otherwise start with black
-				if (initialMaskUri) {
-					// Load the image from the data URI
-					const base64Data = initialMaskUri.split(',')[1];
-					const imageData = Skia.Data.fromBase64(base64Data);
-					const initMask = Skia.Image.MakeImageFromEncoded(imageData);
+				// Offscreen mask surface at image resolution
+				const imgW = skImage.width();
+				const imgH = skImage.height();
+				const surface = Skia.Surface.MakeOffscreen(imgW, imgH);
+				maskSurfaceRef.current = surface;
 
-					if (initMask) {
-						canvas.drawImage(initMask, 0, 0);
-						surface?.flush();
-						const snap = surface?.makeImageSnapshot()?.makeNonTextureImage();
-						if (snap) {
-							setMaskSnapshot(snap);
-							setHasMaskContent(true);
-							setMaskHistory([snap]);
-							setHistoryIndex(0);
+				// Fill black (preserve areas). Runware expects white to be the edited area.
+				try {
+					isSurfaceOperationInProgressRef.current = true;
+					const canvas = surface?.getCanvas();
+					if (canvas) {
+						// If we have an initial mask, load it, otherwise start with black
+						if (initialMaskUri) {
+							// Load the image from the data URI
+							const base64Data = initialMaskUri.split(',')[1];
+							const imageData = Skia.Data.fromBase64(base64Data);
+							const initMask = Skia.Image.MakeImageFromEncoded(imageData);
+
+							if (initMask) {
+								canvas.drawImage(initMask, 0, 0);
+								surface?.flush();
+								const snap = surface?.makeImageSnapshot()?.makeNonTextureImage();
+								if (snap) {
+									setMaskSnapshot(snap);
+									setHasMaskContent(true);
+									setMaskHistory([snap]);
+									setHistoryIndex(0);
+								}
+							}
+						} else {
+							const paint = Skia.Paint();
+							paint.setColor(Skia.Color('black'));
+							// PaintStyle.Fill = 0
+							paint.setStyle(0);
+							canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
+							surface?.flush();
+							const snap = surface?.makeImageSnapshot()?.makeNonTextureImage(); // for using on JS thread safely
+							if (snap) {
+								setMaskSnapshot(snap);
+								// Add initial empty mask to history
+								setMaskHistory([snap]);
+								setHistoryIndex(0);
+							}
 						}
 					}
-				} else {
-					const paint = Skia.Paint();
-					paint.setColor(Skia.Color('black'));
-					paint.setStyle(PaintStyle.Fill);
-					canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
-					surface?.flush();
-					const snap = surface?.makeImageSnapshot()?.makeNonTextureImage(); // for using on JS thread safely
-					if (snap) {
-						setMaskSnapshot(snap);
-						// Add initial empty mask to history
-						setMaskHistory([snap]);
-						setHistoryIndex(0);
-					}
+				} finally {
+					isSurfaceOperationInProgressRef.current = false;
 				}
-			}
+			};
+
+			setupMask();
 		}, [skImage, imageUri, initialMaskUri]);
 
 		// Draw helpers (write to full-res mask) with smooth interpolation
@@ -233,98 +252,119 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 			isErasing: boolean = false
 		) => {
 			const surface = maskSurfaceRef.current;
-			if (!surface) return;
-			const canvas = surface.getCanvas();
+			if (!surface || isSurfaceOperationInProgressRef.current) return;
 
-			// For eraser, use DST_OUT blend mode to remove the mask
-			// For brush, use white to add to the mask
-			const paint = Skia.Paint();
-			if (isErasing) {
-				paint.setColor(Skia.Color('black')); // Black with DST_OUT will erase
-				paint.setBlendMode(BlendMode.DstOut);
-			} else {
-				paint.setColor(Skia.Color('white')); // WHITE = edit region
-			}
-			paint.setStyle(PaintStyle.Stroke);
-			paint.setStrokeWidth(Math.max(1, brushImagePx));
-			paint.setAntiAlias(true);
-			paint.setStrokeCap(StrokeCap.Round);
+			// Set guard before getting canvas to make operation atomic
+			// This prevents race conditions where getCanvas() is called while another operation is starting
+			isSurfaceOperationInProgressRef.current = true;
 
-			const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+			try {
+				const canvas = surface.getCanvas();
 
-			// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
-			if (distance < 0.001) {
-				const dotPaint = Skia.Paint();
+				// For eraser, use DST_OUT blend mode to remove the mask
+				// For brush, use white to add to the mask
+				const paint = Skia.Paint();
+				paint.setColor(isErasing ? Skia.Color('black') : Skia.Color('white'));
 				if (isErasing) {
-					dotPaint.setColor(Skia.Color('black'));
-					dotPaint.setBlendMode(BlendMode.DstOut);
-				} else {
-					dotPaint.setColor(Skia.Color('white'));
+					// Black with DST_OUT will erase - use numeric value for v2 compatibility
+					// BlendMode.DstOut = 11
+					paint.setBlendMode(11);
 				}
-				dotPaint.setStyle(PaintStyle.Fill);
-				canvas.drawCircle(p1.x, p1.y, brushImagePx * 0.5, dotPaint);
-			} else {
-				// If points are far apart, interpolate to avoid sharp edges
-				// Interpolate every ~1 pixel of distance for smooth curves
-				const stepSize = 1; // pixel step for interpolation
-				const numSteps = Math.ceil(distance / stepSize);
+				// PaintStyle.Stroke = 1, StrokeCap.Round = 1
+				paint.setStyle(1);
+				paint.setStrokeWidth(Math.max(1, brushImagePx));
+				paint.setStrokeCap(1);
 
-				if (numSteps > 1) {
-					// Draw multiple small segments for smooth curves
-					const path = Skia.Path.Make();
-					path.moveTo(p1.x, p1.y);
+				const distance = Math.hypot(p2.x - p1.x, p2.y - p1.y);
 
-					for (let i = 1; i <= numSteps; i++) {
-						const t = i / numSteps;
-						const x = p1.x + (p2.x - p1.x) * t;
-						const y = p1.y + (p2.y - p1.y) * t;
-						path.lineTo(x, y);
+				// If it's a tap/start, draw a dot (line with same start/end can miss if antialiasing is off)
+				if (distance < 0.001) {
+					const dotPaint = Skia.Paint();
+					dotPaint.setColor(isErasing ? Skia.Color('black') : Skia.Color('white'));
+					if (isErasing) {
+						// BlendMode.DstOut = 11
+						dotPaint.setBlendMode(11);
 					}
-					canvas.drawPath(path, paint);
+					// PaintStyle.Fill = 0
+					dotPaint.setStyle(0);
+					canvas.drawCircle(p1.x, p1.y, brushImagePx * 0.5, dotPaint);
 				} else {
-					// Draw single segment for short distances
-					const path = Skia.Path.Make();
-					path.moveTo(p1.x, p1.y);
-					path.lineTo(p2.x, p2.y);
-					canvas.drawPath(path, paint);
-				}
-			}
+					// If points are far apart, interpolate to avoid sharp edges
+					// Interpolate every ~1 pixel of distance for smooth curves
+					const stepSize = 1; // pixel step for interpolation
+					const numSteps = Math.ceil(distance / stepSize);
 
-			// Flush is needed to commit changes to the surface
-			// We don't create a snapshot here to avoid blocking; snapshot is done periodically
-			surface.flush();
+					if (numSteps > 1) {
+						// Draw multiple small segments for smooth curves
+						const path = Skia.Path.Make();
+						path.moveTo(p1.x, p1.y);
+
+						for (let i = 1; i <= numSteps; i++) {
+							const t = i / numSteps;
+							const x = p1.x + (p2.x - p1.x) * t;
+							const y = p1.y + (p2.y - p1.y) * t;
+							path.lineTo(x, y);
+						}
+						canvas.drawPath(path, paint);
+					} else {
+						// Draw single segment for short distances
+						const path = Skia.Path.Make();
+						path.moveTo(p1.x, p1.y);
+						path.lineTo(p2.x, p2.y);
+						canvas.drawPath(path, paint);
+					}
+				}
+
+				// Don't flush during drawing - we'll flush when the stroke is complete
+				// This prevents "Should not already be working" errors from concurrent operations
+			} catch (e) {
+				// If we can't get the canvas (operation in progress), skip this draw
+				console.warn('Failed to draw stroke segment:', e);
+			} finally {
+				isSurfaceOperationInProgressRef.current = false;
+			}
 		};
 
 		const refreshMaskSnapshot = (saveToHistory: boolean = false) => {
 			const surface = maskSurfaceRef.current;
-			if (!surface) return;
+			if (!surface || isSurfaceOperationInProgressRef.current) return;
 
-			surface.flush();
-			const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
-			if (snap) {
-				setMaskSnapshot(snap);
-				// Save to history only when explicitly requested and not during history navigation
-				if (saveToHistory && !isHistoryActionRef.current) {
-					const newHistory = maskHistory.slice(0, historyIndex + 1);
-					newHistory.push(snap);
-					setMaskHistory(newHistory);
-					setHistoryIndex(newHistory.length - 1);
+			try {
+				isSurfaceOperationInProgressRef.current = true;
+				surface.flush();
+				const snap = surface.makeImageSnapshot()?.makeNonTextureImage();
+				if (snap) {
+					setMaskSnapshot(snap);
+					// Save to history only when explicitly requested and not during history navigation
+					if (saveToHistory && !isHistoryActionRef.current) {
+						const newHistory = maskHistory.slice(0, historyIndex + 1);
+						newHistory.push(snap);
+						setMaskHistory(newHistory);
+						setHistoryIndex(newHistory.length - 1);
+					}
 				}
+			} finally {
+				isSurfaceOperationInProgressRef.current = false;
 			}
 		};
 
 		const handleUndo = () => {
-			if (historyIndex > 0) {
+			if (historyIndex > 0 && !isSurfaceOperationInProgressRef.current) {
 				isHistoryActionRef.current = true;
 				const newIndex = historyIndex - 1;
 				setHistoryIndex(newIndex);
 				setMaskSnapshot(maskHistory[newIndex]);
 				// Also update the actual surface
 				if (maskHistory[newIndex] && maskSurfaceRef.current) {
-					const canvas = maskSurfaceRef.current.getCanvas();
-					canvas.clear(Skia.Color('black'));
-					canvas.drawImage(maskHistory[newIndex], 0, 0);
-					maskSurfaceRef.current.flush();
+					try {
+						isSurfaceOperationInProgressRef.current = true;
+						const canvas = maskSurfaceRef.current.getCanvas();
+						canvas.clear(Skia.Color('black'));
+						canvas.drawImage(maskHistory[newIndex], 0, 0);
+						maskSurfaceRef.current.flush();
+					} finally {
+						isSurfaceOperationInProgressRef.current = false;
+					}
 				}
 				setTimeout(() => {
 					isHistoryActionRef.current = false;
@@ -333,17 +373,22 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 		};
 
 		const handleRedo = () => {
-			if (historyIndex < maskHistory.length - 1) {
+			if (historyIndex < maskHistory.length - 1 && !isSurfaceOperationInProgressRef.current) {
 				isHistoryActionRef.current = true;
 				const newIndex = historyIndex + 1;
 				setHistoryIndex(newIndex);
 				setMaskSnapshot(maskHistory[newIndex]);
 				// Also update the actual surface
 				if (maskHistory[newIndex] && maskSurfaceRef.current) {
-					const canvas = maskSurfaceRef.current.getCanvas();
-					canvas.clear(Skia.Color('black'));
-					canvas.drawImage(maskHistory[newIndex], 0, 0);
-					maskSurfaceRef.current.flush();
+					try {
+						isSurfaceOperationInProgressRef.current = true;
+						const canvas = maskSurfaceRef.current.getCanvas();
+						canvas.clear(Skia.Color('black'));
+						canvas.drawImage(maskHistory[newIndex], 0, 0);
+						maskSurfaceRef.current.flush();
+					} finally {
+						isSurfaceOperationInProgressRef.current = false;
+					}
 				}
 				setTimeout(() => {
 					isHistoryActionRef.current = false;
@@ -439,7 +484,16 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 				lastImgPointRef.current = null;
 				lastViewPointRef.current = null;
 				setLiveStrokePath(null);
-				// snapshot after each stroke and save to history
+				// Flush the surface and snapshot after each stroke and save to history
+				const surface = maskSurfaceRef.current;
+				if (surface && !isSurfaceOperationInProgressRef.current) {
+					try {
+						isSurfaceOperationInProgressRef.current = true;
+						surface.flush();
+					} finally {
+						isSurfaceOperationInProgressRef.current = false;
+					}
+				}
 				segmentCounterRef.current = 0;
 				refreshMaskSnapshot(true);
 				setHasMaskContent(true);
@@ -449,6 +503,16 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 				lastImgPointRef.current = null;
 				lastViewPointRef.current = null;
 				setLiveStrokePath(null);
+				// Flush the surface before snapshot
+				const surface = maskSurfaceRef.current;
+				if (surface && !isSurfaceOperationInProgressRef.current) {
+					try {
+						isSurfaceOperationInProgressRef.current = true;
+						surface.flush();
+					} finally {
+						isSurfaceOperationInProgressRef.current = false;
+					}
+				}
 				segmentCounterRef.current = 0;
 				refreshMaskSnapshot(true);
 				setHasMaskContent(true);
@@ -579,12 +643,15 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 				);
 
 				const surface = maskSurfaceRef.current;
-				if (surface && regionImg) {
-					const canvas = surface.getCanvas();
-					const paint = Skia.Paint();
-					// When we draw the white region over black mask, srcOver is fine
-					paint.setBlendMode(BlendMode.SrcOver as any);
-					canvas.drawImage(regionImg, 0, 0, paint);
+				if (surface && regionImg && !isSurfaceOperationInProgressRef.current) {
+					try {
+						isSurfaceOperationInProgressRef.current = true;
+						const canvas = surface.getCanvas();
+						// Draw the white region over black mask (default SrcOver blend mode is fine)
+						canvas.drawImage(regionImg, 0, 0);
+					} finally {
+						isSurfaceOperationInProgressRef.current = false;
+					}
 					refreshMaskSnapshot();
 					setHasMaskContent(true);
 				}
@@ -601,14 +668,20 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 		// Clear mask (fill black)
 		const handleClearMask = () => {
 			const surface = maskSurfaceRef.current;
-			if (!surface || !skImage) return;
+			if (!surface || !skImage || isSurfaceOperationInProgressRef.current) return;
 			const imgW = skImage.width();
 			const imgH = skImage.height();
-			const canvas = surface.getCanvas();
-			const paint = Skia.Paint();
-			paint.setColor(Skia.Color('black')); // reset = preserve all
-			paint.setStyle(PaintStyle.Fill);
-			canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
+			try {
+				isSurfaceOperationInProgressRef.current = true;
+				const canvas = surface.getCanvas();
+				const paint = Skia.Paint();
+				paint.setColor(Skia.Color('black')); // reset = preserve all
+				// PaintStyle.Fill = 0
+				paint.setStyle(0);
+				canvas.drawRect({ x: 0, y: 0, width: imgW, height: imgH }, paint);
+			} finally {
+				isSurfaceOperationInProgressRef.current = false;
+			}
 			refreshMaskSnapshot();
 			setLiveStrokePath(null);
 			setHasMaskContent(false);
@@ -617,25 +690,35 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 		// Export mask as data URI (PNG)
 		const handleComplete = async () => {
 			const surface = maskSurfaceRef.current;
-			if (!surface) return;
-			surface.flush();
-			const image = surface.makeImageSnapshot();
-			if (!image) return;
-			const b64 = image.encodeToBase64(ImageFormat.PNG, 100);
-			const dataUri = `data:image/png;base64,${b64}`;
-			onMaskComplete?.(dataUri);
+			if (!surface || isSurfaceOperationInProgressRef.current) return;
+			try {
+				isSurfaceOperationInProgressRef.current = true;
+				surface.flush();
+				const image = surface.makeImageSnapshot();
+				if (!image) return;
+				const b64 = image.encodeToBase64(ImageFormat.PNG, 100);
+				const dataUri = `data:image/png;base64,${b64}`;
+				onMaskComplete?.(dataUri);
+			} finally {
+				isSurfaceOperationInProgressRef.current = false;
+			}
 		};
 
 		// Expose exportMask function via ref
 		useImperativeHandle(ref, () => ({
 			exportMask: async () => {
 				const surface = maskSurfaceRef.current;
-				if (!surface) return undefined;
-				surface.flush();
-				const image = surface.makeImageSnapshot();
-				if (!image) return undefined;
-				const b64 = image.encodeToBase64(ImageFormat.PNG, 100);
-				return `data:image/png;base64,${b64}`;
+				if (!surface || isSurfaceOperationInProgressRef.current) return undefined;
+				try {
+					isSurfaceOperationInProgressRef.current = true;
+					surface.flush();
+					const image = surface.makeImageSnapshot();
+					if (!image) return undefined;
+					const b64 = image.encodeToBase64(ImageFormat.PNG, 100);
+					return `data:image/png;base64,${b64}`;
+				} finally {
+					isSurfaceOperationInProgressRef.current = false;
+				}
 			},
 		}));
 
@@ -689,6 +772,7 @@ export const MaskStep = forwardRef<MaskStepRef, MaskStepProps>(
 						{maskSnapshot && (
 							<SkiaMask
 								mode="luminance"
+								clip={false}
 								mask={
 									<SkiaImage
 										image={maskSnapshot}

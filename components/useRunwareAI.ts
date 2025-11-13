@@ -418,8 +418,8 @@ export function useRunwareAI() {
 				{
 					taskType: 'imageInference',
 					taskUUID,
-					positivePrompt: params.prompt,
-					referenceImages: [params.seedImageUri, params.maskImageUri], // Pass both seed and mask as reference images
+					positivePrompt: `${params.prompt}`,
+					referenceImages: [params.seedImageUri], // Pass both seed and mask as reference images
 					model: 'runware:108@22',
 					width: 1248,
 					height: 832,

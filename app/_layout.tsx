@@ -25,14 +25,6 @@ export default function RootLayout() {
 			initializeRevenueCat();
 			// Initialize AdMob
 			console.log('=== INITIALIZING ADMOB ===');
-			mobileAds()
-				.initialize()
-				.then(() => {
-					console.log('✅ AdMob initialized successfully');
-				})
-				.catch((error) => {
-					console.error('❌ AdMob initialization failed:', error);
-				});
 		}
 	}, [fontsLoaded, initializeRevenueCat]);
 
